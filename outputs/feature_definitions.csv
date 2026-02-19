@@ -1,0 +1,122 @@
+feature_name,meaning
+brand_id,identifier
+window_end_date,identifier
+window_size,identifier
+window_size_days,identifier
+recency_days_mean,aggregated KPI metric
+recency_days_median,aggregated KPI metric
+recency_days_p90,aggregated KPI metric
+active_users,aggregated KPI metric
+new_users,aggregated KPI metric
+returning_users,aggregated KPI metric
+dormant_share,ratio/share feature
+total_events,aggregated KPI metric
+total_logins,aggregated KPI metric
+total_views,aggregated KPI metric
+avg_events_per_active,aggregated KPI metric
+session_proxy_login_to_view,aggregated KPI metric
+activity_events,aggregated KPI metric
+activity_completed_events,aggregated KPI metric
+activity_completion_rate,rate/proportion feature
+activity_points_sum,aggregated KPI metric
+activity_points_per_active,aggregated KPI metric
+activity_redeem_count,aggregated KPI metric
+activity_redeem_rate,rate/proportion feature
+activity_redeem_per_active,aggregated KPI metric
+activity_type_entropy,distribution entropy
+activity_type_top_share,ratio/share feature
+activity_type_login_count,aggregated KPI metric
+activity_type_login_completion_rate,rate/proportion feature
+activity_type_product_consume_uniquecode_count,aggregated KPI metric
+activity_type_product_consume_uniquecode_completion_rate,rate/proportion feature
+activity_type_registration_count,aggregated KPI metric
+activity_type_registration_completion_rate,rate/proportion feature
+activity_name_entropy,distribution entropy
+activity_name_top_share,ratio/share feature
+redeem_user_low_share,ratio/share feature
+redeem_user_med_share,ratio/share feature
+redeem_user_high_share,ratio/share feature
+transaction_count,aggregated KPI metric
+transaction_success_rate,rate/proportion feature
+gmv_net,aggregated KPI metric
+gmv_sell,aggregated KPI metric
+discount_rate,rate/proportion feature
+aov_net,aggregated KPI metric
+items_per_transaction,aggregated KPI metric
+paid_delay_hours,aggregated KPI metric
+delivered_rate,rate/proportion feature
+shipped_rate,rate/proportion feature
+buyers,aggregated KPI metric
+repeat_purchase_rate,rate/proportion feature
+sku_unique,aggregated KPI metric
+sku_top_share,ratio/share feature
+sku_entropy,distribution entropy
+status_success_rate,rate/proportion feature
+rfm_recency_mean,RFM-based user distribution or transition metric
+rfm_frequency_mean,RFM-based user distribution or transition metric
+rfm_monetary_mean,RFM-based user distribution or transition metric
+rfm_score_mean,RFM-based user distribution or transition metric
+rfm_transition_up_share,RFM-based user distribution or transition metric
+rfm_transition_down_share,RFM-based user distribution or transition metric
+rfm_dormant_share,RFM-based user distribution or transition metric
+rfm_recency_tier_1_pct,RFM-based user distribution or transition metric
+rfm_recency_tier_2_pct,RFM-based user distribution or transition metric
+rfm_recency_tier_3_pct,RFM-based user distribution or transition metric
+rfm_recency_tier_4_pct,RFM-based user distribution or transition metric
+rfm_recency_tier_5_pct,RFM-based user distribution or transition metric
+rfm_frequency_tier_1_pct,RFM-based user distribution or transition metric
+rfm_frequency_tier_2_pct,RFM-based user distribution or transition metric
+rfm_frequency_tier_3_pct,RFM-based user distribution or transition metric
+rfm_frequency_tier_4_pct,RFM-based user distribution or transition metric
+rfm_frequency_tier_5_pct,RFM-based user distribution or transition metric
+rfm_monetary_tier_1_pct,RFM-based user distribution or transition metric
+rfm_monetary_tier_2_pct,RFM-based user distribution or transition metric
+rfm_monetary_tier_3_pct,RFM-based user distribution or transition metric
+rfm_monetary_tier_4_pct,RFM-based user distribution or transition metric
+rfm_monetary_tier_5_pct,RFM-based user distribution or transition metric
+rfm_score_tier_1_pct,RFM-based user distribution or transition metric
+rfm_score_tier_2_pct,RFM-based user distribution or transition metric
+rfm_score_tier_3_pct,RFM-based user distribution or transition metric
+rfm_score_tier_4_pct,RFM-based user distribution or transition metric
+rfm_score_tier_5_pct,RFM-based user distribution or transition metric
+activity_type_referral_count,aggregated KPI metric
+activity_type_referral_completion_rate,rate/proportion feature
+activity_type_upload_receipts_count,aggregated KPI metric
+activity_type_upload_receipts_completion_rate,rate/proportion feature
+status_voided_rate,rate/proportion feature
+status_pending_rate,rate/proportion feature
+status_reject_rate,rate/proportion feature
+new_user_share,ratio/share feature
+returning_user_share,ratio/share feature
+gmv_per_active,aggregated KPI metric
+transactions_per_active,aggregated KPI metric
+points_per_completion,aggregated KPI metric
+reward_efficiency,aggregated KPI metric
+active_users_wow_pct,week-over-week percent change
+active_users_mom_pct,month-over-month percent change (4 weekly windows)
+active_users_zscore,rolling z-score vs trailing baseline
+active_users_volatility,rolling std/mean over trailing windows
+gmv_net_wow_pct,week-over-week percent change
+gmv_net_mom_pct,month-over-month percent change (4 weekly windows)
+gmv_net_zscore,rolling z-score vs trailing baseline
+gmv_net_volatility,rolling std/mean over trailing windows
+transaction_count_wow_pct,week-over-week percent change
+transaction_count_mom_pct,month-over-month percent change (4 weekly windows)
+transaction_count_zscore,rolling z-score vs trailing baseline
+transaction_count_volatility,rolling std/mean over trailing windows
+activity_completion_rate_wow_pct,week-over-week percent change
+activity_completion_rate_mom_pct,month-over-month percent change (4 weekly windows)
+activity_completion_rate_zscore,rolling z-score vs trailing baseline
+activity_completion_rate_volatility,rolling std/mean over trailing windows
+activity_redeem_rate_wow_pct,week-over-week percent change
+activity_redeem_rate_mom_pct,month-over-month percent change (4 weekly windows)
+activity_redeem_rate_zscore,rolling z-score vs trailing baseline
+activity_redeem_rate_volatility,rolling std/mean over trailing windows
+reward_efficiency_wow_pct,week-over-week percent change
+reward_efficiency_mom_pct,month-over-month percent change (4 weekly windows)
+reward_efficiency_zscore,rolling z-score vs trailing baseline
+reward_efficiency_volatility,rolling std/mean over trailing windows
+dormant_share_wow_pct,week-over-week percent change
+dormant_share_mom_pct,month-over-month percent change (4 weekly windows)
+dormant_share_zscore,rolling z-score vs trailing baseline
+dormant_share_volatility,rolling std/mean over trailing windows

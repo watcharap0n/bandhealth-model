@@ -1,0 +1,628 @@
+{
+  "feature_columns": [
+    "brand_id",
+    "window_size",
+    "window_size_days",
+    "recency_days_mean",
+    "recency_days_median",
+    "recency_days_p90",
+    "active_users",
+    "new_users",
+    "returning_users",
+    "dormant_share",
+    "total_events",
+    "total_logins",
+    "total_views",
+    "avg_events_per_active",
+    "session_proxy_login_to_view",
+    "activity_events",
+    "activity_completed_events",
+    "activity_completion_rate",
+    "activity_points_sum",
+    "activity_points_per_active",
+    "activity_redeem_count",
+    "activity_redeem_rate",
+    "activity_redeem_per_active",
+    "activity_type_entropy",
+    "activity_type_top_share",
+    "activity_type_login_count",
+    "activity_type_login_completion_rate",
+    "activity_type_product_consume_uniquecode_count",
+    "activity_type_product_consume_uniquecode_completion_rate",
+    "activity_type_registration_count",
+    "activity_type_registration_completion_rate",
+    "activity_name_entropy",
+    "activity_name_top_share",
+    "redeem_user_low_share",
+    "redeem_user_med_share",
+    "redeem_user_high_share",
+    "transaction_count",
+    "transaction_success_rate",
+    "gmv_net",
+    "gmv_sell",
+    "discount_rate",
+    "aov_net",
+    "items_per_transaction",
+    "paid_delay_hours",
+    "delivered_rate",
+    "shipped_rate",
+    "buyers",
+    "repeat_purchase_rate",
+    "sku_unique",
+    "sku_top_share",
+    "sku_entropy",
+    "status_success_rate",
+    "rfm_recency_mean",
+    "rfm_frequency_mean",
+    "rfm_monetary_mean",
+    "rfm_score_mean",
+    "rfm_transition_up_share",
+    "rfm_transition_down_share",
+    "rfm_dormant_share",
+    "rfm_recency_tier_1_pct",
+    "rfm_recency_tier_2_pct",
+    "rfm_recency_tier_3_pct",
+    "rfm_recency_tier_4_pct",
+    "rfm_recency_tier_5_pct",
+    "rfm_frequency_tier_1_pct",
+    "rfm_frequency_tier_2_pct",
+    "rfm_frequency_tier_3_pct",
+    "rfm_frequency_tier_4_pct",
+    "rfm_frequency_tier_5_pct",
+    "rfm_monetary_tier_1_pct",
+    "rfm_monetary_tier_2_pct",
+    "rfm_monetary_tier_3_pct",
+    "rfm_monetary_tier_4_pct",
+    "rfm_monetary_tier_5_pct",
+    "rfm_score_tier_1_pct",
+    "rfm_score_tier_2_pct",
+    "rfm_score_tier_3_pct",
+    "rfm_score_tier_4_pct",
+    "rfm_score_tier_5_pct",
+    "activity_type_referral_count",
+    "activity_type_referral_completion_rate",
+    "activity_type_upload_receipts_count",
+    "activity_type_upload_receipts_completion_rate",
+    "status_voided_rate",
+    "status_pending_rate",
+    "status_reject_rate",
+    "new_user_share",
+    "returning_user_share",
+    "gmv_per_active",
+    "transactions_per_active",
+    "points_per_completion",
+    "reward_efficiency",
+    "active_users_wow_pct",
+    "active_users_mom_pct",
+    "active_users_zscore",
+    "active_users_volatility",
+    "gmv_net_wow_pct",
+    "gmv_net_mom_pct",
+    "gmv_net_zscore",
+    "gmv_net_volatility",
+    "transaction_count_wow_pct",
+    "transaction_count_mom_pct",
+    "transaction_count_zscore",
+    "transaction_count_volatility",
+    "activity_completion_rate_wow_pct",
+    "activity_completion_rate_mom_pct",
+    "activity_completion_rate_zscore",
+    "activity_completion_rate_volatility",
+    "activity_redeem_rate_wow_pct",
+    "activity_redeem_rate_mom_pct",
+    "activity_redeem_rate_zscore",
+    "activity_redeem_rate_volatility",
+    "reward_efficiency_wow_pct",
+    "reward_efficiency_mom_pct",
+    "reward_efficiency_zscore",
+    "reward_efficiency_volatility",
+    "dormant_share_wow_pct",
+    "dormant_share_mom_pct",
+    "dormant_share_zscore",
+    "dormant_share_volatility",
+    "activity_points_per_active_wow_pct",
+    "window_end_ordinal",
+    "window_end_month",
+    "window_end_week"
+  ],
+  "categorical_columns": [
+    "brand_id",
+    "window_size"
+  ],
+  "numeric_columns": [
+    "window_size_days",
+    "recency_days_mean",
+    "recency_days_median",
+    "recency_days_p90",
+    "active_users",
+    "new_users",
+    "returning_users",
+    "dormant_share",
+    "total_events",
+    "total_logins",
+    "total_views",
+    "avg_events_per_active",
+    "session_proxy_login_to_view",
+    "activity_events",
+    "activity_completed_events",
+    "activity_completion_rate",
+    "activity_points_sum",
+    "activity_points_per_active",
+    "activity_redeem_count",
+    "activity_redeem_rate",
+    "activity_redeem_per_active",
+    "activity_type_entropy",
+    "activity_type_top_share",
+    "activity_type_login_count",
+    "activity_type_login_completion_rate",
+    "activity_type_product_consume_uniquecode_count",
+    "activity_type_product_consume_uniquecode_completion_rate",
+    "activity_type_registration_count",
+    "activity_type_registration_completion_rate",
+    "activity_name_entropy",
+    "activity_name_top_share",
+    "redeem_user_low_share",
+    "redeem_user_med_share",
+    "redeem_user_high_share",
+    "transaction_count",
+    "transaction_success_rate",
+    "gmv_net",
+    "gmv_sell",
+    "discount_rate",
+    "aov_net",
+    "items_per_transaction",
+    "paid_delay_hours",
+    "delivered_rate",
+    "shipped_rate",
+    "buyers",
+    "repeat_purchase_rate",
+    "sku_unique",
+    "sku_top_share",
+    "sku_entropy",
+    "status_success_rate",
+    "rfm_recency_mean",
+    "rfm_frequency_mean",
+    "rfm_monetary_mean",
+    "rfm_score_mean",
+    "rfm_transition_up_share",
+    "rfm_transition_down_share",
+    "rfm_dormant_share",
+    "rfm_recency_tier_1_pct",
+    "rfm_recency_tier_2_pct",
+    "rfm_recency_tier_3_pct",
+    "rfm_recency_tier_4_pct",
+    "rfm_recency_tier_5_pct",
+    "rfm_frequency_tier_1_pct",
+    "rfm_frequency_tier_2_pct",
+    "rfm_frequency_tier_3_pct",
+    "rfm_frequency_tier_4_pct",
+    "rfm_frequency_tier_5_pct",
+    "rfm_monetary_tier_1_pct",
+    "rfm_monetary_tier_2_pct",
+    "rfm_monetary_tier_3_pct",
+    "rfm_monetary_tier_4_pct",
+    "rfm_monetary_tier_5_pct",
+    "rfm_score_tier_1_pct",
+    "rfm_score_tier_2_pct",
+    "rfm_score_tier_3_pct",
+    "rfm_score_tier_4_pct",
+    "rfm_score_tier_5_pct",
+    "activity_type_referral_count",
+    "activity_type_referral_completion_rate",
+    "activity_type_upload_receipts_count",
+    "activity_type_upload_receipts_completion_rate",
+    "status_voided_rate",
+    "status_pending_rate",
+    "status_reject_rate",
+    "new_user_share",
+    "returning_user_share",
+    "gmv_per_active",
+    "transactions_per_active",
+    "points_per_completion",
+    "reward_efficiency",
+    "active_users_wow_pct",
+    "active_users_mom_pct",
+    "active_users_zscore",
+    "active_users_volatility",
+    "gmv_net_wow_pct",
+    "gmv_net_mom_pct",
+    "gmv_net_zscore",
+    "gmv_net_volatility",
+    "transaction_count_wow_pct",
+    "transaction_count_mom_pct",
+    "transaction_count_zscore",
+    "transaction_count_volatility",
+    "activity_completion_rate_wow_pct",
+    "activity_completion_rate_mom_pct",
+    "activity_completion_rate_zscore",
+    "activity_completion_rate_volatility",
+    "activity_redeem_rate_wow_pct",
+    "activity_redeem_rate_mom_pct",
+    "activity_redeem_rate_zscore",
+    "activity_redeem_rate_volatility",
+    "reward_efficiency_wow_pct",
+    "reward_efficiency_mom_pct",
+    "reward_efficiency_zscore",
+    "reward_efficiency_volatility",
+    "dormant_share_wow_pct",
+    "dormant_share_mom_pct",
+    "dormant_share_zscore",
+    "dormant_share_volatility",
+    "activity_points_per_active_wow_pct",
+    "window_end_ordinal",
+    "window_end_month",
+    "window_end_week"
+  ],
+  "class_labels": [
+    "AtRisk",
+    "Healthy",
+    "Warning"
+  ],
+  "metrics": {
+    "time_split_cutoff": "2025-02-09 00:00:00+00:00",
+    "time_split": {
+      "logistic": {
+        "macro_f1": 0.29012142026853,
+        "balanced_accuracy": 0.386616671336152,
+        "confusion_matrix": [
+          [
+            46,
+            6,
+            15
+          ],
+          [
+            184,
+            70,
+            39
+          ],
+          [
+            47,
+            2,
+            15
+          ]
+        ],
+        "class_labels": [
+          "AtRisk",
+          "Healthy",
+          "Warning"
+        ],
+        "calibration": {
+          "risk_class": "AtRisk",
+          "brier": 0.1641568069476274,
+          "calibration_ece": 0.3522829112112435,
+          "bin_pred": [
+            0.04717258303996234,
+            0.1896092414446514,
+            0.3588123610136631,
+            0.41529925642259274,
+            0.5459453551510101,
+            0.692620731507794,
+            0.7815802069751945
+          ],
+          "bin_true": [
+            0.031746031746031744,
+            0.125,
+            0.18382352941176472,
+            0.22448979591836735,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "hgb": {
+        "macro_f1": 0.8269513921469741,
+        "balanced_accuracy": 0.8328547110862071,
+        "confusion_matrix": [
+          [
+            58,
+            0,
+            9
+          ],
+          [
+            0,
+            277,
+            16
+          ],
+          [
+            9,
+            11,
+            44
+          ]
+        ],
+        "class_labels": [
+          "AtRisk",
+          "Healthy",
+          "Warning"
+        ],
+        "calibration": {
+          "risk_class": "AtRisk",
+          "brier": 0.03535610464610793,
+          "calibration_ece": 0.24215028824351134,
+          "bin_pred": [
+            0.002629990829771228,
+            0.17352417021946395,
+            0.266533821553223,
+            0.49546947024080656,
+            0.5790714017609367,
+            0.6900479498762103,
+            0.8266918364926238,
+            0.9897444201227281
+          ],
+          "bin_true": [
+            0.022922636103151862,
+            0.0,
+            0.3333333333333333,
+            0.0,
+            0.8,
+            0.3333333333333333,
+            0.25,
+            0.9629629629629629
+          ]
+        }
+      },
+      "hgb_calibrated": {
+        "macro_f1": 0.8108728879715595,
+        "balanced_accuracy": 0.8023178688468918,
+        "confusion_matrix": [
+          [
+            57,
+            0,
+            10
+          ],
+          [
+            0,
+            282,
+            11
+          ],
+          [
+            8,
+            18,
+            38
+          ]
+        ],
+        "class_labels": [
+          "AtRisk",
+          "Healthy",
+          "Warning"
+        ],
+        "calibration": {
+          "risk_class": "AtRisk",
+          "brier": 0.03145969218821867,
+          "calibration_ece": 0.09849538620693865,
+          "bin_pred": [
+            0.016962065617188965,
+            0.18413873207000767,
+            0.3093688926242478,
+            0.43941817851877985,
+            0.5821834801079648,
+            0.7123263149061991,
+            0.8194440266483709,
+            0.9014442447312195
+          ],
+          "bin_true": [
+            0.0,
+            0.043478260869565216,
+            0.3333333333333333,
+            0.5555555555555556,
+            0.4444444444444444,
+            0.7857142857142857,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "cross_brand": {
+      "c-vit": {
+        "macro_f1": 0.7674475963773792,
+        "balanced_accuracy": 0.7445574772157051,
+        "confusion_matrix": [
+          [
+            122,
+            7,
+            46
+          ],
+          [
+            0,
+            694,
+            17
+          ],
+          [
+            19,
+            61,
+            102
+          ]
+        ],
+        "class_labels": [
+          "AtRisk",
+          "Healthy",
+          "Warning"
+        ],
+        "calibration": {
+          "risk_class": "AtRisk",
+          "brier": 0.053346191308194936,
+          "calibration_ece": 0.12194160834913861,
+          "bin_pred": [
+            0.004565755720968634,
+            0.18028751892353775,
+            0.3000847469852045,
+            0.4370582175582438,
+            0.577339497809351,
+            0.6613956177544922,
+            0.8183974038699778,
+            0.9881556236542076
+          ],
+          "bin_true": [
+            0.039503386004514675,
+            0.38095238095238093,
+            0.38461538461538464,
+            0.75,
+            0.36363636363636365,
+            0.6363636363636364,
+            0.75,
+            0.9528301886792453
+          ]
+        }
+      },
+      "see-chan": {
+        "macro_f1": 0.759668983583908,
+        "balanced_accuracy": 0.7366665898635208,
+        "confusion_matrix": [
+          [
+            86,
+            4,
+            12
+          ],
+          [
+            1,
+            845,
+            5
+          ],
+          [
+            20,
+            52,
+            43
+          ]
+        ],
+        "class_labels": [
+          "AtRisk",
+          "Healthy",
+          "Warning"
+        ],
+        "calibration": {
+          "risk_class": "AtRisk",
+          "brier": 0.023832016210076478,
+          "calibration_ece": 0.1746936361849501,
+          "bin_pred": [
+            0.0029346516520529723,
+            0.17153258462692808,
+            0.31232966801938716,
+            0.4212089280153333,
+            0.5247771302024367,
+            0.682006600227762,
+            0.8359797343194242,
+            0.9830809745340907
+          ],
+          "bin_true": [
+            0.007494646680942184,
+            0.2222222222222222,
+            0.4166666666666667,
+            0.3333333333333333,
+            0.16666666666666666,
+            0.4,
+            0.4,
+            0.9090909090909091
+          ]
+        }
+      }
+    },
+    "group_kfold_brand": [
+      {
+        "macro_f1": 0.759668983583908,
+        "balanced_accuracy": 0.7366665898635208,
+        "confusion_matrix": [
+          [
+            86,
+            4,
+            12
+          ],
+          [
+            1,
+            845,
+            5
+          ],
+          [
+            20,
+            52,
+            43
+          ]
+        ],
+        "class_labels": [
+          "AtRisk",
+          "Healthy",
+          "Warning"
+        ],
+        "calibration": {
+          "risk_class": "AtRisk",
+          "brier": 0.023832016210076478,
+          "calibration_ece": 0.1746936361849501,
+          "bin_pred": [
+            0.0029346516520529723,
+            0.17153258462692808,
+            0.31232966801938716,
+            0.4212089280153333,
+            0.5247771302024367,
+            0.682006600227762,
+            0.8359797343194242,
+            0.9830809745340907
+          ],
+          "bin_true": [
+            0.007494646680942184,
+            0.2222222222222222,
+            0.4166666666666667,
+            0.3333333333333333,
+            0.16666666666666666,
+            0.4,
+            0.4,
+            0.9090909090909091
+          ]
+        },
+        "fold": 1
+      },
+      {
+        "macro_f1": 0.7674475963773792,
+        "balanced_accuracy": 0.7445574772157051,
+        "confusion_matrix": [
+          [
+            122,
+            7,
+            46
+          ],
+          [
+            0,
+            694,
+            17
+          ],
+          [
+            19,
+            61,
+            102
+          ]
+        ],
+        "class_labels": [
+          "AtRisk",
+          "Healthy",
+          "Warning"
+        ],
+        "calibration": {
+          "risk_class": "AtRisk",
+          "brier": 0.053346191308194936,
+          "calibration_ece": 0.12194160834913861,
+          "bin_pred": [
+            0.004565755720968634,
+            0.18028751892353775,
+            0.3000847469852045,
+            0.4370582175582438,
+            0.577339497809351,
+            0.6613956177544922,
+            0.8183974038699778,
+            0.9881556236542076
+          ],
+          "bin_true": [
+            0.039503386004514675,
+            0.38095238095238093,
+            0.38461538461538464,
+            0.75,
+            0.36363636363636365,
+            0.6363636363636364,
+            0.75,
+            0.9528301886792453
+          ]
+        },
+        "fold": 2
+      }
+    ],
+    "selected_model": "hgb"
+  }
+}
