@@ -25,29 +25,33 @@
 
 ### Join key coverage
 
-| brand_id | left_table           | right_table    | key            | left_rows | right_rows | left_unique | right_unique | overlap_unique | row_coverage          |
-| -------- | -------------------- | -------------- | -------------- | --------- | ---------- | ----------- | ------------ | -------------- | --------------------- |
-| c-vit    | activity_transaction | user_identity  | user_id        | 10000     | 10000      | 181         | 10000        | 9              | 0.0408                |
-| c-vit    | activity_transaction | user_view      | user_id        | 10000     | 10000      | 181         | 10000        | 10             | 0.028                 |
-| c-vit    | activity_transaction | user_visitor   | user_id        | 10000     | 10000      | 181         | 242          | 4              | 0.1084                |
-| c-vit    | purchase             | purchase_items | transaction_id | 10000     | 8827       | 10000       | 5326         | 0              | 0.0                   |
-| c-vit    | purchase             | purchase_items | user_id        | 10000     | 8827       | 1250        | 1            | 0              | 0.0                   |
-| c-vit    | purchase             | user_identity  | user_id        | 10000     | 10000      | 1250        | 10000        | 82             | 0.0439                |
-| c-vit    | purchase             | user_info      | user_id        | 10000     | 10000      | 1250        | 10000        | 70             | 0.0308                |
-| c-vit    | user_view            | user_visitor   | user_id        | 10000     | 10000      | 10000       | 242          | 0              | 0.0                   |
-| see-chan | activity_transaction | user_identity  | user_id        | 178594    | 141220     | 140795      | 141220       | 140792         | 0.9999832021232516    |
-| see-chan | activity_transaction | user_view      | user_id        | 178594    | 173494     | 140795      | 173494       | 140792         | 0.9999832021232516    |
-| see-chan | activity_transaction | user_visitor   | user_id        | 178594    | 446324     | 140795      | 172144       | 139453         | 0.9924857498012252    |
-| see-chan | purchase             | purchase_items | transaction_id | 1404759   | 1982120    | 1399583     | 1378053      | 1378053        | 0.9839175260667489    |
-| see-chan | purchase             | purchase_items | user_id        | 1404759   | 1982120    | 10359       | 19           | 19             | 0.0020581521535755717 |
-| see-chan | purchase             | user_identity  | user_id        | 1404759   | 141220     | 10359       | 141220       | 10359          | 1.0                   |
-| see-chan | purchase             | user_info      | user_id        | 1404759   | 141220     | 10359       | 141220       | 10359          | 1.0                   |
-| see-chan | user_view            | user_visitor   | user_id        | 173494    | 446324     | 173494      | 172144       | 172144         | 0.992218751080729     |
+| brand_id | left_table           | right_table    | key            | left_rows | right_rows | left_unique | right_unique | overlap_unique | row_coverage       | left_unique_norm | right_unique_norm | overlap_unique_norm | row_coverage_norm  |
+| -------- | -------------------- | -------------- | -------------- | --------- | ---------- | ----------- | ------------ | -------------- | ------------------ | ---------------- | ----------------- | ------------------- | ------------------ |
+| c-vit    | activity_transaction | user_identity  | user_id        | 10000     | 10000      | 181         | 10000        | 9              | 0.0408             | 181              | 10000             | 9                   | 0.0408             |
+| c-vit    | activity_transaction | user_view      | user_id        | 10000     | 10000      | 181         | 10000        | 10             | 0.028              | 181              | 10000             | 10                  | 0.028              |
+| c-vit    | activity_transaction | user_visitor   | user_id        | 10000     | 10000      | 181         | 242          | 4              | 0.1084             | 181              | 242               | 4                   | 0.1084             |
+| c-vit    | purchase             | purchase_items | transaction_id | 10000     | 8827       | 10000       | 5326         | 0              | 0.0                | 10000            | 5326              | 0                   | 0.0                |
+| c-vit    | purchase             | purchase_items | user_id        | 10000     | 8827       | 1250        | 1            | 0              | 0.0                | 1250             | 1                 | 0                   | 0.0                |
+| c-vit    | purchase             | user_identity  | user_id        | 10000     | 10000      | 1250        | 10000        | 82             | 0.0439             | 1250             | 10000             | 82                  | 0.0439             |
+| c-vit    | purchase             | user_info      | user_id        | 10000     | 10000      | 1250        | 10000        | 70             | 0.0308             | 1250             | 10000             | 70                  | 0.0308             |
+| c-vit    | user_view            | user_visitor   | user_id        | 10000     | 10000      | 10000       | 242          | 0              | 0.0                | 10000            | 242               | 0                   | 0.0                |
+| see-chan | activity_transaction | user_identity  | user_id        | 178594    | 141220     | 140795      | 141220       | 140792         | 0.9999832021232516 | 140795           | 141220            | 140792              | 0.9999832021232516 |
+| see-chan | activity_transaction | user_view      | user_id        | 178594    | 173494     | 140795      | 173494       | 140792         | 0.9999832021232516 | 140795           | 173494            | 140792              | 0.9999832021232516 |
+| see-chan | activity_transaction | user_visitor   | user_id        | 178594    | 446324     | 140795      | 172144       | 139453         | 0.9924857498012252 | 140795           | 172144            | 139453              | 0.9924857498012252 |
+| see-chan | purchase             | purchase_items | transaction_id | 1404759   | 1982120    | 1399583     | 1378053      | 1378053        | 0.9839175260667488 | 1399566          | 1378053           | 1378053             | 0.9839294905061196 |
+| see-chan | purchase             | purchase_items | user_id        | 1404759   | 1982120    | 10359       | 19           | 19             | 0.0020581521535755 | 10359            | 19                | 19                  | 0.0020581521535755 |
+| see-chan | purchase             | user_identity  | user_id        | 1404759   | 141220     | 10359       | 141220       | 10359          | 1.0                | 10359            | 141220            | 10359               | 1.0                |
+| see-chan | purchase             | user_info      | user_id        | 1404759   | 141220     | 10359       | 141220       | 10359          | 1.0                | 10359            | 141220            | 10359               | 1.0                |
+| see-chan | user_view            | user_visitor   | user_id        | 173494    | 446324     | 173494      | 172144       | 172144         | 0.992218751080729  | 173494           | 172144            | 172144              | 0.992218751080729  |
 
 ### Coverage notes
 
-- **c-vit**: weak key coverage observed in activity_transaction->user_identity (4.08%), activity_transaction->user_view (2.80%), activity_transaction->user_visitor (10.84%), purchase->purchase_items (0.00%), purchase->purchase_items (0.00%), purchase->user_identity (4.39%), purchase->user_info (3.08%), user_view->user_visitor (0.00%); feature logic uses brand-level fallback aggregations.
-- **see-chan**: weak key coverage observed in purchase->purchase_items (0.21%); feature logic uses brand-level fallback aggregations.
+- **c-vit**: canonical `purchase↔purchase_items` join key is `transaction_id` (raw=0.0000, normalized=0.0000, not valid).
+- **c-vit**: `purchase_items.user_id` coverage is low (raw=0.0000, normalized=0.0000); ignored for purchase↔items joins.
+- **c-vit**: additional low-coverage relations: activity_transaction->user_identity.user_id (0.0408), activity_transaction->user_view.user_id (0.0280), activity_transaction->user_visitor.user_id (0.1084), purchase->user_identity.user_id (0.0439), purchase->user_info.user_id (0.0308), user_view->user_visitor.user_id (0.0000).
+
+- **see-chan**: canonical `purchase↔purchase_items` join key is `transaction_id` (raw=0.9839, normalized=0.9839, valid).
+- **see-chan**: `purchase_items.user_id` coverage is low (raw=0.0021, normalized=0.0021); ignored for purchase↔items joins.
 
 ## 2) Feature Table Schema
 
@@ -135,6 +139,7 @@ Feature names and meanings are exported to `outputs/feature_definitions.csv`.
 | rfm_score_tier_3_pct                                     | RFM-based user distribution or transition metric   |
 | rfm_score_tier_4_pct                                     | RFM-based user distribution or transition metric   |
 | rfm_score_tier_5_pct                                     | RFM-based user distribution or transition metric   |
+| commerce_joinable                                        | aggregated KPI metric                              |
 | activity_type_referral_count                             | aggregated KPI metric                              |
 | activity_type_referral_completion_rate                   | rate/proportion feature                            |
 | activity_type_upload_receipts_count                      | aggregated KPI metric                              |
@@ -243,7 +248,9 @@ Selected model based on time-split macro F1: **hgb_calibrated**
   "window_end_date": "2026-01-25 00:00:00+00:00",
   "window_size": "30d",
   "predicted_health_class": "Healthy",
+  "predicted_health_statement": "Healthy",
   "predicted_health_score": 85.3504902842963,
+  "confidence_band": "high",
   "probabilities": {
     "AtRisk": 0.0031703971093804176,
     "Healthy": 0.8487151394374873,
@@ -269,6 +276,19 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       }
     }
   ],
+  "target_segments": [
+    {
+      "segment_key": "recently_lapsed_8_14d",
+      "contribution_share": 1.0,
+      "reason_statement": "Major contributor to completion_rate drop. Driver: Model-highlighted anomaly: reward_efficiency_zscore=1.10",
+      "evidence_metrics": {
+        "completion_rate_delta_seg": -1.0,
+        "completion_rate_wow_pct_seg": -1.0,
+        "segment_share": 0.21739130434782608,
+        "driver_key": "efficiency_drop"
+      }
+    }
+  ],
   "suggested_actions": [
     "Recalibrate reward economics: trim low-yield rewards and raise completion-linked value.",
     "Prioritize activities with best completion-per-point efficiency.",
@@ -283,7 +303,9 @@ Selected model based on time-split macro F1: **hgb_calibrated**
   "window_end_date": "2026-02-01 00:00:00+00:00",
   "window_size": "30d",
   "predicted_health_class": "Healthy",
+  "predicted_health_statement": "Healthy",
   "predicted_health_score": 85.90892643155102,
+  "confidence_band": "high",
   "probabilities": {
     "AtRisk": 0.003366989790721984,
     "Healthy": 0.867559035807543,
@@ -309,10 +331,45 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       }
     }
   ],
+  "target_segments": [
+    {
+      "segment_key": "new_users_0_7d",
+      "contribution_share": 0.7142857142857144,
+      "reason_statement": "Major contributor to active_users increase. Driver: Model-highlighted signal: active_users_wow_pct up +13.4%",
+      "evidence_metrics": {
+        "active_users_delta_seg": 5.0,
+        "active_users_wow_pct_seg": 0.3333333333333333,
+        "segment_share": 0.2597402597402597,
+        "driver_key": "active_down"
+      }
+    },
+    {
+      "segment_key": "redeemers",
+      "contribution_share": 0.14285714285714288,
+      "reason_statement": "Major contributor to active_users increase. Driver: Model-highlighted signal: active_users_wow_pct up +13.4%",
+      "evidence_metrics": {
+        "active_users_delta_seg": 1.0,
+        "active_users_wow_pct_seg": 0.5,
+        "segment_share": 0.03896103896103896,
+        "driver_key": "active_down"
+      }
+    },
+    {
+      "segment_key": "recently_lapsed_8_14d",
+      "contribution_share": 0.14285714285714288,
+      "reason_statement": "Major contributor to active_users increase. Driver: Model-highlighted signal: active_users_wow_pct up +13.4%",
+      "evidence_metrics": {
+        "active_users_delta_seg": 1.0,
+        "active_users_wow_pct_seg": 0.06666666666666667,
+        "segment_share": 0.2077922077922078,
+        "driver_key": "active_down"
+      }
+    }
+  ],
   "suggested_actions": [
-    "Launch dormant-user reactivation campaigns with segmented incentives.",
-    "Reduce message fatigue via tighter frequency caps and send-time optimization.",
-    "Retarget recently lapsed cohorts with low-friction missions."
+    "Trigger winback rewards for `recently_lapsed_8_14d` with short expiry and capped frequency.",
+    "Set reactivation journeys for `recently_lapsed_8_14d` using low-friction missions first.",
+    "Launch dormant-user reactivation campaigns with segmented incentives."
   ]
 }
 ```
@@ -323,7 +380,9 @@ Selected model based on time-split macro F1: **hgb_calibrated**
   "window_end_date": "2026-02-08 00:00:00+00:00",
   "window_size": "30d",
   "predicted_health_class": "Healthy",
+  "predicted_health_statement": "Healthy",
   "predicted_health_score": 76.28785950540521,
+  "confidence_band": "medium",
   "probabilities": {
     "AtRisk": 0.06599127508928683,
     "Healthy": 0.619918471117675,
@@ -357,10 +416,34 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       }
     }
   ],
+  "target_segments": [
+    {
+      "segment_key": "new_users_0_7d",
+      "contribution_share": 0.9945175805403565,
+      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -18.4% WoW",
+      "evidence_metrics": {
+        "active_users_delta_seg": -20.0,
+        "active_users_wow_pct_seg": -1.0,
+        "segment_share": 0.0,
+        "driver_key": "active_down"
+      }
+    },
+    {
+      "segment_key": "recently_lapsed_8_14d",
+      "contribution_share": 0.005482419459643421,
+      "reason_statement": "Major contributor to completion_rate drop. Driver: Model-highlighted anomaly: reward_efficiency_zscore=1.04",
+      "evidence_metrics": {
+        "completion_rate_delta_seg": -1.0,
+        "completion_rate_wow_pct_seg": -1.0,
+        "segment_share": 0.27941176470588236,
+        "driver_key": "efficiency_drop"
+      }
+    }
+  ],
   "suggested_actions": [
-    "Launch dormant-user reactivation campaigns with segmented incentives.",
-    "Reduce message fatigue via tighter frequency caps and send-time optimization.",
-    "Retarget recently lapsed cohorts with low-friction missions."
+    "Trigger winback rewards for `recently_lapsed_8_14d` with short expiry and capped frequency.",
+    "Set reactivation journeys for `recently_lapsed_8_14d` using low-friction missions first.",
+    "Launch dormant-user reactivation campaigns with segmented incentives."
   ]
 }
 ```
@@ -371,7 +454,9 @@ Selected model based on time-split macro F1: **hgb_calibrated**
   "window_end_date": "2026-02-15 00:00:00+00:00",
   "window_size": "30d",
   "predicted_health_class": "Warning",
+  "predicted_health_statement": "Warning",
   "predicted_health_score": 51.3953028469059,
+  "confidence_band": "medium",
   "probabilities": {
     "AtRisk": 0.2814209461760006,
     "Healthy": 0.04150119876886372,
@@ -414,10 +499,34 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       }
     }
   ],
+  "target_segments": [
+    {
+      "segment_key": "recently_lapsed_8_14d",
+      "contribution_share": 0.7368421052631579,
+      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -24.2% WoW",
+      "evidence_metrics": {
+        "active_users_delta_seg": -14.0,
+        "active_users_wow_pct_seg": -0.7368421052631579,
+        "segment_share": 0.10204081632653061,
+        "driver_key": "active_down"
+      }
+    },
+    {
+      "segment_key": "active_0_7d",
+      "contribution_share": 0.26315789473684215,
+      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -24.2% WoW",
+      "evidence_metrics": {
+        "active_users_delta_seg": -5.0,
+        "active_users_wow_pct_seg": -1.0,
+        "segment_share": 0.0,
+        "driver_key": "active_down"
+      }
+    }
+  ],
   "suggested_actions": [
-    "Launch dormant-user reactivation campaigns with segmented incentives.",
-    "Reduce message fatigue via tighter frequency caps and send-time optimization.",
-    "Retarget recently lapsed cohorts with low-friction missions."
+    "Trigger winback rewards for `recently_lapsed_8_14d` with short expiry and capped frequency.",
+    "Set reactivation journeys for `recently_lapsed_8_14d` using low-friction missions first.",
+    "Launch dormant-user reactivation campaigns with segmented incentives."
   ]
 }
 ```
@@ -430,7 +539,9 @@ Selected model based on time-split macro F1: **hgb_calibrated**
   "window_end_date": "2026-01-07 00:00:00+00:00",
   "window_size": "30d",
   "predicted_health_class": "Healthy",
+  "predicted_health_statement": "Healthy (borderline)",
   "predicted_health_score": 68.30585723207474,
+  "confidence_band": "low",
   "probabilities": {
     "AtRisk": 0.23268134010634559,
     "Healthy": 0.5483234711932284,
@@ -473,10 +584,45 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       }
     }
   ],
+  "target_segments": [
+    {
+      "segment_key": "new_users_0_7d",
+      "contribution_share": 0.41445559821361627,
+      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -12.7% WoW",
+      "evidence_metrics": {
+        "active_users_delta_seg": -5001.0,
+        "active_users_wow_pct_seg": -0.9494968672868805,
+        "segment_share": 0.009806090098060901,
+        "driver_key": "active_down"
+      }
+    },
+    {
+      "segment_key": "active_0_7d",
+      "contribution_share": 0.3233764735511959,
+      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -12.7% WoW",
+      "evidence_metrics": {
+        "active_users_delta_seg": -3902.0,
+        "active_users_wow_pct_seg": -0.8261698073258522,
+        "segment_share": 0.030266165302661654,
+        "driver_key": "active_down"
+      }
+    },
+    {
+      "segment_key": "recently_lapsed_8_14d",
+      "contribution_share": 0.2621679282351878,
+      "reason_statement": "Major contributor to active_users increase. Driver: Model-highlighted anomaly: dormant_share_zscore=1.31",
+      "evidence_metrics": {
+        "active_users_delta_seg": 6571.0,
+        "active_users_wow_pct_seg": 2.231997282608696,
+        "segment_share": 0.35077047850770476,
+        "driver_key": "dormant_up"
+      }
+    }
+  ],
   "suggested_actions": [
-    "Launch dormant-user reactivation campaigns with segmented incentives.",
-    "Reduce message fatigue via tighter frequency caps and send-time optimization.",
-    "Retarget recently lapsed cohorts with low-friction missions."
+    "Trigger winback rewards for `recently_lapsed_8_14d` with short expiry and capped frequency.",
+    "Set reactivation journeys for `recently_lapsed_8_14d` using low-friction missions first.",
+    "Launch dormant-user reactivation campaigns with segmented incentives."
   ]
 }
 ```
@@ -487,7 +633,9 @@ Selected model based on time-split macro F1: **hgb_calibrated**
   "window_end_date": "2026-01-14 00:00:00+00:00",
   "window_size": "30d",
   "predicted_health_class": "AtRisk",
+  "predicted_health_statement": "AtRisk",
   "predicted_health_score": 29.369050379757407,
+  "confidence_band": "high",
   "probabilities": {
     "AtRisk": 0.8992620423517659,
     "Healthy": 0.02810739540230728,
@@ -536,10 +684,45 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       }
     }
   ],
+  "target_segments": [
+    {
+      "segment_key": "recently_lapsed_8_14d",
+      "contribution_share": 0.599962957430322,
+      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -44.6% WoW",
+      "evidence_metrics": {
+        "active_users_delta_seg": -8716.0,
+        "active_users_wow_pct_seg": -0.9160273252758802,
+        "segment_share": 0.05128369704749679,
+        "driver_key": "active_down"
+      }
+    },
+    {
+      "segment_key": "dormant_15_30d",
+      "contribution_share": 0.28080838933907387,
+      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -44.6% WoW",
+      "evidence_metrics": {
+        "active_users_delta_seg": -3280.0,
+        "active_users_wow_pct_seg": -0.19849915274751875,
+        "segment_share": 0.8500641848523749,
+        "driver_key": "active_down"
+      }
+    },
+    {
+      "segment_key": "active_0_7d",
+      "contribution_share": 0.11922865323060425,
+      "reason_statement": "Major contributor to gmv drop. Driver: GMV down -23.0% WoW",
+      "evidence_metrics": {
+        "gmv_delta_seg": -13825.0,
+        "gmv_wow_pct_seg": -0.2757169638227434,
+        "segment_share": 0.06097560975609756,
+        "driver_key": "gmv_down"
+      }
+    }
+  ],
   "suggested_actions": [
-    "Launch dormant-user reactivation campaigns with segmented incentives.",
-    "Reduce message fatigue via tighter frequency caps and send-time optimization.",
-    "Retarget recently lapsed cohorts with low-friction missions."
+    "Trigger winback rewards for `recently_lapsed_8_14d` with short expiry and capped frequency.",
+    "Set reactivation journeys for `recently_lapsed_8_14d` using low-friction missions first.",
+    "Trigger winback rewards for `dormant_15_30d` with short expiry and capped frequency."
   ]
 }
 ```
@@ -550,7 +733,9 @@ Selected model based on time-split macro F1: **hgb_calibrated**
   "window_end_date": "2026-01-21 00:00:00+00:00",
   "window_size": "30d",
   "predicted_health_class": "Healthy",
+  "predicted_health_statement": "Healthy",
   "predicted_health_score": 83.66645809216831,
+  "confidence_band": "high",
   "probabilities": {
     "AtRisk": 0.024804862941783246,
     "Healthy": 0.8178209431710242,
@@ -593,10 +778,45 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       }
     }
   ],
+  "target_segments": [
+    {
+      "segment_key": "dormant_15_30d",
+      "contribution_share": 0.6020240171008395,
+      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -8.9% WoW",
+      "evidence_metrics": {
+        "active_users_delta_seg": -2374.0,
+        "active_users_wow_pct_seg": -0.17925098157656297,
+        "segment_share": 0.7908330301927974,
+        "driver_key": "active_down"
+      }
+    },
+    {
+      "segment_key": "recently_lapsed_8_14d",
+      "contribution_share": 0.2583398677337223,
+      "reason_statement": "Major contributor to active_users increase. Driver: Model-highlighted anomaly: dormant_share_zscore=1.52",
+      "evidence_metrics": {
+        "active_users_delta_seg": 536.0,
+        "active_users_wow_pct_seg": 0.6708385481852316,
+        "segment_share": 0.09712622771917061,
+        "driver_key": "dormant_up"
+      }
+    },
+    {
+      "segment_key": "active_0_7d",
+      "contribution_share": 0.13963611516543822,
+      "reason_statement": "Major contributor to active_users increase. Driver: Model-highlighted anomaly: dormant_share_zscore=1.52",
+      "evidence_metrics": {
+        "active_users_delta_seg": 272.0,
+        "active_users_wow_pct_seg": 0.2863157894736842,
+        "segment_share": 0.08890505638413969,
+        "driver_key": "dormant_up"
+      }
+    }
+  ],
   "suggested_actions": [
-    "Launch dormant-user reactivation campaigns with segmented incentives.",
-    "Reduce message fatigue via tighter frequency caps and send-time optimization.",
-    "Retarget recently lapsed cohorts with low-friction missions."
+    "Trigger winback rewards for `dormant_15_30d` with short expiry and capped frequency.",
+    "Set reactivation journeys for `dormant_15_30d` using low-friction missions first.",
+    "Trigger winback rewards for `recently_lapsed_8_14d` with short expiry and capped frequency."
   ]
 }
 ```
@@ -607,7 +827,9 @@ Selected model based on time-split macro F1: **hgb_calibrated**
   "window_end_date": "2026-01-28 00:00:00+00:00",
   "window_size": "30d",
   "predicted_health_class": "AtRisk",
+  "predicted_health_statement": "AtRisk",
   "predicted_health_score": 30.534624034264723,
+  "confidence_band": "high",
   "probabilities": {
     "AtRisk": 0.8672282389881542,
     "Healthy": 0.029587079961670495,
@@ -650,10 +872,34 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       }
     }
   ],
+  "target_segments": [
+    {
+      "segment_key": "dormant_15_30d",
+      "contribution_share": 0.9746090830945847,
+      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -56.5% WoW",
+      "evidence_metrics": {
+        "active_users_delta_seg": -7997.0,
+        "active_users_wow_pct_seg": -0.7356945722171113,
+        "segment_share": 0.43411906920519794,
+        "driver_key": "active_down"
+      }
+    },
+    {
+      "segment_key": "recently_lapsed_8_14d",
+      "contribution_share": 0.0253909169054152,
+      "reason_statement": "Major contributor to transactions drop. Driver: Model-highlighted signal: transaction_count_wow_pct up +12.5%",
+      "evidence_metrics": {
+        "transactions_delta_seg": -33.0,
+        "transactions_wow_pct_seg": -0.4647887323943662,
+        "segment_share": 0.20006044122091265,
+        "driver_key": "transactions_down"
+      }
+    }
+  ],
   "suggested_actions": [
-    "Launch dormant-user reactivation campaigns with segmented incentives.",
-    "Reduce message fatigue via tighter frequency caps and send-time optimization.",
-    "Retarget recently lapsed cohorts with low-friction missions."
+    "Trigger winback rewards for `dormant_15_30d` with short expiry and capped frequency.",
+    "Set reactivation journeys for `dormant_15_30d` using low-friction missions first.",
+    "Trigger winback rewards for `recently_lapsed_8_14d` with short expiry and capped frequency."
   ]
 }
 ```

@@ -736,6 +736,7 @@ def _compute_commerce_features(
     purchase_items: pd.DataFrame,
     window_ends: pd.DatetimeIndex,
     window_sizes: Sequence[int],
+    commerce_joinable: Optional[bool] = None,
 ) -> pd.DataFrame:
     out = _empty_with_index(window_ends)
     if len(window_ends) == 0:
@@ -799,7 +800,10 @@ def _compute_commerce_features(
         if len(p_tx):
             tx_overlap = float(p_tx.isin(set(pi_tx.unique())).mean())
 
-    use_items_for_value = tx_overlap >= 0.50
+    if commerce_joinable is None:
+        use_items_for_value = tx_overlap >= 0.50
+    else:
+        use_items_for_value = bool(commerce_joinable)
 
     gmv_net_daily = pd.Series(dtype=float)
     gmv_sell_daily = pd.Series(dtype=float)
@@ -838,7 +842,7 @@ def _compute_commerce_features(
         gmv_net_daily = net_daily.copy()
     if not use_items_for_value or gmv_sell_daily.empty:
         gmv_sell_daily = subtotal_daily.copy()
-    if qty_daily.empty:
+    if (not use_items_for_value) or qty_daily.empty:
         qty_daily = itemsold_daily.copy()
 
     for w in window_sizes:
@@ -1151,6 +1155,7 @@ def build_feature_table(
     tables: Mapping[str, pd.DataFrame],
     window_sizes: Sequence[int] = WINDOW_SIZES,
     snapshot_freq: str = "7D",
+    commerce_joinable_by_brand: Optional[Mapping[str, bool]] = None,
 ) -> pd.DataFrame:
     """Build brand-level features at (brand_id, window_end_date, window_size)."""
     brands = sorted(
@@ -1187,6 +1192,7 @@ def build_feature_table(
         purchase_items = brand_tables.get("purchase_items", pd.DataFrame())
         user_view = brand_tables.get("user_view", pd.DataFrame())
         user_visitor = brand_tables.get("user_visitor", pd.DataFrame())
+        commerce_joinable = None if commerce_joinable_by_brand is None else commerce_joinable_by_brand.get(brand_id)
 
         engagement_df = _compute_engagement_features(
             activity=activity,
@@ -1208,6 +1214,7 @@ def build_feature_table(
             purchase_items=purchase_items,
             window_ends=window_ends,
             window_sizes=window_sizes,
+            commerce_joinable=commerce_joinable,
         )
 
         rfm_df = _compute_rfm_features(
@@ -1218,6 +1225,8 @@ def build_feature_table(
 
         snapshot_df = pd.concat([engagement_df, activity_df, commerce_df, rfm_df], axis=1).fillna(0.0)
         flat_df = _flatten_windows(snapshot_df, brand_id=brand_id, window_sizes=window_sizes)
+        if commerce_joinable is not None:
+            flat_df["commerce_joinable"] = float(bool(commerce_joinable))
         all_rows.append(flat_df)
 
     if not all_rows:

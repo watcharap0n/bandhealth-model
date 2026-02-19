@@ -79,6 +79,7 @@ rfm_score_tier_2_pct,RFM-based user distribution or transition metric
 rfm_score_tier_3_pct,RFM-based user distribution or transition metric
 rfm_score_tier_4_pct,RFM-based user distribution or transition metric
 rfm_score_tier_5_pct,RFM-based user distribution or transition metric
+commerce_joinable,aggregated KPI metric
 activity_type_referral_count,aggregated KPI metric
 activity_type_referral_completion_rate,rate/proportion feature
 activity_type_upload_receipts_count,aggregated KPI metric

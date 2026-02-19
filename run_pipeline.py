@@ -10,13 +10,17 @@ import pandas as pd
 
 from src.data_load import (
     TABLE_FILES,
+    build_purchase_item_join_diagnostics,
     profile_dataset,
     save_profile,
     load_tables,
+    write_coverage_notes_markdown,
+    write_join_diagnostics_markdown,
 )
 from src.features import build_feature_table, feature_definitions
 from src.infer import predict_with_drivers, save_predictions
 from src.labeling import generate_weak_labels, labeling_thresholds
+from src.segments import compute_segment_kpis
 from src.train import train_models
 
 BRAND_APP_ID_FILTERS = {
@@ -77,13 +81,40 @@ def _write_markdown_report(
     lines.append("### Coverage notes")
     lines.append("")
     for brand, sub in join_coverage.groupby("brand_id"):
-        weak = sub[sub["row_coverage"].fillna(0) < 0.5]
-        if weak.empty:
-            lines.append(f"- **{brand}**: key joins are mostly healthy.")
-        else:
-            rels = ", ".join([f"{r.left_table}->{r.right_table} ({_format_pct(float(r.row_coverage))})" for r in weak.itertuples()])
-            lines.append(f"- **{brand}**: weak key coverage observed in {rels}; feature logic uses brand-level fallback aggregations.")
-    lines.append("")
+        p2i = sub[(sub["left_table"] == "purchase") & (sub["right_table"] == "purchase_items")]
+        tx = p2i[p2i["key"] == "transaction_id"]
+        uid = p2i[p2i["key"] == "user_id"]
+
+        if not tx.empty:
+            tx_cov_raw = float(tx["row_coverage"].iloc[0])
+            tx_cov_norm = float(tx["row_coverage_norm"].iloc[0]) if "row_coverage_norm" in tx.columns else tx_cov_raw
+            status = "valid" if tx_cov_norm >= 0.80 else "not valid"
+            lines.append(
+                f"- **{brand}**: canonical `purchase↔purchase_items` join key is `transaction_id` "
+                f"(raw={tx_cov_raw:.4f}, normalized={tx_cov_norm:.4f}, {status})."
+            )
+        if not uid.empty:
+            uid_cov_raw = float(uid["row_coverage"].iloc[0])
+            uid_cov_norm = float(uid["row_coverage_norm"].iloc[0]) if "row_coverage_norm" in uid.columns else uid_cov_raw
+            lines.append(
+                f"- **{brand}**: `purchase_items.user_id` coverage is low "
+                f"(raw={uid_cov_raw:.4f}, normalized={uid_cov_norm:.4f}); ignored for purchase↔items joins."
+            )
+
+        other = sub[
+            ~((sub["left_table"] == "purchase") & (sub["right_table"] == "purchase_items"))
+            & (sub["row_coverage_norm"].fillna(sub["row_coverage"].fillna(0.0)) < 0.5)
+        ]
+        if not other.empty:
+            rels = ", ".join(
+                [
+                    f"{r.left_table}->{r.right_table}.{r.key} "
+                    f"({float(r.row_coverage_norm if pd.notna(r.row_coverage_norm) else r.row_coverage):.4f})"
+                    for r in other.itertuples()
+                ]
+            )
+            lines.append(f"- **{brand}**: additional low-coverage relations: {rels}.")
+        lines.append("")
 
     lines.append("## 2) Feature Table Schema")
     lines.append("")
@@ -181,9 +212,12 @@ def _write_markdown_report(
                 "window_end_date": str(row["window_end_date"]),
                 "window_size": row["window_size"],
                 "predicted_health_class": row["predicted_health_class"],
+                "predicted_health_statement": row.get("predicted_health_statement", row["predicted_health_class"]),
                 "predicted_health_score": float(row["predicted_health_score"]),
+                "confidence_band": row.get("confidence_band", "low"),
                 "probabilities": {k.replace("prob_", ""): float(row[k]) for k in row.index if k.startswith("prob_")},
                 "drivers": row["drivers"],
+                "target_segments": row.get("target_segments", []),
                 "suggested_actions": row["suggested_actions"],
             }
             lines.append(json.dumps(payload, ensure_ascii=False, indent=2))
@@ -191,6 +225,35 @@ def _write_markdown_report(
             lines.append("")
 
     report_path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _write_profiling_report(
+    output_path: Path,
+    join_diag_df: pd.DataFrame,
+    time_diag_df: pd.DataFrame,
+    commerce_joinable: Dict[str, bool],
+) -> None:
+    lines: List[str] = []
+    lines.append("# Profiling Report")
+    lines.append("")
+    lines.append("## Commerce Join Guardrails")
+    lines.append("")
+
+    for brand_id in sorted(commerce_joinable.keys()):
+        joinable = bool(commerce_joinable.get(brand_id, False))
+        tx = join_diag_df[(join_diag_df["brand_id"] == brand_id) & (join_diag_df["key"] == "transaction_id")]
+        cov_norm = float(tx["row_coverage_norm"].iloc[0]) if not tx.empty else np.nan
+        t = time_diag_df[time_diag_df["brand_id"] == brand_id]
+        overlap = bool(t["time_range_overlap"].iloc[0]) if not t.empty else False
+
+        lines.append(f"- brand={brand_id} coverage_norm={cov_norm:.4f} time_overlap={overlap} commerce_joinable={joinable}")
+        if (pd.isna(cov_norm) or cov_norm < 0.80) or (not overlap):
+            lines.append(
+                f"  WARNING: join coverage/time overlap failed for {brand_id}; "
+                "using purchase-only commerce metrics + purchase_items-only SKU metrics (no cross-table join)."
+            )
+    lines.append("")
+    output_path.write_text("\n".join(lines), encoding="utf-8")
 
 
 
@@ -214,11 +277,22 @@ def main() -> None:
     artifacts_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Using app_id filters: {BRAND_APP_ID_FILTERS}")
-    print("[1/6] Profiling parquet datasets...")
+    print("[0/7] Building join diagnostics...")
+    join_diag = build_purchase_item_join_diagnostics(dataset_root, brand_app_ids=BRAND_APP_ID_FILTERS)
+    write_join_diagnostics_markdown(join_diag, outputs_dir / "join_diagnostics.md")
+
+    print("[1/7] Profiling parquet datasets...")
     profile = profile_dataset(dataset_root, brand_app_ids=BRAND_APP_ID_FILTERS)
     save_profile(profile, reports_dir / "data_profile")
+    write_coverage_notes_markdown(profile.join_coverage, join_diag, outputs_dir / "coverage_notes.md")
+    _write_profiling_report(
+        outputs_dir / "profiling_report.md",
+        join_diag_df=join_diag.coverage_summary,
+        time_diag_df=join_diag.time_range_summary,
+        commerce_joinable=join_diag.commerce_joinable,
+    )
 
-    print("[2/6] Loading tables for feature engineering...")
+    print("[2/7] Loading tables for feature engineering...")
     columns_map = {
         "activity_transaction": [
             "app_id",
@@ -285,32 +359,44 @@ def main() -> None:
         brand_app_ids=BRAND_APP_ID_FILTERS,
     )
 
-    print("[3/6] Building features...")
-    feature_df = build_feature_table(tables=tables, snapshot_freq=args.snapshot_freq)
+    print("[3/7] Building features...")
+    feature_df = build_feature_table(
+        tables=tables,
+        snapshot_freq=args.snapshot_freq,
+        commerce_joinable_by_brand=join_diag.commerce_joinable,
+    )
     if feature_df.empty:
         raise RuntimeError("Feature table is empty; check source timestamps and schema.")
     feature_df.to_parquet(outputs_dir / "feature_table.parquet", index=False)
     feature_df.to_csv(outputs_dir / "feature_table_sample.csv", index=False)
 
+    print("[4/7] Building segment KPIs for Marketing Automation...")
+    segment_kpi_df = compute_segment_kpis(tables=tables, snapshot_freq=args.snapshot_freq)
+    if not segment_kpi_df.empty:
+        segment_kpi_df.to_parquet(outputs_dir / "segment_kpis.parquet", index=False)
+        segment_kpi_df.to_csv(outputs_dir / "segment_kpis.csv", index=False)
+
     feature_defs = feature_definitions(feature_df)
     feature_defs.to_csv(outputs_dir / "feature_definitions.csv", index=False)
 
-    print("[4/6] Generating weak labels...")
+    print("[5/7] Generating weak labels...")
     labeled_df = generate_weak_labels(feature_df)
     labeled_df.to_parquet(outputs_dir / "labeled_feature_table.parquet", index=False)
 
-    print("[5/6] Training and evaluating models...")
+    print("[6/7] Training and evaluating models...")
     artifacts = train_models(labeled_df, artifact_dir=artifacts_dir)
 
-    print("[6/6] Running inference + drivers + actions...")
+    print("[7/7] Running inference + drivers + actions...")
     pred_df = predict_with_drivers(
         feature_df=labeled_df,
         model=artifacts.final_model,
         feature_columns=artifacts.feature_columns,
         class_labels=artifacts.class_labels,
         feature_importance=artifacts.feature_importance,
+        segment_kpis_df=segment_kpi_df if not segment_kpi_df.empty else None,
         top_n_drivers=5,
         top_n_actions=3,
+        top_n_target_segments=3,
     )
     save_predictions(pred_df, output_dir=outputs_dir)
 
@@ -320,6 +406,7 @@ def main() -> None:
         ex = pred_df.copy()
     examples = ex.sort_values("window_end_date").groupby("brand_id", as_index=False).tail(4)
     examples.to_json(outputs_dir / "examples_last4_windows.json", orient="records", indent=2, date_format="iso")
+    examples.to_json(outputs_dir / "examples_last4_with_segments.json", orient="records", indent=2, date_format="iso")
 
     # Final report.
     report_path = reports_dir / args.report_name
@@ -336,6 +423,7 @@ def main() -> None:
     # Also write compact summary JSON for backend usage.
     summary = {
         "join_coverage": profile.join_coverage.to_dict(orient="records"),
+        "commerce_joinable": join_diag.commerce_joinable,
         "selected_model": artifacts.metrics.get("selected_model"),
         "metrics": artifacts.metrics,
         "feature_count": len(artifacts.feature_columns),

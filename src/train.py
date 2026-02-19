@@ -286,9 +286,9 @@ def train_models(feature_df: pd.DataFrame, artifact_dir: str | Path) -> TrainArt
             perm_X,
             perm_y,
             scoring="f1_macro",
-            n_repeats=3,
+            n_repeats=1,
             random_state=42,
-            n_jobs=-1,
+            n_jobs=1,
         )
         feature_importance = {col: float(val) for col, val in zip(feature_cols, perm.importances_mean)}
     except Exception:

@@ -108,7 +108,11 @@
       "left_unique": 181,
       "right_unique": 10000,
       "overlap_unique": 9,
-      "row_coverage": 0.0408
+      "row_coverage": 0.0408,
+      "left_unique_norm": 181,
+      "right_unique_norm": 10000,
+      "overlap_unique_norm": 9,
+      "row_coverage_norm": 0.0408
     },
     {
       "brand_id": "c-vit",
@@ -120,7 +124,11 @@
       "left_unique": 181,
       "right_unique": 10000,
       "overlap_unique": 10,
-      "row_coverage": 0.028
+      "row_coverage": 0.028,
+      "left_unique_norm": 181,
+      "right_unique_norm": 10000,
+      "overlap_unique_norm": 10,
+      "row_coverage_norm": 0.028
     },
     {
       "brand_id": "c-vit",
@@ -132,7 +140,11 @@
       "left_unique": 181,
       "right_unique": 242,
       "overlap_unique": 4,
-      "row_coverage": 0.1084
+      "row_coverage": 0.1084,
+      "left_unique_norm": 181,
+      "right_unique_norm": 242,
+      "overlap_unique_norm": 4,
+      "row_coverage_norm": 0.1084
     },
     {
       "brand_id": "c-vit",
@@ -144,7 +156,11 @@
       "left_unique": 10000,
       "right_unique": 5326,
       "overlap_unique": 0,
-      "row_coverage": 0.0
+      "row_coverage": 0.0,
+      "left_unique_norm": 10000,
+      "right_unique_norm": 5326,
+      "overlap_unique_norm": 0,
+      "row_coverage_norm": 0.0
     },
     {
       "brand_id": "c-vit",
@@ -156,7 +172,11 @@
       "left_unique": 1250,
       "right_unique": 1,
       "overlap_unique": 0,
-      "row_coverage": 0.0
+      "row_coverage": 0.0,
+      "left_unique_norm": 1250,
+      "right_unique_norm": 1,
+      "overlap_unique_norm": 0,
+      "row_coverage_norm": 0.0
     },
     {
       "brand_id": "c-vit",
@@ -168,7 +188,11 @@
       "left_unique": 1250,
       "right_unique": 10000,
       "overlap_unique": 82,
-      "row_coverage": 0.0439
+      "row_coverage": 0.0439,
+      "left_unique_norm": 1250,
+      "right_unique_norm": 10000,
+      "overlap_unique_norm": 82,
+      "row_coverage_norm": 0.0439
     },
     {
       "brand_id": "c-vit",
@@ -180,7 +204,11 @@
       "left_unique": 1250,
       "right_unique": 10000,
       "overlap_unique": 70,
-      "row_coverage": 0.0308
+      "row_coverage": 0.0308,
+      "left_unique_norm": 1250,
+      "right_unique_norm": 10000,
+      "overlap_unique_norm": 70,
+      "row_coverage_norm": 0.0308
     },
     {
       "brand_id": "c-vit",
@@ -192,7 +220,11 @@
       "left_unique": 10000,
       "right_unique": 242,
       "overlap_unique": 0,
-      "row_coverage": 0.0
+      "row_coverage": 0.0,
+      "left_unique_norm": 10000,
+      "right_unique_norm": 242,
+      "overlap_unique_norm": 0,
+      "row_coverage_norm": 0.0
     },
     {
       "brand_id": "see-chan",
@@ -204,7 +236,11 @@
       "left_unique": 140795,
       "right_unique": 141220,
       "overlap_unique": 140792,
-      "row_coverage": 0.9999832021232516
+      "row_coverage": 0.9999832021232516,
+      "left_unique_norm": 140795,
+      "right_unique_norm": 141220,
+      "overlap_unique_norm": 140792,
+      "row_coverage_norm": 0.9999832021232516
     },
     {
       "brand_id": "see-chan",
@@ -216,7 +252,11 @@
       "left_unique": 140795,
       "right_unique": 173494,
       "overlap_unique": 140792,
-      "row_coverage": 0.9999832021232516
+      "row_coverage": 0.9999832021232516,
+      "left_unique_norm": 140795,
+      "right_unique_norm": 173494,
+      "overlap_unique_norm": 140792,
+      "row_coverage_norm": 0.9999832021232516
     },
     {
       "brand_id": "see-chan",
@@ -228,7 +268,11 @@
       "left_unique": 140795,
       "right_unique": 172144,
       "overlap_unique": 139453,
-      "row_coverage": 0.9924857498012252
+      "row_coverage": 0.9924857498012252,
+      "left_unique_norm": 140795,
+      "right_unique_norm": 172144,
+      "overlap_unique_norm": 139453,
+      "row_coverage_norm": 0.9924857498012252
     },
     {
       "brand_id": "see-chan",
@@ -240,7 +284,11 @@
       "left_unique": 1399583,
       "right_unique": 1378053,
       "overlap_unique": 1378053,
-      "row_coverage": 0.9839175260667489
+      "row_coverage": 0.9839175260667489,
+      "left_unique_norm": 1399566,
+      "right_unique_norm": 1378053,
+      "overlap_unique_norm": 1378053,
+      "row_coverage_norm": 0.9839294905061196
     },
     {
       "brand_id": "see-chan",
@@ -252,7 +300,11 @@
       "left_unique": 10359,
       "right_unique": 19,
       "overlap_unique": 19,
-      "row_coverage": 0.0020581521535755717
+      "row_coverage": 0.0020581521535755717,
+      "left_unique_norm": 10359,
+      "right_unique_norm": 19,
+      "overlap_unique_norm": 19,
+      "row_coverage_norm": 0.0020581521535755717
     },
     {
       "brand_id": "see-chan",
@@ -264,7 +316,11 @@
       "left_unique": 10359,
       "right_unique": 141220,
       "overlap_unique": 10359,
-      "row_coverage": 1.0
+      "row_coverage": 1.0,
+      "left_unique_norm": 10359,
+      "right_unique_norm": 141220,
+      "overlap_unique_norm": 10359,
+      "row_coverage_norm": 1.0
     },
     {
       "brand_id": "see-chan",
@@ -276,7 +332,11 @@
       "left_unique": 10359,
       "right_unique": 141220,
       "overlap_unique": 10359,
-      "row_coverage": 1.0
+      "row_coverage": 1.0,
+      "left_unique_norm": 10359,
+      "right_unique_norm": 141220,
+      "overlap_unique_norm": 10359,
+      "row_coverage_norm": 1.0
     },
     {
       "brand_id": "see-chan",
@@ -288,7 +348,11 @@
       "left_unique": 173494,
       "right_unique": 172144,
       "overlap_unique": 172144,
-      "row_coverage": 0.992218751080729
+      "row_coverage": 0.992218751080729,
+      "left_unique_norm": 173494,
+      "right_unique_norm": 172144,
+      "overlap_unique_norm": 172144,
+      "row_coverage_norm": 0.992218751080729
     }
   ]
 }
