@@ -37,6 +37,31 @@ def _safe_series(df: pd.DataFrame, col: str, default: float = 0.0) -> pd.Series:
     return pd.to_numeric(df[col], errors="coerce").fillna(default)
 
 
+def _to_bool_series(values, index=None) -> pd.Series:
+    if isinstance(values, pd.Series):
+        s = values.copy()
+    else:
+        s = pd.Series(values, index=index)
+
+    if s.empty:
+        return s.astype(bool)
+    if pd.api.types.is_bool_dtype(s):
+        return s.fillna(False).astype(bool)
+
+    out = pd.Series(False, index=s.index, dtype=bool)
+    numeric = pd.to_numeric(s, errors="coerce")
+    numeric_mask = numeric.notna()
+    if numeric_mask.any():
+        out.loc[numeric_mask] = numeric.loc[numeric_mask] != 0
+
+    rem = ~numeric_mask
+    if rem.any():
+        text = s.loc[rem].astype(str).str.strip().str.lower()
+        out.loc[rem] = text.isin({"true", "t", "1", "yes", "y"})
+
+    return out
+
+
 def _rolling_at_windows_sum(series: pd.Series, window_ends: pd.DatetimeIndex, window: int) -> pd.Series:
     if len(window_ends) == 0:
         return pd.Series(dtype=float)
@@ -799,11 +824,8 @@ def _compute_commerce_features(
             gmv_sell_daily = pi.groupby("create_date")["gmv_sell"].sum().astype(float)
             qty_daily = pi.groupby("create_date")["quantity"].sum().astype(float)
 
-            delivered = pi.get("delivered", False)
-            delivered = delivered.fillna(False).astype(bool)
-            shipped = pi.get("is_shiped", False)
-            if shipped.dtype != bool:
-                shipped = shipped.fillna(False).astype(bool)
+            delivered = _to_bool_series(pi.get("delivered", False), index=pi.index)
+            shipped = _to_bool_series(pi.get("is_shiped", False), index=pi.index)
 
             pi["delivered_i"] = delivered.astype(float)
             pi["shipped_i"] = shipped.astype(float)

@@ -83,13 +83,13 @@ c-vit,user_visitor,user_id,string,0,0.0,,
 c-vit,user_visitor,user_type,string,0,0.0,,
 c-vit,user_visitor,visit_datetime,"datetime64[ns, UTC]",0,0.0,2020-10-14 20:55:53.837000+00:00,2026-01-29 08:03:32+00:00
 c-vit,user_visitor,visit_end_datetime,"datetime64[ns, UTC]",0,0.0,2020-10-14 20:55:53.837000+00:00,2026-01-29 08:03:34+00:00
-see-chan,activity_transaction,activity_datetime,"datetime64[ns, UTC]",0,0.0,2020-10-09 15:07:07.702000+00:00,2026-02-15 23:38:56.917000+00:00
+see-chan,activity_transaction,activity_datetime,"datetime64[ns, UTC]",0,0.0,2024-09-11 09:23:46.043000+00:00,2026-02-02 00:06:59.601000+00:00
 see-chan,activity_transaction,activity_name,string,0,0.0,,
 see-chan,activity_transaction,activity_type,string,0,0.0,,
 see-chan,activity_transaction,app_id,int64,0,0.0,,
 see-chan,activity_transaction,is_completed,bool,0,0.0,,
 see-chan,activity_transaction,points,int64,0,0.0,,
-see-chan,activity_transaction,reward,float64,20937218,1.0,,
+see-chan,activity_transaction,reward,float64,178594,1.0,,
 see-chan,activity_transaction,reward_type,string,0,0.0,,
 see-chan,activity_transaction,transaction_id,string,0,0.0,,
 see-chan,activity_transaction,user_id,string,0,0.0,,
@@ -112,7 +112,7 @@ see-chan,purchase_items,create_datetime,"datetime64[ns, UTC]",0,0.0,2023-04-06 0
 see-chan,purchase_items,delivered,bool,0,0.0,,
 see-chan,purchase_items,delivered_datetime,float64,1982120,1.0,,
 see-chan,purchase_items,delivery_provider,string,0,0.0,,
-see-chan,purchase_items,is_shiped,bool,0,0.0,,
+see-chan,purchase_items,is_shiped,string,0,0.0,,
 see-chan,purchase_items,paid_datetime,"datetime64[ns, UTC]",0,0.0,2023-04-06 00:00:00+00:00,2026-02-02 00:00:00+00:00
 see-chan,purchase_items,price_discount,int64,0,0.0,,
 see-chan,purchase_items,price_list,int64,0,0.0,,
@@ -129,31 +129,31 @@ see-chan,purchase_items,transaction_status,string,0,0.0,,
 see-chan,purchase_items,transactionitem_id,int64,0,0.0,,
 see-chan,purchase_items,user_id,string,1982080,0.9999798195871088,,
 see-chan,user_device,app_id,int64,0,0.0,,
-see-chan,user_device,device_brand,string,4003,0.03797516388232727,,
+see-chan,user_device,device_brand,string,2117,0.026467793558711743,,
 see-chan,user_device,device_model,string,0,0.0,,
 see-chan,user_device,device_type,string,0,0.0,,
 see-chan,user_device,idsite,int64,0,0.0,,
-see-chan,user_device,lastaccess,"datetime64[ns, UTC]",0,0.0,2025-05-06 23:59:22+00:00,2026-02-02 23:34:45+00:00
+see-chan,user_device,lastaccess,"datetime64[ns, UTC]",0,0.0,2025-05-07 00:02:41+00:00,2026-02-02 23:34:45+00:00
 see-chan,user_device,os_name,string,0,0.0,,
-see-chan,user_device,os_version,string,5,4.743337981804556e-05,,
+see-chan,user_device,os_version,string,0,0.0,,
 see-chan,user_device,resolution,string,0,0.0,,
 see-chan,user_device,user_id,string,0,0.0,,
 see-chan,user_identity,app_id,int64,0,0.0,,
-see-chan,user_identity,external_id,string,201878,0.5890980186174093,,
-see-chan,user_identity,facebookmessenger_id,float64,342690,1.0,,
-see-chan,user_identity,line_id,string,1817,0.005302168140301731,,
+see-chan,user_identity,external_id,string,408,0.0028891091913326723,,
+see-chan,user_identity,facebookmessenger_id,float64,141220,1.0,,
+see-chan,user_identity,line_id,string,1475,0.010444696218665912,,
 see-chan,user_identity,user_id,string,0,0.0,,
 see-chan,user_info,app_id,int64,0,0.0,,
-see-chan,user_info,contactnumber,float64,231,0.0006740786133239955,,
-see-chan,user_info,dateofbirth,"datetime64[ns, UTC]",12672,0.03697802678805918,1907-01-03 00:00:00+00:00,2025-10-25 00:00:00+00:00
-see-chan,user_info,email,string,201508,0.5880183256003969,,
-see-chan,user_info,first_name,string,7780,0.022702734249613353,,
+see-chan,user_info,contactnumber,float64,74,0.0005240050984279848,,
+see-chan,user_info,dateofbirth,"datetime64[ns, UTC]",74,0.0005240050984279848,1907-01-03 00:00:00+00:00,2010-10-01 00:00:00+00:00
+see-chan,user_info,email,string,74,0.0005240050984279848,,
+see-chan,user_info,first_name,string,74,0.0005240050984279848,,
 see-chan,user_info,gender,string,0,0.0,,
-see-chan,user_info,last_name,string,7785,0.022717324695789198,,
+see-chan,user_info,last_name,string,75,0.0005310862484067413,,
 see-chan,user_info,user_id,string,0,0.0,,
 see-chan,user_view,app_id,int64,0,0.0,,
-see-chan,user_view,inactive_datetime,string,400015,0.9994403344001959,2023-05-18 14:46:08.853000+00:00,2026-01-29 13:06:59.899000+00:00
-see-chan,user_view,join_datetime,"datetime64[ns, UTC]",722,0.0018039221565114844,2020-10-09 15:07:06.623000+00:00,2026-02-03 01:21:07.787000+00:00
+see-chan,user_view,inactive_datetime,string,173420,0.9995734722814622,2024-09-11 11:13:50.816000+00:00,2026-01-29 13:06:59.899000+00:00
+see-chan,user_view,join_datetime,"datetime64[ns, UTC]",518,0.002985694029764718,2024-09-11 10:54:44.091000+00:00,2026-02-03 01:21:07.787000+00:00
 see-chan,user_view,user_id,string,0,0.0,,
 see-chan,user_view,user_type,string,0,0.0,,
 see-chan,user_visitor,actions,int64,0,0.0,,
@@ -165,5 +165,5 @@ see-chan,user_visitor,searches,int64,0,0.0,,
 see-chan,user_visitor,tbl_type,string,0,0.0,,
 see-chan,user_visitor,user_id,string,0,0.0,,
 see-chan,user_visitor,user_type,string,0,0.0,,
-see-chan,user_visitor,visit_datetime,"datetime64[ns, UTC]",0,0.0,2020-10-09 15:07:07.623000+00:00,2026-02-03 00:10:33.833000+00:00
-see-chan,user_visitor,visit_end_datetime,"datetime64[ns, UTC]",0,0.0,2020-10-09 15:07:07.623000+00:00,2026-02-03 00:10:33.833000+00:00
+see-chan,user_visitor,visit_datetime,"datetime64[ns, UTC]",0,0.0,2024-09-11 11:03:58.480000+00:00,2026-02-03 00:10:33.833000+00:00
+see-chan,user_visitor,visit_end_datetime,"datetime64[ns, UTC]",0,0.0,2024-09-11 11:03:58.480000+00:00,2026-02-03 00:10:33.833000+00:00

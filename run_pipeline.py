@@ -12,13 +12,17 @@ from src.data_load import (
     TABLE_FILES,
     profile_dataset,
     save_profile,
-    summarize_join_coverage,
     load_tables,
 )
 from src.features import build_feature_table, feature_definitions
 from src.infer import predict_with_drivers, save_predictions
 from src.labeling import generate_weak_labels, labeling_thresholds
 from src.train import train_models
+
+BRAND_APP_ID_FILTERS = {
+    "c-vit": [1993744540760190],
+    "see-chan": [838315041537793],
+}
 
 
 def _format_pct(v: float) -> str:
@@ -197,6 +201,7 @@ def main() -> None:
     parser.add_argument("--outputs-dir", type=str, default="outputs")
     parser.add_argument("--artifacts-dir", type=str, default="artifacts")
     parser.add_argument("--snapshot-freq", type=str, default="7D")
+    parser.add_argument("--report-name", type=str, default="brand_health_report.md")
     args = parser.parse_args()
 
     dataset_root = Path(args.dataset_root)
@@ -208,8 +213,9 @@ def main() -> None:
     outputs_dir.mkdir(parents=True, exist_ok=True)
     artifacts_dir.mkdir(parents=True, exist_ok=True)
 
+    print(f"Using app_id filters: {BRAND_APP_ID_FILTERS}")
     print("[1/6] Profiling parquet datasets...")
-    profile = profile_dataset(dataset_root)
+    profile = profile_dataset(dataset_root, brand_app_ids=BRAND_APP_ID_FILTERS)
     save_profile(profile, reports_dir / "data_profile")
 
     print("[2/6] Loading tables for feature engineering...")
@@ -272,7 +278,12 @@ def main() -> None:
         "user_identity": ["app_id", "user_id", "line_id", "external_id"],
         "user_info": ["app_id", "user_id", "dateofbirth", "gender"],
     }
-    tables = load_tables(dataset_root, table_files=TABLE_FILES, columns_map=columns_map)
+    tables = load_tables(
+        dataset_root,
+        table_files=TABLE_FILES,
+        columns_map=columns_map,
+        brand_app_ids=BRAND_APP_ID_FILTERS,
+    )
 
     print("[3/6] Building features...")
     feature_df = build_feature_table(tables=tables, snapshot_freq=args.snapshot_freq)
@@ -301,7 +312,7 @@ def main() -> None:
         top_n_drivers=5,
         top_n_actions=3,
     )
-    save_predictions(pred_df, outputs_dir=outputs_dir)
+    save_predictions(pred_df, output_dir=outputs_dir)
 
     # Last 4 windows per brand (prefer 30d windows for concise dashboard snapshots).
     ex = pred_df[pred_df["window_size"].astype(str) == "30d"].copy()
@@ -311,7 +322,7 @@ def main() -> None:
     examples.to_json(outputs_dir / "examples_last4_windows.json", orient="records", indent=2, date_format="iso")
 
     # Final report.
-    report_path = reports_dir / "brand_health_report.md"
+    report_path = reports_dir / args.report_name
     _write_markdown_report(
         report_path=report_path,
         table_profile=profile.table_profile,

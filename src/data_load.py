@@ -76,10 +76,28 @@ def safe_read_parquet(
     return df
 
 
+def _filter_brand_app_id(
+    df: pd.DataFrame,
+    brand_id: str,
+    brand_app_ids: Optional[Mapping[str, Sequence[int | str]]] = None,
+) -> pd.DataFrame:
+    if not brand_app_ids or df.empty or "app_id" not in df.columns:
+        return df
+
+    allowed = brand_app_ids.get(brand_id)
+    if not allowed:
+        return df
+
+    allowed_ids = {int(x) for x in allowed}
+    app_numeric = pd.to_numeric(df["app_id"], errors="coerce").astype("Int64")
+    return df.loc[app_numeric.isin(list(allowed_ids))].copy()
+
+
 def load_tables(
     dataset_root: str | Path,
     table_files: Sequence[str] = TABLE_FILES,
     columns_map: Optional[Mapping[str, Sequence[str]]] = None,
+    brand_app_ids: Optional[Mapping[str, Sequence[int | str]]] = None,
 ) -> Dict[str, pd.DataFrame]:
     """Load all tables across brands; add brand_id to each row.
 
@@ -96,10 +114,21 @@ def load_tables(
             fp = root / brand_id / file_name
             req_cols = None if columns_map is None else columns_map.get(table_name)
             df = safe_read_parquet(fp, columns=req_cols)
+            df = _filter_brand_app_id(df, brand_id=brand_id, brand_app_ids=brand_app_ids)
             df["brand_id"] = brand_id
             out[table_name].append(df)
 
-    return {k: pd.concat(v, ignore_index=True) if v else pd.DataFrame() for k, v in out.items()}
+    merged: Dict[str, pd.DataFrame] = {}
+    for k, frames in out.items():
+        if not frames:
+            merged[k] = pd.DataFrame()
+            continue
+        non_empty = [f for f in frames if not f.empty]
+        if non_empty:
+            merged[k] = pd.concat(non_empty, ignore_index=True)
+        else:
+            merged[k] = frames[0].iloc[0:0].copy()
+    return merged
 
 
 # -----------------------------
@@ -119,6 +148,7 @@ def profile_dataset(
     dataset_root: str | Path,
     table_files: Sequence[str] = TABLE_FILES,
     key_relations: Sequence[Tuple[str, str, str]] = DEFAULT_KEY_RELATIONS,
+    brand_app_ids: Optional[Mapping[str, Sequence[int | str]]] = None,
 ) -> DataProfile:
     root = Path(dataset_root)
     brands = list_brands(root)
@@ -131,6 +161,7 @@ def profile_dataset(
             table_name = Path(file_name).stem
             fp = root / brand_id / file_name
             df = safe_read_parquet(fp)
+            df = _filter_brand_app_id(df, brand_id=brand_id, brand_app_ids=brand_app_ids)
 
             table_rows.append(
                 {
@@ -166,7 +197,12 @@ def profile_dataset(
 
     table_profile = pd.DataFrame(table_rows).sort_values(["brand_id", "table"]).reset_index(drop=True)
     schema_profile = pd.DataFrame(schema_rows).sort_values(["brand_id", "table", "column"]).reset_index(drop=True)
-    join_coverage = validate_join_coverage(root, table_files=table_files, key_relations=key_relations)
+    join_coverage = validate_join_coverage(
+        root,
+        table_files=table_files,
+        key_relations=key_relations,
+        brand_app_ids=brand_app_ids,
+    )
 
     return DataProfile(table_profile=table_profile, schema_profile=schema_profile, join_coverage=join_coverage)
 
@@ -175,6 +211,7 @@ def validate_join_coverage(
     dataset_root: str | Path,
     table_files: Sequence[str] = TABLE_FILES,
     key_relations: Sequence[Tuple[str, str, str]] = DEFAULT_KEY_RELATIONS,
+    brand_app_ids: Optional[Mapping[str, Sequence[int | str]]] = None,
 ) -> pd.DataFrame:
     root = Path(dataset_root)
     brands = list_brands(root)
@@ -194,7 +231,10 @@ def validate_join_coverage(
             if table_name not in table_name_to_file:
                 continue
             fp = root / brand_id / table_name_to_file[table_name]
-            key_frames[table_name] = safe_read_parquet(fp, columns=sorted(cols))
+            read_cols = sorted(set(cols).union({"app_id"}))
+            df = safe_read_parquet(fp, columns=read_cols)
+            df = _filter_brand_app_id(df, brand_id=brand_id, brand_app_ids=brand_app_ids)
+            key_frames[table_name] = df
 
         for left_table, right_table, key in key_relations:
             left_df = key_frames.get(left_table, pd.DataFrame())

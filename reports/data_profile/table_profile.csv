@@ -7,11 +7,11 @@ c-vit,user_identity,10000,5
 c-vit,user_info,10000,8
 c-vit,user_view,10000,5
 c-vit,user_visitor,10000,11
-see-chan,activity_transaction,20937218,10
+see-chan,activity_transaction,178594,10
 see-chan,purchase,1404759,14
 see-chan,purchase_items,1982120,21
-see-chan,user_device,105411,10
-see-chan,user_identity,342690,5
-see-chan,user_info,342690,8
-see-chan,user_view,400239,5
-see-chan,user_visitor,5409254,11
+see-chan,user_device,79984,10
+see-chan,user_identity,141220,5
+see-chan,user_info,141220,8
+see-chan,user_view,173494,5
+see-chan,user_visitor,446324,11

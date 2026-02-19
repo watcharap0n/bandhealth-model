@@ -7,11 +7,11 @@ c-vit,purchase,purchase_items,user_id,10000,8827,1250,1,0,0.0
 c-vit,purchase,user_identity,user_id,10000,10000,1250,10000,82,0.0439
 c-vit,purchase,user_info,user_id,10000,10000,1250,10000,70,0.0308
 c-vit,user_view,user_visitor,user_id,10000,10000,10000,242,0,0.0
-see-chan,activity_transaction,user_identity,user_id,20937218,342690,342532,342690,342207,0.9999375752786258
-see-chan,activity_transaction,user_view,user_id,20937218,400239,342532,400239,342207,0.9999375752786258
-see-chan,activity_transaction,user_visitor,user_id,20937218,5409254,342532,398842,340857,0.999873096798247
+see-chan,activity_transaction,user_identity,user_id,178594,141220,140795,141220,140792,0.9999832021232516
+see-chan,activity_transaction,user_view,user_id,178594,173494,140795,173494,140792,0.9999832021232516
+see-chan,activity_transaction,user_visitor,user_id,178594,446324,140795,172144,139453,0.9924857498012252
 see-chan,purchase,purchase_items,transaction_id,1404759,1982120,1399583,1378053,1378053,0.9839175260667489
 see-chan,purchase,purchase_items,user_id,1404759,1982120,10359,19,19,0.0020581521535755717
-see-chan,purchase,user_identity,user_id,1404759,342690,10359,342690,10359,1.0
-see-chan,purchase,user_info,user_id,1404759,342690,10359,342690,10359,1.0
-see-chan,user_view,user_visitor,user_id,400239,5409254,400239,398842,398842,0.9965095855226502
+see-chan,purchase,user_identity,user_id,1404759,141220,10359,141220,10359,1.0
+see-chan,purchase,user_info,user_id,1404759,141220,10359,141220,10359,1.0
+see-chan,user_view,user_visitor,user_id,173494,446324,173494,172144,172144,0.992218751080729

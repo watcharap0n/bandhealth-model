@@ -1,161 +1,169 @@
 [
   {
     "brand_id":"see-chan",
-    "window_end_date":"2026-01-22T00:00:00.000Z",
+    "window_end_date":"2026-01-07T00:00:00.000Z",
     "window_size":"30d",
     "window_size_days":30.0,
-    "recency_days_mean":514.9502400709,
-    "recency_days_median":295.0,
-    "recency_days_p90":1003.0,
-    "active_users":18661.0,
-    "new_users":8564.0,
-    "returning_users":10097.0,
-    "dormant_share":0.9529909363,
-    "total_events":95333.0,
-    "total_logins":1539.0,
-    "total_views":40221.0,
-    "avg_events_per_active":5.108675848,
-    "session_proxy_login_to_view":0.0382635936,
-    "activity_events":55112.0,
-    "activity_completed_events":48706.0,
-    "activity_completion_rate":0.8837639715,
-    "activity_points_sum":52486.0,
-    "activity_points_per_active":2.8126038262,
-    "activity_redeem_count":48286.0,
-    "activity_redeem_rate":0.8761431267,
-    "activity_redeem_per_active":2.5875355018,
-    "activity_type_entropy":0.4406463695,
-    "activity_type_top_share":0.8761431267,
-    "activity_type_login_count":1539.0,
+    "recency_days_mean":156.4137551436,
+    "recency_days_median":100.0,
+    "recency_days_p90":297.0,
+    "active_users":26953.0,
+    "new_users":13793.0,
+    "returning_users":13160.0,
+    "dormant_share":0.8413325406,
+    "total_events":60326.0,
+    "total_logins":1680.0,
+    "total_views":49813.0,
+    "avg_events_per_active":2.238192409,
+    "session_proxy_login_to_view":0.0337261357,
+    "activity_events":10513.0,
+    "activity_completed_events":0.0,
+    "activity_completion_rate":0.0,
+    "activity_points_sum":0.0,
+    "activity_points_per_active":0.0,
+    "activity_redeem_count":0.0,
+    "activity_redeem_rate":0.0,
+    "activity_redeem_per_active":0.0,
+    "activity_type_entropy":0.4393416528,
+    "activity_type_top_share":0.8401978503,
+    "activity_type_login_count":1680.0,
     "activity_type_login_completion_rate":0.0,
-    "activity_type_product_consume_uniquecode_count":48286.0,
-    "activity_type_product_consume_uniquecode_completion_rate":1.0,
-    "activity_type_registration_count":5287.0,
-    "activity_type_registration_completion_rate":0.0794401362,
-    "activity_name_entropy":0.0495744073,
-    "activity_name_top_share":0.9913768324,
-    "redeem_user_low_share":0.2994152047,
-    "redeem_user_med_share":0.2311890838,
-    "redeem_user_high_share":0.4693957115,
-    "transaction_count":90053.0,
-    "transaction_success_rate":0.8911307785,
-    "gmv_net":45642539.0,
-    "gmv_sell":20068053.0,
-    "discount_rate":-1.2743880037,
-    "aov_net":506.8408492776,
-    "items_per_transaction":2.2855540626,
+    "activity_type_product_consume_uniquecode_count":0.0,
+    "activity_type_product_consume_uniquecode_completion_rate":0.0,
+    "activity_type_registration_count":8833.0,
+    "activity_type_registration_completion_rate":0.0,
+    "activity_name_entropy":0.4543465506,
+    "activity_name_top_share":0.8309689104,
+    "redeem_user_low_share":0.0,
+    "redeem_user_med_share":0.0,
+    "redeem_user_high_share":0.0,
+    "transaction_count":122633.0,
+    "transaction_success_rate":0.8839464092,
+    "gmv_net":58712551.0,
+    "gmv_sell":24857704.0,
+    "discount_rate":-1.3619458579,
+    "aov_net":478.7663271713,
+    "items_per_transaction":2.2178777327,
     "paid_delay_hours":0.0,
     "delivered_rate":1.0,
-    "shipped_rate":0.9016176232,
-    "buyers":211.0,
-    "repeat_purchase_rate":0.2227488152,
-    "sku_unique":364.0,
-    "sku_top_share":0.1962831616,
-    "sku_entropy":4.1508069038,
-    "status_success_rate":0.8911307785,
-    "rfm_recency_mean":607.9376447961,
-    "rfm_frequency_mean":0.4264002442,
-    "rfm_monetary_mean":5.1922569275,
-    "rfm_score_mean":9.0763026148,
+    "shipped_rate":0.8869782856,
+    "buyers":320.0,
+    "repeat_purchase_rate":0.23125,
+    "sku_unique":542.0,
+    "sku_top_share":0.1491117179,
+    "sku_entropy":4.1849989891,
+    "status_success_rate":0.8839464092,
+    "rfm_recency_mean":286.8173624625,
+    "rfm_frequency_mean":0.0129547296,
+    "rfm_monetary_mean":11.5690917969,
+    "rfm_score_mean":9.0261722468,
     "rfm_transition_up_share":0.0,
     "rfm_transition_down_share":0.0,
-    "rfm_dormant_share":0.4000645985,
-    "rfm_recency_tier_1_pct":0.2010012773,
-    "rfm_recency_tier_2_pct":0.1990633212,
-    "rfm_recency_tier_3_pct":0.2004962342,
-    "rfm_recency_tier_4_pct":0.1987931819,
-    "rfm_recency_tier_5_pct":0.2006459853,
+    "rfm_dormant_share":0.4012343925,
+    "rfm_recency_tier_1_pct":0.2009119448,
+    "rfm_recency_tier_2_pct":0.2003224478,
+    "rfm_recency_tier_3_pct":0.1984545235,
+    "rfm_recency_tier_4_pct":0.2008267163,
+    "rfm_recency_tier_5_pct":0.1994843677,
     "rfm_frequency_tier_1_pct":0.0,
     "rfm_frequency_tier_2_pct":0.0,
-    "rfm_frequency_tier_3_pct":0.9806791655,
+    "rfm_frequency_tier_3_pct":0.9928692169,
     "rfm_frequency_tier_4_pct":0.0,
-    "rfm_frequency_tier_5_pct":0.0193208345,
+    "rfm_frequency_tier_5_pct":0.0071307831,
     "rfm_monetary_tier_1_pct":0.0,
     "rfm_monetary_tier_2_pct":0.0,
-    "rfm_monetary_tier_3_pct":0.9806791655,
+    "rfm_monetary_tier_3_pct":0.9928692169,
     "rfm_monetary_tier_4_pct":0.0,
-    "rfm_monetary_tier_5_pct":0.0193208345,
-    "rfm_score_tier_1_pct":0.2010012773,
-    "rfm_score_tier_2_pct":0.1990633212,
-    "rfm_score_tier_3_pct":0.2004962342,
-    "rfm_score_tier_4_pct":0.1987931819,
-    "rfm_score_tier_5_pct":0.2006459853,
+    "rfm_monetary_tier_5_pct":0.0071307831,
+    "rfm_score_tier_1_pct":0.2009119448,
+    "rfm_score_tier_2_pct":0.2003224478,
+    "rfm_score_tier_3_pct":0.1984545235,
+    "rfm_score_tier_4_pct":0.2008267163,
+    "rfm_score_tier_5_pct":0.1994843677,
     "activity_type_referral_count":0.0,
     "activity_type_referral_completion_rate":0.0,
     "activity_type_upload_receipts_count":0.0,
     "activity_type_upload_receipts_completion_rate":0.0,
-    "status_voided_rate":0.1051713991,
-    "status_pending_rate":0.0015879538,
-    "status_reject_rate":0.0019099863,
-    "new_user_share":0.4589250308,
-    "returning_user_share":0.5410749692,
-    "gmv_per_active":2445.8785166926,
-    "transactions_per_active":4.8257328117,
-    "points_per_completion":1.0776085082,
-    "reward_efficiency":0.9279631147,
-    "active_users_wow_pct":-0.0657354561,
-    "active_users_mom_pct":-0.4948431282,
-    "active_users_zscore":-1.4453007363,
-    "active_users_volatility":0.303698495,
-    "gmv_net_wow_pct":-0.0317823727,
-    "gmv_net_mom_pct":-0.3964067916,
-    "gmv_net_zscore":-1.3441705456,
-    "gmv_net_volatility":0.2054702611,
-    "transaction_count_wow_pct":-0.0580131591,
-    "transaction_count_mom_pct":-0.3141745236,
-    "transaction_count_zscore":-1.1691766657,
-    "transaction_count_volatility":0.1548228678,
-    "activity_completion_rate_wow_pct":0.0158053911,
-    "activity_completion_rate_mom_pct":0.1487375708,
-    "activity_completion_rate_zscore":1.4102518068,
-    "activity_completion_rate_volatility":0.0940488831,
-    "activity_redeem_rate_wow_pct":0.01595912,
-    "activity_redeem_rate_mom_pct":0.1509389626,
-    "activity_redeem_rate_zscore":1.4110861223,
-    "activity_redeem_rate_volatility":0.0950573723,
-    "reward_efficiency_wow_pct":0.0012526204,
-    "reward_efficiency_mom_pct":0.0158377908,
-    "reward_efficiency_zscore":1.3934868767,
-    "reward_efficiency_volatility":0.0083104929,
-    "dormant_share_wow_pct":0.0035852311,
-    "dormant_share_mom_pct":0.0528752841,
-    "dormant_share_zscore":1.4229092007,
-    "dormant_share_volatility":0.0296604428,
+    "status_voided_rate":0.1073854509,
+    "status_pending_rate":0.0056999339,
+    "status_reject_rate":0.0021853824,
+    "new_user_share":0.5117426632,
+    "returning_user_share":0.4882573368,
+    "gmv_per_active":2178.3308351575,
+    "transactions_per_active":4.5498831299,
+    "points_per_completion":0.0,
+    "reward_efficiency":0.0,
+    "active_users_wow_pct":-0.1273109924,
+    "active_users_mom_pct":-0.1805107936,
+    "active_users_zscore":-1.4197443642,
+    "active_users_volatility":0.1648251647,
+    "gmv_net_wow_pct":0.0287425648,
+    "gmv_net_mom_pct":-0.1926814133,
+    "gmv_net_zscore":-1.0689718583,
+    "gmv_net_volatility":0.1335522009,
+    "transaction_count_wow_pct":0.0035433715,
+    "transaction_count_mom_pct":0.2284060062,
+    "transaction_count_zscore":0.7637052525,
+    "transaction_count_volatility":0.1635910678,
+    "activity_completion_rate_wow_pct":0.0,
+    "activity_completion_rate_mom_pct":0.0,
+    "activity_completion_rate_zscore":-0.5353041555,
+    "activity_completion_rate_volatility":1.8680968375,
+    "activity_redeem_rate_wow_pct":0.0,
+    "activity_redeem_rate_mom_pct":0.0,
+    "activity_redeem_rate_zscore":0.0,
+    "activity_redeem_rate_volatility":0.0,
+    "reward_efficiency_wow_pct":0.0,
+    "reward_efficiency_mom_pct":0.0,
+    "reward_efficiency_zscore":-0.5400617249,
+    "reward_efficiency_volatility":1.8516401995,
+    "dormant_share_wow_pct":0.0286450664,
+    "dormant_share_mom_pct":0.0624262649,
+    "dormant_share_zscore":1.3129149663,
+    "dormant_share_volatility":0.0648735927,
     "activity_points_per_active_wow_pct":0.0,
-    "label_health_score":84.0,
+    "label_health_score":70.1764610652,
     "label_health_class":"Healthy",
     "label_health_class_int":2,
-    "prob_AtRisk":0.0000000662,
-    "prob_Healthy":0.9997495419,
-    "prob_Warning":0.0002503918,
+    "prob_AtRisk":0.2326813401,
+    "prob_Healthy":0.5483234712,
+    "prob_Warning":0.2189951887,
     "predicted_health_class":"Healthy",
-    "predicted_health_score":89.9924839407,
+    "predicted_health_score":68.3058572321,
     "drivers":[
       {
-        "key":"model_active_users_zscore",
-        "statement":"Model-highlighted anomaly: active_users_zscore=-1.45",
-        "severity":0.0975481764,
+        "key":"active_down",
+        "statement":"Active users 30d down -12.7% WoW",
+        "severity":0.1273109924,
         "metrics":{
-          "active_users_zscore":-1.4453007363,
-          "importance":0.0674933417
+          "active_users_wow_pct":-0.1273109924
+        }
+      },
+      {
+        "key":"model_dormant_share_zscore",
+        "statement":"Model-highlighted anomaly: dormant_share_zscore=1.31",
+        "severity":0.0568713697,
+        "metrics":{
+          "dormant_share_zscore":1.3129149663,
+          "importance":0.0433168721
+        }
+      },
+      {
+        "key":"model_active_users_zscore",
+        "statement":"Model-highlighted anomaly: active_users_zscore=-1.42",
+        "severity":0.0318706803,
+        "metrics":{
+          "active_users_zscore":-1.4197443642,
+          "importance":0.0224481823
         }
       },
       {
         "key":"model_active_users_wow_pct",
-        "statement":"Model-highlighted signal: active_users_wow_pct down -6.6%",
-        "severity":0.0128806554,
+        "statement":"Model-highlighted signal: active_users_wow_pct down -12.7%",
+        "severity":0.029045346,
         "metrics":{
-          "active_users_wow_pct":-0.0657354561,
-          "importance":0.1959468474
-        }
-      },
-      {
-        "key":"model_transaction_count_wow_pct",
-        "statement":"Model-highlighted signal: transaction_count_wow_pct down -5.8%",
-        "severity":0.0041748947,
-        "metrics":{
-          "transaction_count_wow_pct":-0.0580131591,
-          "importance":0.0719646165
+          "active_users_wow_pct":-0.1273109924,
+          "importance":0.2281448401
         }
       }
     ],
@@ -166,41 +174,517 @@
     ],
     "payload":{
       "brand_id":"see-chan",
-      "window_end_date":"2026-01-22 00:00:00+00:00",
+      "window_end_date":"2026-01-07 00:00:00+00:00",
       "window_size":"30d",
       "predicted_health_class":"Healthy",
-      "predicted_health_score":89.9924839407,
+      "predicted_health_score":68.3058572321,
       "probabilities":{
-        "AtRisk":0.0000000662,
-        "Healthy":0.9997495419,
-        "Warning":0.0002503918
+        "AtRisk":0.2326813401,
+        "Healthy":0.5483234712,
+        "Warning":0.2189951887
       },
       "drivers":[
         {
-          "key":"model_active_users_zscore",
-          "statement":"Model-highlighted anomaly: active_users_zscore=-1.45",
-          "severity":0.0975481764,
+          "key":"active_down",
+          "statement":"Active users 30d down -12.7% WoW",
+          "severity":0.1273109924,
           "metrics":{
-            "active_users_zscore":-1.4453007363,
-            "importance":0.0674933417
+            "active_users_wow_pct":-0.1273109924
+          }
+        },
+        {
+          "key":"model_dormant_share_zscore",
+          "statement":"Model-highlighted anomaly: dormant_share_zscore=1.31",
+          "severity":0.0568713697,
+          "metrics":{
+            "dormant_share_zscore":1.3129149663,
+            "importance":0.0433168721
+          }
+        },
+        {
+          "key":"model_active_users_zscore",
+          "statement":"Model-highlighted anomaly: active_users_zscore=-1.42",
+          "severity":0.0318706803,
+          "metrics":{
+            "active_users_zscore":-1.4197443642,
+            "importance":0.0224481823
           }
         },
         {
           "key":"model_active_users_wow_pct",
-          "statement":"Model-highlighted signal: active_users_wow_pct down -6.6%",
-          "severity":0.0128806554,
+          "statement":"Model-highlighted signal: active_users_wow_pct down -12.7%",
+          "severity":0.029045346,
           "metrics":{
-            "active_users_wow_pct":-0.0657354561,
-            "importance":0.1959468474
+            "active_users_wow_pct":-0.1273109924,
+            "importance":0.2281448401
+          }
+        }
+      ],
+      "suggested_actions":[
+        "Launch dormant-user reactivation campaigns with segmented incentives.",
+        "Reduce message fatigue via tighter frequency caps and send-time optimization.",
+        "Retarget recently lapsed cohorts with low-friction missions."
+      ]
+    }
+  },
+  {
+    "brand_id":"see-chan",
+    "window_end_date":"2026-01-14T00:00:00.000Z",
+    "window_size":"30d",
+    "window_size_days":30.0,
+    "recency_days_mean":162.6054910243,
+    "recency_days_median":99.0,
+    "recency_days_p90":304.0,
+    "active_users":14922.0,
+    "new_users":8722.0,
+    "returning_users":6200.0,
+    "dormant_share":0.9124604013,
+    "total_events":35803.0,
+    "total_logins":884.0,
+    "total_views":28612.0,
+    "avg_events_per_active":2.3993432516,
+    "session_proxy_login_to_view":0.0308961275,
+    "activity_events":7191.0,
+    "activity_completed_events":0.0,
+    "activity_completion_rate":0.0,
+    "activity_points_sum":0.0,
+    "activity_points_per_active":0.0,
+    "activity_redeem_count":0.0,
+    "activity_redeem_rate":0.0,
+    "activity_redeem_per_active":0.0,
+    "activity_type_entropy":0.3727252793,
+    "activity_type_top_share":0.8770685579,
+    "activity_type_login_count":884.0,
+    "activity_type_login_completion_rate":0.0,
+    "activity_type_product_consume_uniquecode_count":0.0,
+    "activity_type_product_consume_uniquecode_completion_rate":0.0,
+    "activity_type_registration_count":6307.0,
+    "activity_type_registration_completion_rate":0.0,
+    "activity_name_entropy":0.4088383267,
+    "activity_name_top_share":0.8578549606,
+    "redeem_user_low_share":0.0,
+    "redeem_user_med_share":0.0,
+    "redeem_user_high_share":0.0,
+    "transaction_count":95183.0,
+    "transaction_success_rate":0.8827731843,
+    "gmv_net":45234003.0,
+    "gmv_sell":19126191.0,
+    "discount_rate":-1.3650293464,
+    "aov_net":475.2319531849,
+    "items_per_transaction":2.1385226353,
+    "paid_delay_hours":0.0,
+    "delivered_rate":1.0,
+    "shipped_rate":0.8934585544,
+    "buyers":243.0,
+    "repeat_purchase_rate":0.2181069959,
+    "sku_unique":361.0,
+    "sku_top_share":0.175946936,
+    "sku_entropy":4.1645326614,
+    "status_success_rate":0.8827731843,
+    "rfm_recency_mean":293.7887825111,
+    "rfm_frequency_mean":0.0127061466,
+    "rfm_monetary_mean":11.3926763535,
+    "rfm_score_mean":9.0253341667,
+    "rfm_transition_up_share":0.0000497166,
+    "rfm_transition_down_share":0.0,
+    "rfm_dormant_share":0.4012272902,
+    "rfm_recency_tier_1_pct":0.2009119448,
+    "rfm_recency_tier_2_pct":0.2003153454,
+    "rfm_recency_tier_3_pct":0.1984474211,
+    "rfm_recency_tier_4_pct":0.2007912044,
+    "rfm_recency_tier_5_pct":0.1995340843,
+    "rfm_frequency_tier_1_pct":0.0,
+    "rfm_frequency_tier_2_pct":0.0,
+    "rfm_frequency_tier_3_pct":0.9930964928,
+    "rfm_frequency_tier_4_pct":0.0,
+    "rfm_frequency_tier_5_pct":0.0069035072,
+    "rfm_monetary_tier_1_pct":0.0,
+    "rfm_monetary_tier_2_pct":0.0,
+    "rfm_monetary_tier_3_pct":0.9930964928,
+    "rfm_monetary_tier_4_pct":0.0,
+    "rfm_monetary_tier_5_pct":0.0069035072,
+    "rfm_score_tier_1_pct":0.2009119448,
+    "rfm_score_tier_2_pct":0.2003153454,
+    "rfm_score_tier_3_pct":0.1984474211,
+    "rfm_score_tier_4_pct":0.2007912044,
+    "rfm_score_tier_5_pct":0.1995340843,
+    "activity_type_referral_count":0.0,
+    "activity_type_referral_completion_rate":0.0,
+    "activity_type_upload_receipts_count":0.0,
+    "activity_type_upload_receipts_completion_rate":0.0,
+    "status_voided_rate":0.1130348907,
+    "status_pending_rate":0.0019961548,
+    "status_reject_rate":0.0019751426,
+    "new_user_share":0.5845060984,
+    "returning_user_share":0.4154939016,
+    "gmv_per_active":3031.3632891033,
+    "transactions_per_active":6.3787025868,
+    "points_per_completion":0.0,
+    "reward_efficiency":0.0,
+    "active_users_wow_pct":-0.4463696064,
+    "active_users_mom_pct":-0.5917708533,
+    "active_users_zscore":-1.9302809808,
+    "active_users_volatility":0.2778563676,
+    "gmv_net_wow_pct":-0.2295684274,
+    "gmv_net_mom_pct":-0.4257595388,
+    "gmv_net_zscore":-1.8342418509,
+    "gmv_net_volatility":0.1769924236,
+    "transaction_count_wow_pct":-0.2238386079,
+    "transaction_count_mom_pct":-0.2266763079,
+    "transaction_count_zscore":-0.9172932055,
+    "transaction_count_volatility":0.1483733557,
+    "activity_completion_rate_wow_pct":0.0,
+    "activity_completion_rate_mom_pct":0.0,
+    "activity_completion_rate_zscore":-0.3535533906,
+    "activity_completion_rate_volatility":2.8284271248,
+    "activity_redeem_rate_wow_pct":0.0,
+    "activity_redeem_rate_mom_pct":0.0,
+    "activity_redeem_rate_zscore":0.0,
+    "activity_redeem_rate_volatility":0.0,
+    "reward_efficiency_wow_pct":0.0,
+    "reward_efficiency_mom_pct":0.0,
+    "reward_efficiency_zscore":-0.3535533906,
+    "reward_efficiency_volatility":2.8284271247,
+    "dormant_share_wow_pct":0.0845419109,
+    "dormant_share_mom_pct":0.1767506496,
+    "dormant_share_zscore":1.7562936873,
+    "dormant_share_volatility":0.080783204,
+    "activity_points_per_active_wow_pct":0.0,
+    "label_health_score":0.0,
+    "label_health_class":"AtRisk",
+    "label_health_class_int":0,
+    "prob_AtRisk":0.8992620424,
+    "prob_Healthy":0.0281073954,
+    "prob_Warning":0.0726305622,
+    "predicted_health_class":"AtRisk",
+    "predicted_health_score":29.3690503798,
+    "drivers":[
+      {
+        "key":"active_down",
+        "statement":"Active users 30d down -44.6% WoW",
+        "severity":0.4463696064,
+        "metrics":{
+          "active_users_wow_pct":-0.4463696064
+        }
+      },
+      {
+        "key":"gmv_down",
+        "statement":"GMV down -23.0% WoW",
+        "severity":0.2295684274,
+        "metrics":{
+          "gmv_net_wow_pct":-0.2295684274
+        }
+      },
+      {
+        "key":"transactions_down",
+        "statement":"Transactions down -22.4% WoW",
+        "severity":0.2238386079,
+        "metrics":{
+          "transaction_count_wow_pct":-0.2238386079
+        }
+      },
+      {
+        "key":"model_active_users_wow_pct",
+        "statement":"Model-highlighted signal: active_users_wow_pct down -44.6%",
+        "severity":0.1018369225,
+        "metrics":{
+          "active_users_wow_pct":-0.4463696064,
+          "importance":0.2281448401
+        }
+      },
+      {
+        "key":"dormant_up",
+        "statement":"Dormant share up +8.5% WoW",
+        "severity":0.0845419109,
+        "metrics":{
+          "dormant_share_wow_pct":0.0845419109
+        }
+      }
+    ],
+    "suggested_actions":[
+      "Launch dormant-user reactivation campaigns with segmented incentives.",
+      "Reduce message fatigue via tighter frequency caps and send-time optimization.",
+      "Retarget recently lapsed cohorts with low-friction missions."
+    ],
+    "payload":{
+      "brand_id":"see-chan",
+      "window_end_date":"2026-01-14 00:00:00+00:00",
+      "window_size":"30d",
+      "predicted_health_class":"AtRisk",
+      "predicted_health_score":29.3690503798,
+      "probabilities":{
+        "AtRisk":0.8992620424,
+        "Healthy":0.0281073954,
+        "Warning":0.0726305622
+      },
+      "drivers":[
+        {
+          "key":"active_down",
+          "statement":"Active users 30d down -44.6% WoW",
+          "severity":0.4463696064,
+          "metrics":{
+            "active_users_wow_pct":-0.4463696064
+          }
+        },
+        {
+          "key":"gmv_down",
+          "statement":"GMV down -23.0% WoW",
+          "severity":0.2295684274,
+          "metrics":{
+            "gmv_net_wow_pct":-0.2295684274
+          }
+        },
+        {
+          "key":"transactions_down",
+          "statement":"Transactions down -22.4% WoW",
+          "severity":0.2238386079,
+          "metrics":{
+            "transaction_count_wow_pct":-0.2238386079
+          }
+        },
+        {
+          "key":"model_active_users_wow_pct",
+          "statement":"Model-highlighted signal: active_users_wow_pct down -44.6%",
+          "severity":0.1018369225,
+          "metrics":{
+            "active_users_wow_pct":-0.4463696064,
+            "importance":0.2281448401
+          }
+        },
+        {
+          "key":"dormant_up",
+          "statement":"Dormant share up +8.5% WoW",
+          "severity":0.0845419109,
+          "metrics":{
+            "dormant_share_wow_pct":0.0845419109
+          }
+        }
+      ],
+      "suggested_actions":[
+        "Launch dormant-user reactivation campaigns with segmented incentives.",
+        "Reduce message fatigue via tighter frequency caps and send-time optimization.",
+        "Retarget recently lapsed cohorts with low-friction missions."
+      ]
+    }
+  },
+  {
+    "brand_id":"see-chan",
+    "window_end_date":"2026-01-21T00:00:00.000Z",
+    "window_size":"30d",
+    "window_size_days":30.0,
+    "recency_days_mean":169.0067165184,
+    "recency_days_median":105.0,
+    "recency_days_p90":311.0,
+    "active_users":13594.0,
+    "new_users":7117.0,
+    "returning_users":6477.0,
+    "dormant_share":0.9203972525,
+    "total_events":31454.0,
+    "total_logins":1456.0,
+    "total_views":25073.0,
+    "avg_events_per_active":2.3138149183,
+    "session_proxy_login_to_view":0.0580704343,
+    "activity_events":6381.0,
+    "activity_completed_events":0.0,
+    "activity_completion_rate":0.0,
+    "activity_points_sum":0.0,
+    "activity_points_per_active":0.0,
+    "activity_redeem_count":0.0,
+    "activity_redeem_rate":0.0,
+    "activity_redeem_per_active":0.0,
+    "activity_type_entropy":0.5370646795,
+    "activity_type_top_share":0.7718225983,
+    "activity_type_login_count":1456.0,
+    "activity_type_login_completion_rate":0.0,
+    "activity_type_product_consume_uniquecode_count":0.0,
+    "activity_type_product_consume_uniquecode_completion_rate":0.0,
+    "activity_type_registration_count":4925.0,
+    "activity_type_registration_completion_rate":0.0,
+    "activity_name_entropy":0.570250645,
+    "activity_name_top_share":0.7426652527,
+    "redeem_user_low_share":0.0,
+    "redeem_user_med_share":0.0,
+    "redeem_user_high_share":0.0,
+    "transaction_count":89763.0,
+    "transaction_success_rate":0.8909795796,
+    "gmv_net":46450839.0,
+    "gmv_sell":20091476.0,
+    "discount_rate":-1.3119674732,
+    "aov_net":517.4831389325,
+    "items_per_transaction":2.2936399185,
+    "paid_delay_hours":0.0,
+    "delivered_rate":1.0,
+    "shipped_rate":0.9021951378,
+    "buyers":210.0,
+    "repeat_purchase_rate":0.2238095238,
+    "sku_unique":363.0,
+    "sku_top_share":0.1941976696,
+    "sku_entropy":4.1582279205,
+    "status_success_rate":0.8909795796,
+    "rfm_recency_mean":300.7605079618,
+    "rfm_frequency_mean":0.0123936422,
+    "rfm_monetary_mean":11.2832422256,
+    "rfm_score_mean":9.024979048,
+    "rfm_transition_up_share":0.0000639214,
+    "rfm_transition_down_share":0.0,
+    "rfm_dormant_share":0.4012201878,
+    "rfm_recency_tier_1_pct":0.2009048424,
+    "rfm_recency_tier_2_pct":0.2003153454,
+    "rfm_recency_tier_3_pct":0.1984332164,
+    "rfm_recency_tier_4_pct":0.2007485902,
+    "rfm_recency_tier_5_pct":0.1995980057,
+    "rfm_frequency_tier_1_pct":0.0,
+    "rfm_frequency_tier_2_pct":0.0,
+    "rfm_frequency_tier_3_pct":0.9932101308,
+    "rfm_frequency_tier_4_pct":0.0,
+    "rfm_frequency_tier_5_pct":0.0067898692,
+    "rfm_monetary_tier_1_pct":0.0,
+    "rfm_monetary_tier_2_pct":0.0,
+    "rfm_monetary_tier_3_pct":0.9932101308,
+    "rfm_monetary_tier_4_pct":0.0,
+    "rfm_monetary_tier_5_pct":0.0067898692,
+    "rfm_score_tier_1_pct":0.2009048424,
+    "rfm_score_tier_2_pct":0.2003153454,
+    "rfm_score_tier_3_pct":0.1984332164,
+    "rfm_score_tier_4_pct":0.2007485902,
+    "rfm_score_tier_5_pct":0.1995980057,
+    "activity_type_referral_count":0.0,
+    "activity_type_referral_completion_rate":0.0,
+    "activity_type_upload_receipts_count":0.0,
+    "activity_type_upload_receipts_completion_rate":0.0,
+    "status_voided_rate":0.1053552132,
+    "status_pending_rate":0.0015485222,
+    "status_reject_rate":0.0019050165,
+    "new_user_share":0.523539797,
+    "returning_user_share":0.476460203,
+    "gmv_per_active":3417.010372223,
+    "transactions_per_active":6.6031337355,
+    "points_per_completion":0.0,
+    "reward_efficiency":0.0,
+    "active_users_wow_pct":-0.0889961131,
+    "active_users_mom_pct":-0.5697420478,
+    "active_users_zscore":-1.575430519,
+    "active_users_volatility":0.3287372271,
+    "gmv_net_wow_pct":0.0269009135,
+    "gmv_net_mom_pct":-0.3908780568,
+    "gmv_net_zscore":-1.2722447701,
+    "gmv_net_volatility":0.212436113,
+    "transaction_count_wow_pct":-0.0569429415,
+    "transaction_count_mom_pct":-0.3203737214,
+    "transaction_count_zscore":-1.238124439,
+    "transaction_count_volatility":0.1492751846,
+    "activity_completion_rate_wow_pct":0.0,
+    "activity_completion_rate_mom_pct":0.0,
+    "activity_completion_rate_zscore":0.0,
+    "activity_completion_rate_volatility":0.0,
+    "activity_redeem_rate_wow_pct":0.0,
+    "activity_redeem_rate_mom_pct":0.0,
+    "activity_redeem_rate_zscore":0.0,
+    "activity_redeem_rate_volatility":0.0,
+    "reward_efficiency_wow_pct":0.0,
+    "reward_efficiency_mom_pct":0.0,
+    "reward_efficiency_zscore":0.0,
+    "reward_efficiency_volatility":0.0,
+    "dormant_share_wow_pct":0.0086982966,
+    "dormant_share_mom_pct":0.1394701176,
+    "dormant_share_zscore":1.5243361915,
+    "dormant_share_volatility":0.0735399414,
+    "activity_points_per_active_wow_pct":0.0,
+    "label_health_score":72.0,
+    "label_health_class":"Healthy",
+    "label_health_class_int":2,
+    "prob_AtRisk":0.0248048629,
+    "prob_Healthy":0.8178209432,
+    "prob_Warning":0.1573741939,
+    "predicted_health_class":"Healthy",
+    "predicted_health_score":83.6664580922,
+    "drivers":[
+      {
+        "key":"active_down",
+        "statement":"Active users 30d down -8.9% WoW",
+        "severity":0.0889961131,
+        "metrics":{
+          "active_users_wow_pct":-0.0889961131
+        }
+      },
+      {
+        "key":"model_dormant_share_zscore",
+        "statement":"Model-highlighted anomaly: dormant_share_zscore=1.52",
+        "severity":0.0660294759,
+        "metrics":{
+          "dormant_share_zscore":1.5243361915,
+          "importance":0.0433168721
+        }
+      },
+      {
+        "key":"model_active_users_wow_pct",
+        "statement":"Model-highlighted signal: active_users_wow_pct down -8.9%",
+        "severity":0.020304004,
+        "metrics":{
+          "active_users_wow_pct":-0.0889961131,
+          "importance":0.2281448401
+        }
+      },
+      {
+        "key":"model_transaction_count_wow_pct",
+        "statement":"Model-highlighted signal: transaction_count_wow_pct down -5.7%",
+        "severity":0.0049208121,
+        "metrics":{
+          "transaction_count_wow_pct":-0.0569429415,
+          "importance":0.0864165412
+        }
+      }
+    ],
+    "suggested_actions":[
+      "Launch dormant-user reactivation campaigns with segmented incentives.",
+      "Reduce message fatigue via tighter frequency caps and send-time optimization.",
+      "Retarget recently lapsed cohorts with low-friction missions."
+    ],
+    "payload":{
+      "brand_id":"see-chan",
+      "window_end_date":"2026-01-21 00:00:00+00:00",
+      "window_size":"30d",
+      "predicted_health_class":"Healthy",
+      "predicted_health_score":83.6664580922,
+      "probabilities":{
+        "AtRisk":0.0248048629,
+        "Healthy":0.8178209432,
+        "Warning":0.1573741939
+      },
+      "drivers":[
+        {
+          "key":"active_down",
+          "statement":"Active users 30d down -8.9% WoW",
+          "severity":0.0889961131,
+          "metrics":{
+            "active_users_wow_pct":-0.0889961131
+          }
+        },
+        {
+          "key":"model_dormant_share_zscore",
+          "statement":"Model-highlighted anomaly: dormant_share_zscore=1.52",
+          "severity":0.0660294759,
+          "metrics":{
+            "dormant_share_zscore":1.5243361915,
+            "importance":0.0433168721
+          }
+        },
+        {
+          "key":"model_active_users_wow_pct",
+          "statement":"Model-highlighted signal: active_users_wow_pct down -8.9%",
+          "severity":0.020304004,
+          "metrics":{
+            "active_users_wow_pct":-0.0889961131,
+            "importance":0.2281448401
           }
         },
         {
           "key":"model_transaction_count_wow_pct",
-          "statement":"Model-highlighted signal: transaction_count_wow_pct down -5.8%",
-          "severity":0.0041748947,
+          "statement":"Model-highlighted signal: transaction_count_wow_pct down -5.7%",
+          "severity":0.0049208121,
           "metrics":{
-            "transaction_count_wow_pct":-0.0580131591,
-            "importance":0.0719646165
+            "transaction_count_wow_pct":-0.0569429415,
+            "importance":0.0864165412
           }
         }
       ],
@@ -337,28 +821,28 @@
     "label_health_score":100.0,
     "label_health_class":"Healthy",
     "label_health_class_int":2,
-    "prob_AtRisk":0.0000000007,
-    "prob_Healthy":0.9999990458,
-    "prob_Warning":0.0000009536,
+    "prob_AtRisk":0.0031703971,
+    "prob_Healthy":0.8487151394,
+    "prob_Warning":0.1481144635,
     "predicted_health_class":"Healthy",
-    "predicted_health_score":89.9999713493,
+    "predicted_health_score":85.3504902843,
     "drivers":[
       {
         "key":"model_reward_efficiency_zscore",
         "statement":"Model-highlighted anomaly: reward_efficiency_zscore=1.10",
-        "severity":0.0137290317,
+        "severity":0.0013218029,
         "metrics":{
           "reward_efficiency_zscore":1.1039320711,
-          "importance":-0.0124364823
+          "importance":-0.0011973589
         }
       },
       {
         "key":"model_reward_efficiency_wow_pct",
         "statement":"Model-highlighted signal: reward_efficiency_wow_pct up +10.6%",
-        "severity":0.0000288258,
+        "severity":0.0002618538,
         "metrics":{
           "reward_efficiency_wow_pct":0.1059907834,
-          "importance":0.0002719655
+          "importance":-0.002470534
         }
       }
     ],
@@ -372,29 +856,29 @@
       "window_end_date":"2026-01-25 00:00:00+00:00",
       "window_size":"30d",
       "predicted_health_class":"Healthy",
-      "predicted_health_score":89.9999713493,
+      "predicted_health_score":85.3504902843,
       "probabilities":{
-        "AtRisk":0.0000000007,
-        "Healthy":0.9999990458,
-        "Warning":0.0000009536
+        "AtRisk":0.0031703971,
+        "Healthy":0.8487151394,
+        "Warning":0.1481144635
       },
       "drivers":[
         {
           "key":"model_reward_efficiency_zscore",
           "statement":"Model-highlighted anomaly: reward_efficiency_zscore=1.10",
-          "severity":0.0137290317,
+          "severity":0.0013218029,
           "metrics":{
             "reward_efficiency_zscore":1.1039320711,
-            "importance":-0.0124364823
+            "importance":-0.0011973589
           }
         },
         {
           "key":"model_reward_efficiency_wow_pct",
           "statement":"Model-highlighted signal: reward_efficiency_wow_pct up +10.6%",
-          "severity":0.0000288258,
+          "severity":0.0002618538,
           "metrics":{
             "reward_efficiency_wow_pct":0.1059907834,
-            "importance":0.0002719655
+            "importance":-0.002470534
           }
         }
       ],
@@ -407,169 +891,169 @@
   },
   {
     "brand_id":"see-chan",
-    "window_end_date":"2026-01-29T00:00:00.000Z",
+    "window_end_date":"2026-01-28T00:00:00.000Z",
     "window_size":"30d",
     "window_size_days":30.0,
-    "recency_days_mean":519.0700526185,
-    "recency_days_median":300.0,
-    "recency_days_p90":1010.0,
-    "active_users":12629.0,
-    "new_users":4168.0,
-    "returning_users":8461.0,
-    "dormant_share":0.9683109636,
-    "total_events":85356.0,
-    "total_logins":2079.0,
-    "total_views":28210.0,
-    "avg_events_per_active":6.7587299074,
-    "session_proxy_login_to_view":0.0736972705,
-    "activity_events":57146.0,
-    "activity_completed_events":53643.0,
-    "activity_completion_rate":0.9387008715,
-    "activity_points_sum":57738.0,
-    "activity_points_per_active":4.5718584211,
-    "activity_redeem_count":53188.0,
-    "activity_redeem_rate":0.9307388094,
-    "activity_redeem_per_active":4.2115765302,
-    "activity_type_entropy":0.2996434083,
-    "activity_type_top_share":0.9307388094,
-    "activity_type_login_count":2079.0,
+    "recency_days_mean":174.4844213607,
+    "recency_days_median":109.0,
+    "recency_days_p90":317.0,
+    "active_users":5913.0,
+    "new_users":2080.0,
+    "returning_users":3833.0,
+    "dormant_share":0.965531714,
+    "total_events":12273.0,
+    "total_logins":1280.0,
+    "total_views":9758.0,
+    "avg_events_per_active":2.0755961441,
+    "session_proxy_login_to_view":0.131174421,
+    "activity_events":2515.0,
+    "activity_completed_events":0.0,
+    "activity_completion_rate":0.0,
+    "activity_points_sum":0.0,
+    "activity_points_per_active":0.0,
+    "activity_redeem_count":0.0,
+    "activity_redeem_rate":0.0,
+    "activity_redeem_per_active":0.0,
+    "activity_type_entropy":0.6929870987,
+    "activity_type_top_share":0.5089463221,
+    "activity_type_login_count":1280.0,
     "activity_type_login_completion_rate":0.0,
-    "activity_type_product_consume_uniquecode_count":53188.0,
-    "activity_type_product_consume_uniquecode_completion_rate":1.0,
-    "activity_type_registration_count":1879.0,
-    "activity_type_registration_completion_rate":0.2421500798,
-    "activity_name_entropy":0.0489034523,
-    "activity_name_top_share":0.9915179986,
-    "redeem_user_low_share":0.2929216867,
-    "redeem_user_med_share":0.2251506024,
-    "redeem_user_high_share":0.4819277108,
-    "transaction_count":104240.0,
-    "transaction_success_rate":0.894704528,
-    "gmv_net":50746093.0,
-    "gmv_sell":22596648.0,
-    "discount_rate":-1.2457354294,
-    "aov_net":486.8197716807,
-    "items_per_transaction":2.1938315426,
+    "activity_type_product_consume_uniquecode_count":0.0,
+    "activity_type_product_consume_uniquecode_completion_rate":0.0,
+    "activity_type_registration_count":1235.0,
+    "activity_type_registration_completion_rate":0.0,
+    "activity_name_entropy":0.2477399974,
+    "activity_name_top_share":0.9322651129,
+    "redeem_user_low_share":0.0,
+    "redeem_user_med_share":0.0,
+    "redeem_user_high_share":0.0,
+    "transaction_count":100987.0,
+    "transaction_success_rate":0.8934714369,
+    "gmv_net":49957345.0,
+    "gmv_sell":22063963.0,
+    "discount_rate":-1.2642054376,
+    "aov_net":494.6908512977,
+    "items_per_transaction":2.2128986899,
     "paid_delay_hours":0.0,
     "delivered_rate":1.0,
-    "shipped_rate":0.907364885,
-    "buyers":202.0,
-    "repeat_purchase_rate":0.2623762376,
-    "sku_unique":370.0,
-    "sku_top_share":0.1865229458,
-    "sku_entropy":4.2198200226,
-    "status_success_rate":0.894704528,
-    "rfm_recency_mean":613.195107874,
-    "rfm_frequency_mean":0.4374260306,
-    "rfm_monetary_mean":5.172437191,
-    "rfm_score_mean":9.0773048482,
-    "rfm_transition_up_share":0.0,
-    "rfm_transition_down_share":0.0,
-    "rfm_dormant_share":0.4000656268,
-    "rfm_recency_tier_1_pct":0.2005484525,
-    "rfm_recency_tier_2_pct":0.1995171743,
-    "rfm_recency_tier_3_pct":0.1988609064,
-    "rfm_recency_tier_4_pct":0.2013043325,
-    "rfm_recency_tier_5_pct":0.1997691343,
+    "shipped_rate":0.9064320229,
+    "buyers":203.0,
+    "repeat_purchase_rate":0.2413793103,
+    "sku_unique":368.0,
+    "sku_top_share":0.188773632,
+    "sku_entropy":4.2068996429,
+    "status_success_rate":0.8934714369,
+    "rfm_recency_mean":307.7024815693,
+    "rfm_frequency_mean":0.0121876728,
+    "rfm_monetary_mean":11.2571411133,
+    "rfm_score_mean":9.023572778,
+    "rfm_transition_up_share":0.000113638,
+    "rfm_transition_down_share":0.0007954658,
+    "rfm_dormant_share":0.4011633688,
+    "rfm_recency_tier_1_pct":0.2008693305,
+    "rfm_recency_tier_2_pct":0.2002940383,
+    "rfm_recency_tier_3_pct":0.1992215799,
+    "rfm_recency_tier_4_pct":0.1999034077,
+    "rfm_recency_tier_5_pct":0.1997116436,
     "rfm_frequency_tier_1_pct":0.0,
     "rfm_frequency_tier_2_pct":0.0,
-    "rfm_frequency_tier_3_pct":0.9807309184,
+    "rfm_frequency_tier_3_pct":0.9934303044,
     "rfm_frequency_tier_4_pct":0.0,
-    "rfm_frequency_tier_5_pct":0.0192690816,
+    "rfm_frequency_tier_5_pct":0.0065696956,
     "rfm_monetary_tier_1_pct":0.0,
     "rfm_monetary_tier_2_pct":0.0,
-    "rfm_monetary_tier_3_pct":0.9807309184,
+    "rfm_monetary_tier_3_pct":0.9934303044,
     "rfm_monetary_tier_4_pct":0.0,
-    "rfm_monetary_tier_5_pct":0.0192690816,
-    "rfm_score_tier_1_pct":0.2005484525,
-    "rfm_score_tier_2_pct":0.1995171743,
-    "rfm_score_tier_3_pct":0.1988609064,
-    "rfm_score_tier_4_pct":0.2013043325,
-    "rfm_score_tier_5_pct":0.1997691343,
+    "rfm_monetary_tier_5_pct":0.0065696956,
+    "rfm_score_tier_1_pct":0.2008693305,
+    "rfm_score_tier_2_pct":0.2002940383,
+    "rfm_score_tier_3_pct":0.1992215799,
+    "rfm_score_tier_4_pct":0.1999034077,
+    "rfm_score_tier_5_pct":0.1997116436,
     "activity_type_referral_count":0.0,
     "activity_type_referral_completion_rate":0.0,
     "activity_type_upload_receipts_count":0.0,
     "activity_type_upload_receipts_completion_rate":0.0,
-    "status_voided_rate":0.1017939371,
-    "status_pending_rate":0.0014581734,
-    "status_reject_rate":0.0015541059,
-    "new_user_share":0.3300340486,
-    "returning_user_share":0.6699659514,
-    "gmv_per_active":4018.2194156307,
-    "transactions_per_active":8.2540185288,
-    "points_per_completion":1.0763380124,
-    "reward_efficiency":0.9290600807,
-    "active_users_wow_pct":-0.3232409839,
-    "active_users_mom_pct":-0.6460978002,
-    "active_users_zscore":-1.4783859221,
-    "active_users_volatility":0.3847000151,
-    "gmv_net_wow_pct":0.111815734,
-    "gmv_net_mom_pct":-0.1109500615,
-    "gmv_net_zscore":-0.7375663048,
-    "gmv_net_volatility":0.2128368309,
-    "transaction_count_wow_pct":0.1575405594,
-    "transaction_count_mom_pct":-0.1425022416,
-    "transaction_count_zscore":-0.4143561171,
-    "transaction_count_volatility":0.1467653403,
-    "activity_completion_rate_wow_pct":0.0621624118,
-    "activity_completion_rate_mom_pct":0.2159878065,
-    "activity_completion_rate_zscore":1.5978237785,
-    "activity_completion_rate_volatility":0.0966363009,
-    "activity_redeem_rate_wow_pct":0.0623136574,
-    "activity_redeem_rate_mom_pct":0.2178047471,
-    "activity_redeem_rate_zscore":1.5950689949,
-    "activity_redeem_rate_volatility":0.0976098766,
-    "reward_efficiency_wow_pct":0.0011821225,
-    "reward_efficiency_mom_pct":0.0123738946,
-    "reward_efficiency_zscore":1.2040115924,
-    "reward_efficiency_volatility":0.0081810051,
-    "dormant_share_wow_pct":0.0160757324,
-    "dormant_share_mom_pct":0.0646015804,
-    "dormant_share_zscore":1.4590289378,
-    "dormant_share_volatility":0.0320235668,
+    "status_voided_rate":0.1029538455,
+    "status_pending_rate":0.0014754374,
+    "status_reject_rate":0.0016041669,
+    "new_user_share":0.3517672924,
+    "returning_user_share":0.6482327076,
+    "gmv_per_active":8448.7307627262,
+    "transactions_per_active":17.078809403,
+    "points_per_completion":0.0,
+    "reward_efficiency":0.0,
+    "active_users_wow_pct":-0.5650286891,
+    "active_users_mom_pct":-0.8085478388,
+    "active_users_zscore":-1.6388728087,
+    "active_users_volatility":0.4608583845,
+    "gmv_net_wow_pct":0.0754885396,
+    "gmv_net_mom_pct":-0.1246633581,
+    "gmv_net_zscore":-0.78811324,
+    "gmv_net_volatility":0.2236631057,
+    "transaction_count_wow_pct":0.1250403841,
+    "transaction_count_mom_pct":-0.1735924714,
+    "transaction_count_zscore":-0.6109247563,
+    "transaction_count_volatility":0.1438857086,
+    "activity_completion_rate_wow_pct":0.0,
+    "activity_completion_rate_mom_pct":0.0,
+    "activity_completion_rate_zscore":0.0,
+    "activity_completion_rate_volatility":0.0,
+    "activity_redeem_rate_wow_pct":0.0,
+    "activity_redeem_rate_mom_pct":0.0,
+    "activity_redeem_rate_zscore":0.0,
+    "activity_redeem_rate_volatility":0.0,
+    "reward_efficiency_wow_pct":0.0,
+    "reward_efficiency_mom_pct":0.0,
+    "reward_efficiency_zscore":0.0,
+    "reward_efficiency_volatility":0.0,
+    "dormant_share_wow_pct":0.0490380228,
+    "dormant_share_mom_pct":0.1804956852,
+    "dormant_share_zscore":1.601420956,
+    "dormant_share_volatility":0.0814827289,
     "activity_points_per_active_wow_pct":0.0,
-    "label_health_score":51.5948770162,
-    "label_health_class":"Warning",
-    "label_health_class_int":1,
-    "prob_AtRisk":0.0002532031,
-    "prob_Healthy":0.0000861732,
-    "prob_Warning":0.9996606236,
-    "predicted_health_class":"Warning",
-    "predicted_health_score":59.9937230879,
+    "label_health_score":30.0,
+    "label_health_class":"AtRisk",
+    "label_health_class_int":0,
+    "prob_AtRisk":0.867228239,
+    "prob_Healthy":0.02958708,
+    "prob_Warning":0.1031846811,
+    "predicted_health_class":"AtRisk",
+    "predicted_health_score":30.5346240343,
     "drivers":[
       {
         "key":"active_down",
-        "statement":"Active users 30d down -32.3% WoW",
-        "severity":0.3232409839,
+        "statement":"Active users 30d down -56.5% WoW",
+        "severity":0.5650286891,
         "metrics":{
-          "active_users_wow_pct":-0.3232409839
+          "active_users_wow_pct":-0.5650286891
         }
       },
       {
         "key":"model_active_users_wow_pct",
-        "statement":"Model-highlighted signal: active_users_wow_pct down -32.3%",
-        "severity":0.0633380517,
+        "statement":"Model-highlighted signal: active_users_wow_pct down -56.5%",
+        "severity":0.1289083799,
         "metrics":{
-          "active_users_wow_pct":-0.3232409839,
-          "importance":0.1959468474
+          "active_users_wow_pct":-0.5650286891,
+          "importance":0.2281448401
         }
       },
       {
         "key":"model_gmv_net_wow_pct",
-        "statement":"Model-highlighted signal: gmv_net_wow_pct up +11.2%",
-        "severity":0.0179782416,
+        "statement":"Model-highlighted signal: gmv_net_wow_pct up +7.5%",
+        "severity":0.0126109275,
         "metrics":{
-          "gmv_net_wow_pct":0.111815734,
-          "importance":0.1607845419
+          "gmv_net_wow_pct":0.0754885396,
+          "importance":0.1670575099
         }
       },
       {
         "key":"model_transaction_count_wow_pct",
-        "statement":"Model-highlighted signal: transaction_count_wow_pct up +15.8%",
-        "severity":0.0113373459,
+        "statement":"Model-highlighted signal: transaction_count_wow_pct up +12.5%",
+        "severity":0.0108055575,
         "metrics":{
-          "transaction_count_wow_pct":0.1575405594,
-          "importance":0.0719646165
+          "transaction_count_wow_pct":0.1250403841,
+          "importance":0.0864165412
         }
       }
     ],
@@ -580,49 +1064,49 @@
     ],
     "payload":{
       "brand_id":"see-chan",
-      "window_end_date":"2026-01-29 00:00:00+00:00",
+      "window_end_date":"2026-01-28 00:00:00+00:00",
       "window_size":"30d",
-      "predicted_health_class":"Warning",
-      "predicted_health_score":59.9937230879,
+      "predicted_health_class":"AtRisk",
+      "predicted_health_score":30.5346240343,
       "probabilities":{
-        "AtRisk":0.0002532031,
-        "Healthy":0.0000861732,
-        "Warning":0.9996606236
+        "AtRisk":0.867228239,
+        "Healthy":0.02958708,
+        "Warning":0.1031846811
       },
       "drivers":[
         {
           "key":"active_down",
-          "statement":"Active users 30d down -32.3% WoW",
-          "severity":0.3232409839,
+          "statement":"Active users 30d down -56.5% WoW",
+          "severity":0.5650286891,
           "metrics":{
-            "active_users_wow_pct":-0.3232409839
+            "active_users_wow_pct":-0.5650286891
           }
         },
         {
           "key":"model_active_users_wow_pct",
-          "statement":"Model-highlighted signal: active_users_wow_pct down -32.3%",
-          "severity":0.0633380517,
+          "statement":"Model-highlighted signal: active_users_wow_pct down -56.5%",
+          "severity":0.1289083799,
           "metrics":{
-            "active_users_wow_pct":-0.3232409839,
-            "importance":0.1959468474
+            "active_users_wow_pct":-0.5650286891,
+            "importance":0.2281448401
           }
         },
         {
           "key":"model_gmv_net_wow_pct",
-          "statement":"Model-highlighted signal: gmv_net_wow_pct up +11.2%",
-          "severity":0.0179782416,
+          "statement":"Model-highlighted signal: gmv_net_wow_pct up +7.5%",
+          "severity":0.0126109275,
           "metrics":{
-            "gmv_net_wow_pct":0.111815734,
-            "importance":0.1607845419
+            "gmv_net_wow_pct":0.0754885396,
+            "importance":0.1670575099
           }
         },
         {
           "key":"model_transaction_count_wow_pct",
-          "statement":"Model-highlighted signal: transaction_count_wow_pct up +15.8%",
-          "severity":0.0113373459,
+          "statement":"Model-highlighted signal: transaction_count_wow_pct up +12.5%",
+          "severity":0.0108055575,
           "metrics":{
-            "transaction_count_wow_pct":0.1575405594,
-            "importance":0.0719646165
+            "transaction_count_wow_pct":0.1250403841,
+            "importance":0.0864165412
           }
         }
       ],
@@ -759,28 +1243,28 @@
     "label_health_score":100.0,
     "label_health_class":"Healthy",
     "label_health_class_int":2,
-    "prob_AtRisk":0.0000000004,
-    "prob_Healthy":0.9999992228,
-    "prob_Warning":0.0000007768,
+    "prob_AtRisk":0.0033669898,
+    "prob_Healthy":0.8675590358,
+    "prob_Warning":0.1290739744,
     "predicted_health_class":"Healthy",
-    "predicted_health_score":89.9999766685,
+    "predicted_health_score":85.9089264316,
     "drivers":[
       {
         "key":"model_active_users_wow_pct",
         "statement":"Model-highlighted signal: active_users_wow_pct up +13.4%",
-        "severity":0.0263212183,
+        "severity":0.0306463218,
         "metrics":{
           "active_users_wow_pct":0.1343283582,
-          "importance":0.1959468474
+          "importance":0.2281448401
         }
       },
       {
         "key":"model_reward_efficiency_zscore",
         "statement":"Model-highlighted anomaly: reward_efficiency_zscore=1.10",
-        "severity":0.0136851728,
+        "severity":0.0013175803,
         "metrics":{
           "reward_efficiency_zscore":1.1004054403,
-          "importance":-0.0124364823
+          "importance":-0.0011973589
         }
       }
     ],
@@ -794,241 +1278,29 @@
       "window_end_date":"2026-02-01 00:00:00+00:00",
       "window_size":"30d",
       "predicted_health_class":"Healthy",
-      "predicted_health_score":89.9999766685,
+      "predicted_health_score":85.9089264316,
       "probabilities":{
-        "AtRisk":0.0000000004,
-        "Healthy":0.9999992228,
-        "Warning":0.0000007768
+        "AtRisk":0.0033669898,
+        "Healthy":0.8675590358,
+        "Warning":0.1290739744
       },
       "drivers":[
         {
           "key":"model_active_users_wow_pct",
           "statement":"Model-highlighted signal: active_users_wow_pct up +13.4%",
-          "severity":0.0263212183,
+          "severity":0.0306463218,
           "metrics":{
             "active_users_wow_pct":0.1343283582,
-            "importance":0.1959468474
+            "importance":0.2281448401
           }
         },
         {
           "key":"model_reward_efficiency_zscore",
           "statement":"Model-highlighted anomaly: reward_efficiency_zscore=1.10",
-          "severity":0.0136851728,
+          "severity":0.0013175803,
           "metrics":{
             "reward_efficiency_zscore":1.1004054403,
-            "importance":-0.0124364823
-          }
-        }
-      ],
-      "suggested_actions":[
-        "Launch dormant-user reactivation campaigns with segmented incentives.",
-        "Reduce message fatigue via tighter frequency caps and send-time optimization.",
-        "Retarget recently lapsed cohorts with low-friction missions."
-      ]
-    }
-  },
-  {
-    "brand_id":"see-chan",
-    "window_end_date":"2026-02-05T00:00:00.000Z",
-    "window_size":"30d",
-    "window_size_days":30.0,
-    "recency_days_mean":523.2231645475,
-    "recency_days_median":306.0,
-    "recency_days_p90":1017.0,
-    "active_users":14561.0,
-    "new_users":5340.0,
-    "returning_users":9221.0,
-    "dormant_share":0.9636256901,
-    "total_events":104690.0,
-    "total_logins":3100.0,
-    "total_views":30034.0,
-    "avg_events_per_active":7.189753451,
-    "session_proxy_login_to_view":0.1032163548,
-    "activity_events":74656.0,
-    "activity_completed_events":69469.0,
-    "activity_completion_rate":0.9305213245,
-    "activity_points_sum":74185.0,
-    "activity_points_per_active":5.0947737106,
-    "activity_redeem_count":68945.0,
-    "activity_redeem_rate":0.9235024646,
-    "activity_redeem_per_active":4.7349083167,
-    "activity_type_entropy":0.3228739508,
-    "activity_type_top_share":0.9235024646,
-    "activity_type_login_count":3100.0,
-    "activity_type_login_completion_rate":0.0,
-    "activity_type_product_consume_uniquecode_count":68945.0,
-    "activity_type_product_consume_uniquecode_completion_rate":1.0,
-    "activity_type_registration_count":2611.0,
-    "activity_type_registration_completion_rate":0.200689391,
-    "activity_name_entropy":0.0443778135,
-    "activity_name_top_share":0.9924570672,
-    "redeem_user_low_share":0.2831050228,
-    "redeem_user_med_share":0.2307692308,
-    "redeem_user_high_share":0.4861257464,
-    "transaction_count":100963.0,
-    "transaction_success_rate":0.8391985183,
-    "gmv_net":47546847.0,
-    "gmv_sell":21462512.0,
-    "discount_rate":-1.2153439914,
-    "aov_net":470.9333815358,
-    "items_per_transaction":2.144775809,
-    "paid_delay_hours":0.0,
-    "delivered_rate":1.0,
-    "shipped_rate":0.8531400185,
-    "buyers":167.0,
-    "repeat_purchase_rate":0.2395209581,
-    "sku_unique":369.0,
-    "sku_top_share":0.1821624339,
-    "sku_entropy":4.2140660286,
-    "status_success_rate":0.8391985183,
-    "rfm_recency_mean":617.9026355303,
-    "rfm_frequency_mean":0.4844444692,
-    "rfm_monetary_mean":5.095430851,
-    "rfm_score_mean":9.073349069,
-    "rfm_transition_up_share":0.0,
-    "rfm_transition_down_share":0.0,
-    "rfm_dormant_share":0.4000969847,
-    "rfm_recency_tier_1_pct":0.1999345645,
-    "rfm_recency_tier_2_pct":0.2001624202,
-    "rfm_recency_tier_3_pct":0.2017457248,
-    "rfm_recency_tier_4_pct":0.1978809425,
-    "rfm_recency_tier_5_pct":0.200276348,
-    "rfm_frequency_tier_1_pct":0.0,
-    "rfm_frequency_tier_2_pct":0.0,
-    "rfm_frequency_tier_3_pct":0.9812632551,
-    "rfm_frequency_tier_4_pct":0.0,
-    "rfm_frequency_tier_5_pct":0.0187367449,
-    "rfm_monetary_tier_1_pct":0.0,
-    "rfm_monetary_tier_2_pct":0.0,
-    "rfm_monetary_tier_3_pct":0.9812632551,
-    "rfm_monetary_tier_4_pct":0.0,
-    "rfm_monetary_tier_5_pct":0.0187367449,
-    "rfm_score_tier_1_pct":0.1999345645,
-    "rfm_score_tier_2_pct":0.2001624202,
-    "rfm_score_tier_3_pct":0.2017457248,
-    "rfm_score_tier_4_pct":0.1978809425,
-    "rfm_score_tier_5_pct":0.200276348,
-    "activity_type_referral_count":0.0,
-    "activity_type_referral_completion_rate":0.0,
-    "activity_type_upload_receipts_count":0.0,
-    "activity_type_upload_receipts_completion_rate":0.0,
-    "status_voided_rate":0.0957479473,
-    "status_pending_rate":0.0602596991,
-    "status_reject_rate":0.0012380773,
-    "new_user_share":0.366733054,
-    "returning_user_share":0.633266946,
-    "gmv_per_active":3265.355882151,
-    "transactions_per_active":6.9337957558,
-    "points_per_completion":1.0678863954,
-    "reward_efficiency":0.9364165746,
-    "active_users_wow_pct":0.1529812337,
-    "active_users_mom_pct":-0.4625747398,
-    "active_users_zscore":-1.0165628583,
-    "active_users_volatility":0.4330024071,
-    "gmv_net_wow_pct":-0.0630441835,
-    "gmv_net_mom_pct":-0.1889212879,
-    "gmv_net_zscore":-0.7754003154,
-    "gmv_net_volatility":0.2281170109,
-    "transaction_count_wow_pct":-0.0314370683,
-    "transaction_count_mom_pct":-0.1772294252,
-    "transaction_count_zscore":-0.6797920636,
-    "transaction_count_volatility":0.1406003916,
-    "activity_completion_rate_wow_pct":-0.0087136885,
-    "activity_completion_rate_mom_pct":0.1346414635,
-    "activity_completion_rate_zscore":1.1430445688,
-    "activity_completion_rate_volatility":0.0973675762,
-    "activity_redeem_rate_wow_pct":-0.0077748394,
-    "activity_redeem_rate_mom_pct":0.1367110594,
-    "activity_redeem_rate_zscore":1.1493022994,
-    "activity_redeem_rate_volatility":0.0984263403,
-    "reward_efficiency_wow_pct":0.0079182111,
-    "reward_efficiency_mom_pct":0.0152355833,
-    "reward_efficiency_zscore":1.5477213002,
-    "reward_efficiency_volatility":0.0093179381,
-    "dormant_share_wow_pct":-0.0048386042,
-    "dormant_share_mom_pct":0.0345487335,
-    "dormant_share_zscore":1.0154601221,
-    "dormant_share_volatility":0.0314009709,
-    "activity_points_per_active_wow_pct":0.0,
-    "label_health_score":92.0,
-    "label_health_class":"Healthy",
-    "label_health_class_int":2,
-    "prob_AtRisk":0.0000000074,
-    "prob_Healthy":0.9999925007,
-    "prob_Warning":0.0000074919,
-    "predicted_health_class":"Healthy",
-    "predicted_health_score":89.9997747621,
-    "drivers":[
-      {
-        "key":"model_active_users_zscore",
-        "statement":"Model-highlighted anomaly: active_users_zscore=-1.02",
-        "severity":0.0686112243,
-        "metrics":{
-          "active_users_zscore":-1.0165628583,
-          "importance":0.0674933417
-        }
-      },
-      {
-        "key":"model_active_users_wow_pct",
-        "statement":"Model-highlighted signal: active_users_wow_pct up +15.3%",
-        "severity":0.0299761904,
-        "metrics":{
-          "active_users_wow_pct":0.1529812337,
-          "importance":0.1959468474
-        }
-      },
-      {
-        "key":"model_gmv_net_wow_pct",
-        "statement":"Model-highlighted signal: gmv_net_wow_pct down -6.3%",
-        "severity":0.0101365302,
-        "metrics":{
-          "gmv_net_wow_pct":-0.0630441835,
-          "importance":0.1607845419
-        }
-      }
-    ],
-    "suggested_actions":[
-      "Launch dormant-user reactivation campaigns with segmented incentives.",
-      "Reduce message fatigue via tighter frequency caps and send-time optimization.",
-      "Retarget recently lapsed cohorts with low-friction missions."
-    ],
-    "payload":{
-      "brand_id":"see-chan",
-      "window_end_date":"2026-02-05 00:00:00+00:00",
-      "window_size":"30d",
-      "predicted_health_class":"Healthy",
-      "predicted_health_score":89.9997747621,
-      "probabilities":{
-        "AtRisk":0.0000000074,
-        "Healthy":0.9999925007,
-        "Warning":0.0000074919
-      },
-      "drivers":[
-        {
-          "key":"model_active_users_zscore",
-          "statement":"Model-highlighted anomaly: active_users_zscore=-1.02",
-          "severity":0.0686112243,
-          "metrics":{
-            "active_users_zscore":-1.0165628583,
-            "importance":0.0674933417
-          }
-        },
-        {
-          "key":"model_active_users_wow_pct",
-          "statement":"Model-highlighted signal: active_users_wow_pct up +15.3%",
-          "severity":0.0299761904,
-          "metrics":{
-            "active_users_wow_pct":0.1529812337,
-            "importance":0.1959468474
-          }
-        },
-        {
-          "key":"model_gmv_net_wow_pct",
-          "statement":"Model-highlighted signal: gmv_net_wow_pct down -6.3%",
-          "severity":0.0101365302,
-          "metrics":{
-            "gmv_net_wow_pct":-0.0630441835,
-            "importance":0.1607845419
+            "importance":-0.0011973589
           }
         }
       ],
@@ -1165,11 +1437,11 @@
     "label_health_score":74.2105263158,
     "label_health_class":"Healthy",
     "label_health_class_int":2,
-    "prob_AtRisk":0.0000003989,
-    "prob_Healthy":0.9986672494,
-    "prob_Warning":0.0013323517,
+    "prob_AtRisk":0.0659912751,
+    "prob_Healthy":0.6199184711,
+    "prob_Warning":0.3140902538,
     "predicted_health_class":"Healthy",
-    "predicted_health_score":89.9600035207,
+    "predicted_health_score":76.2878595054,
     "drivers":[
       {
         "key":"active_down",
@@ -1182,19 +1454,19 @@
       {
         "key":"model_active_users_wow_pct",
         "statement":"Model-highlighted signal: active_users_wow_pct down -18.4%",
-        "severity":0.0360954719,
+        "severity":0.0420266811,
         "metrics":{
           "active_users_wow_pct":-0.1842105263,
-          "importance":0.1959468474
+          "importance":0.2281448401
         }
       },
       {
         "key":"model_reward_efficiency_zscore",
         "statement":"Model-highlighted anomaly: reward_efficiency_zscore=1.04",
-        "severity":0.0129537952,
+        "severity":0.0012471647,
         "metrics":{
           "reward_efficiency_zscore":1.041596399,
-          "importance":-0.0124364823
+          "importance":-0.0011973589
         }
       }
     ],
@@ -1208,11 +1480,11 @@
       "window_end_date":"2026-02-08 00:00:00+00:00",
       "window_size":"30d",
       "predicted_health_class":"Healthy",
-      "predicted_health_score":89.9600035207,
+      "predicted_health_score":76.2878595054,
       "probabilities":{
-        "AtRisk":0.0000003989,
-        "Healthy":0.9986672494,
-        "Warning":0.0013323517
+        "AtRisk":0.0659912751,
+        "Healthy":0.6199184711,
+        "Warning":0.3140902538
       },
       "drivers":[
         {
@@ -1226,19 +1498,19 @@
         {
           "key":"model_active_users_wow_pct",
           "statement":"Model-highlighted signal: active_users_wow_pct down -18.4%",
-          "severity":0.0360954719,
+          "severity":0.0420266811,
           "metrics":{
             "active_users_wow_pct":-0.1842105263,
-            "importance":0.1959468474
+            "importance":0.2281448401
           }
         },
         {
           "key":"model_reward_efficiency_zscore",
           "statement":"Model-highlighted anomaly: reward_efficiency_zscore=1.04",
-          "severity":0.0129537952,
+          "severity":0.0012471647,
           "metrics":{
             "reward_efficiency_zscore":1.041596399,
-            "importance":-0.0124364823
+            "importance":-0.0011973589
           }
         }
       ],
@@ -1246,248 +1518,6 @@
         "Launch dormant-user reactivation campaigns with segmented incentives.",
         "Reduce message fatigue via tighter frequency caps and send-time optimization.",
         "Retarget recently lapsed cohorts with low-friction missions."
-      ]
-    }
-  },
-  {
-    "brand_id":"see-chan",
-    "window_end_date":"2026-02-12T00:00:00.000Z",
-    "window_size":"30d",
-    "window_size_days":30.0,
-    "recency_days_mean":529.8466488377,
-    "recency_days_median":313.0,
-    "recency_days_p90":1024.0,
-    "active_users":12918.0,
-    "new_users":4544.0,
-    "returning_users":8374.0,
-    "dormant_share":0.9677431437,
-    "total_events":101736.0,
-    "total_logins":3002.0,
-    "total_views":23847.0,
-    "avg_events_per_active":7.8755225267,
-    "session_proxy_login_to_view":0.1258858557,
-    "activity_events":77889.0,
-    "activity_completed_events":73205.0,
-    "activity_completion_rate":0.9398631386,
-    "activity_points_sum":78335.0,
-    "activity_points_per_active":6.064019198,
-    "activity_redeem_count":72635.0,
-    "activity_redeem_rate":0.932545032,
-    "activity_redeem_per_active":5.6227744233,
-    "activity_type_entropy":0.2930720229,
-    "activity_type_top_share":0.932545032,
-    "activity_type_login_count":3002.0,
-    "activity_type_login_completion_rate":0.0,
-    "activity_type_product_consume_uniquecode_count":72635.0,
-    "activity_type_product_consume_uniquecode_completion_rate":1.0,
-    "activity_type_registration_count":2252.0,
-    "activity_type_registration_completion_rate":0.2531083481,
-    "activity_name_entropy":0.0455616859,
-    "activity_name_top_share":0.9922136466,
-    "redeem_user_low_share":0.2914304768,
-    "redeem_user_med_share":0.2197399133,
-    "redeem_user_high_share":0.4888296099,
-    "transaction_count":78860.0,
-    "transaction_success_rate":0.8218995689,
-    "gmv_net":37381282.0,
-    "gmv_sell":16576761.0,
-    "discount_rate":-1.2550413799,
-    "aov_net":474.0208217094,
-    "items_per_transaction":2.134909967,
-    "paid_delay_hours":0.0,
-    "delivered_rate":1.0,
-    "shipped_rate":0.836908987,
-    "buyers":128.0,
-    "repeat_purchase_rate":0.1953125,
-    "sku_unique":364.0,
-    "sku_top_share":0.178481698,
-    "sku_entropy":4.2394161224,
-    "status_success_rate":0.8218995689,
-    "rfm_recency_mean":624.3507511278,
-    "rfm_frequency_mean":0.5012686849,
-    "rfm_monetary_mean":4.9895176888,
-    "rfm_score_mean":9.0738455699,
-    "rfm_transition_up_share":0.0,
-    "rfm_transition_down_share":0.0,
-    "rfm_dormant_share":0.3998510884,
-    "rfm_recency_tier_1_pct":0.1998189702,
-    "rfm_recency_tier_2_pct":0.2000321182,
-    "rfm_recency_tier_3_pct":0.201477437,
-    "rfm_recency_tier_4_pct":0.1987970276,
-    "rfm_recency_tier_5_pct":0.1998744471,
-    "rfm_frequency_tier_1_pct":0.0,
-    "rfm_frequency_tier_2_pct":0.0,
-    "rfm_frequency_tier_3_pct":0.9812575733,
-    "rfm_frequency_tier_4_pct":0.0,
-    "rfm_frequency_tier_5_pct":0.0187424267,
-    "rfm_monetary_tier_1_pct":0.0,
-    "rfm_monetary_tier_2_pct":0.0,
-    "rfm_monetary_tier_3_pct":0.9812575733,
-    "rfm_monetary_tier_4_pct":0.0,
-    "rfm_monetary_tier_5_pct":0.0187424267,
-    "rfm_score_tier_1_pct":0.1998189702,
-    "rfm_score_tier_2_pct":0.2000321182,
-    "rfm_score_tier_3_pct":0.201477437,
-    "rfm_score_tier_4_pct":0.1987970276,
-    "rfm_score_tier_5_pct":0.1998744471,
-    "activity_type_referral_count":0.0,
-    "activity_type_referral_completion_rate":0.0,
-    "activity_type_upload_receipts_count":0.0,
-    "activity_type_upload_receipts_completion_rate":0.0,
-    "status_voided_rate":0.0957773269,
-    "status_pending_rate":0.0767816383,
-    "status_reject_rate":0.0010778595,
-    "new_user_share":0.351757238,
-    "returning_user_share":0.648242762,
-    "gmv_per_active":2893.7360272488,
-    "transactions_per_active":6.1046601641,
-    "points_per_completion":1.0700771805,
-    "reward_efficiency":0.9345001021,
-    "active_users_wow_pct":-0.1128356569,
-    "active_users_mom_pct":-0.353259237,
-    "active_users_zscore":-0.9550910659,
-    "active_users_volatility":0.4407139788,
-    "gmv_net_wow_pct":-0.2138010329,
-    "gmv_net_mom_pct":-0.2070288605,
-    "gmv_net_zscore":-1.3129051515,
-    "gmv_net_volatility":0.2190533113,
-    "transaction_count_wow_pct":-0.2189217832,
-    "transaction_count_mom_pct":-0.1750959738,
-    "transaction_count_zscore":-1.4823155598,
-    "transaction_count_volatility":0.1711221377,
-    "activity_completion_rate_wow_pct":0.0100393337,
-    "activity_completion_rate_mom_pct":0.0802862232,
-    "activity_completion_rate_zscore":1.0433550409,
-    "activity_completion_rate_volatility":0.0823092528,
-    "activity_redeem_rate_wow_pct":0.0097916007,
-    "activity_redeem_rate_mom_pct":0.0813617104,
-    "activity_redeem_rate_zscore":1.044995103,
-    "activity_redeem_rate_volatility":0.0832532906,
-    "reward_efficiency_wow_pct":-0.0020466024,
-    "reward_efficiency_mom_pct":0.008305892,
-    "reward_efficiency_zscore":1.0758888355,
-    "reward_efficiency_volatility":0.0084931881,
-    "dormant_share_wow_pct":0.0042728766,
-    "dormant_share_mom_pct":0.0191206334,
-    "dormant_share_zscore":0.9536907862,
-    "dormant_share_volatility":0.0268874727,
-    "activity_points_per_active_wow_pct":0.0,
-    "label_health_score":22.843923596,
-    "label_health_class":"AtRisk",
-    "label_health_class_int":0,
-    "prob_AtRisk":0.9999201818,
-    "prob_Healthy":0.0000114472,
-    "prob_Warning":0.000068371,
-    "predicted_health_class":"AtRisk",
-    "predicted_health_score":25.0031370552,
-    "drivers":[
-      {
-        "key":"transactions_down",
-        "statement":"Transactions down -21.9% WoW",
-        "severity":0.2189217832,
-        "metrics":{
-          "transaction_count_wow_pct":-0.2189217832
-        }
-      },
-      {
-        "key":"gmv_down",
-        "statement":"GMV down -21.4% WoW",
-        "severity":0.2138010329,
-        "metrics":{
-          "gmv_net_wow_pct":-0.2138010329
-        }
-      },
-      {
-        "key":"active_down",
-        "statement":"Active users 30d down -11.3% WoW",
-        "severity":0.1128356569,
-        "metrics":{
-          "active_users_wow_pct":-0.1128356569
-        }
-      },
-      {
-        "key":"model_gmv_net_wow_pct",
-        "statement":"Model-highlighted signal: gmv_net_wow_pct down -21.4%",
-        "severity":0.0343759011,
-        "metrics":{
-          "gmv_net_wow_pct":-0.2138010329,
-          "importance":0.1607845419
-        }
-      },
-      {
-        "key":"model_active_users_wow_pct",
-        "statement":"Model-highlighted signal: active_users_wow_pct down -11.3%",
-        "severity":0.0221097912,
-        "metrics":{
-          "active_users_wow_pct":-0.1128356569,
-          "importance":0.1959468474
-        }
-      }
-    ],
-    "suggested_actions":[
-      "Introduce repeat-purchase triggers based on product replenishment cadence.",
-      "Activate personalized offer ladders for near-churn buyers.",
-      "Prioritize retention promotions for buyers with recent order decline."
-    ],
-    "payload":{
-      "brand_id":"see-chan",
-      "window_end_date":"2026-02-12 00:00:00+00:00",
-      "window_size":"30d",
-      "predicted_health_class":"AtRisk",
-      "predicted_health_score":25.0031370552,
-      "probabilities":{
-        "AtRisk":0.9999201818,
-        "Healthy":0.0000114472,
-        "Warning":0.000068371
-      },
-      "drivers":[
-        {
-          "key":"transactions_down",
-          "statement":"Transactions down -21.9% WoW",
-          "severity":0.2189217832,
-          "metrics":{
-            "transaction_count_wow_pct":-0.2189217832
-          }
-        },
-        {
-          "key":"gmv_down",
-          "statement":"GMV down -21.4% WoW",
-          "severity":0.2138010329,
-          "metrics":{
-            "gmv_net_wow_pct":-0.2138010329
-          }
-        },
-        {
-          "key":"active_down",
-          "statement":"Active users 30d down -11.3% WoW",
-          "severity":0.1128356569,
-          "metrics":{
-            "active_users_wow_pct":-0.1128356569
-          }
-        },
-        {
-          "key":"model_gmv_net_wow_pct",
-          "statement":"Model-highlighted signal: gmv_net_wow_pct down -21.4%",
-          "severity":0.0343759011,
-          "metrics":{
-            "gmv_net_wow_pct":-0.2138010329,
-            "importance":0.1607845419
-          }
-        },
-        {
-          "key":"model_active_users_wow_pct",
-          "statement":"Model-highlighted signal: active_users_wow_pct down -11.3%",
-          "severity":0.0221097912,
-          "metrics":{
-            "active_users_wow_pct":-0.1128356569,
-            "importance":0.1959468474
-          }
-        }
-      ],
-      "suggested_actions":[
-        "Introduce repeat-purchase triggers based on product replenishment cadence.",
-        "Activate personalized offer ladders for near-churn buyers.",
-        "Prioritize retention promotions for buyers with recent order decline."
       ]
     }
   },
@@ -1617,11 +1647,11 @@
     "label_health_score":49.7580645161,
     "label_health_class":"Warning",
     "label_health_class_int":1,
-    "prob_AtRisk":0.0001542192,
-    "prob_Healthy":0.0000766047,
-    "prob_Warning":0.9997691761,
+    "prob_AtRisk":0.2814209462,
+    "prob_Healthy":0.0415011988,
+    "prob_Warning":0.6770778551,
     "predicted_health_class":"Warning",
-    "predicted_health_score":59.9969004672,
+    "predicted_health_score":51.3953028469,
     "drivers":[
       {
         "key":"active_down",
@@ -1632,30 +1662,30 @@
         }
       },
       {
-        "key":"model_active_users_zscore",
-        "statement":"Model-highlighted anomaly: active_users_zscore=-2.09",
-        "severity":0.1413931085,
+        "key":"model_dormant_share_zscore",
+        "statement":"Model-highlighted anomaly: dormant_share_zscore=2.11",
+        "severity":0.0914251293,
         "metrics":{
-          "active_users_zscore":-2.0949193662,
-          "importance":0.0674933417
+          "dormant_share_zscore":2.1106124424,
+          "importance":0.0433168721
         }
       },
       {
         "key":"model_active_users_wow_pct",
         "statement":"Model-highlighted signal: active_users_wow_pct down -24.2%",
-        "severity":0.0474064953,
+        "severity":0.0551963323,
         "metrics":{
           "active_users_wow_pct":-0.2419354839,
-          "importance":0.1959468474
+          "importance":0.2281448401
         }
       },
       {
-        "key":"model_dormant_share_zscore",
-        "statement":"Model-highlighted anomaly: dormant_share_zscore=2.11",
-        "severity":0.0371718744,
+        "key":"model_active_users_zscore",
+        "statement":"Model-highlighted anomaly: active_users_zscore=-2.09",
+        "severity":0.0470271318,
         "metrics":{
-          "dormant_share_zscore":2.1106124424,
-          "importance":0.0176118901
+          "active_users_zscore":-2.0949193662,
+          "importance":0.0224481823
         }
       }
     ],
@@ -1669,11 +1699,11 @@
       "window_end_date":"2026-02-15 00:00:00+00:00",
       "window_size":"30d",
       "predicted_health_class":"Warning",
-      "predicted_health_score":59.9969004672,
+      "predicted_health_score":51.3953028469,
       "probabilities":{
-        "AtRisk":0.0001542192,
-        "Healthy":0.0000766047,
-        "Warning":0.9997691761
+        "AtRisk":0.2814209462,
+        "Healthy":0.0415011988,
+        "Warning":0.6770778551
       },
       "drivers":[
         {
@@ -1685,30 +1715,30 @@
           }
         },
         {
-          "key":"model_active_users_zscore",
-          "statement":"Model-highlighted anomaly: active_users_zscore=-2.09",
-          "severity":0.1413931085,
+          "key":"model_dormant_share_zscore",
+          "statement":"Model-highlighted anomaly: dormant_share_zscore=2.11",
+          "severity":0.0914251293,
           "metrics":{
-            "active_users_zscore":-2.0949193662,
-            "importance":0.0674933417
+            "dormant_share_zscore":2.1106124424,
+            "importance":0.0433168721
           }
         },
         {
           "key":"model_active_users_wow_pct",
           "statement":"Model-highlighted signal: active_users_wow_pct down -24.2%",
-          "severity":0.0474064953,
+          "severity":0.0551963323,
           "metrics":{
             "active_users_wow_pct":-0.2419354839,
-            "importance":0.1959468474
+            "importance":0.2281448401
           }
         },
         {
-          "key":"model_dormant_share_zscore",
-          "statement":"Model-highlighted anomaly: dormant_share_zscore=2.11",
-          "severity":0.0371718744,
+          "key":"model_active_users_zscore",
+          "statement":"Model-highlighted anomaly: active_users_zscore=-2.09",
+          "severity":0.0470271318,
           "metrics":{
-            "dormant_share_zscore":2.1106124424,
-            "importance":0.0176118901
+            "active_users_zscore":-2.0949193662,
+            "importance":0.0224481823
           }
         }
       ],
