@@ -2,6 +2,5 @@
 
 ## Commerce Join Guardrails
 
-- brand=c-vit coverage_norm=0.0000 time_overlap=True commerce_joinable=False
-  WARNING: join coverage/time overlap failed for c-vit; using purchase-only commerce metrics + purchase_items-only SKU metrics (no cross-table join).
+- brand=c-vit coverage_norm=1.0000 time_overlap=True commerce_joinable=True
 - brand=see-chan coverage_norm=0.9839 time_overlap=True commerce_joinable=True

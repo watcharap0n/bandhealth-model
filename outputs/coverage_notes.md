@@ -3,8 +3,8 @@
 ## c-vit
 
 - Canonical join key for `purchase ↔ purchase_items` is `transaction_id`.
-- transaction_id normalized coverage: 0.0000 (invalid)
-- user_id normalized coverage: 0.0000 (unreliable for this relationship; ignored for joins)
+- transaction_id normalized coverage: 1.0000 (valid)
+- user_id normalized coverage: 1.0000 (unreliable for this relationship; ignored for joins)
 
 ## see-chan
 

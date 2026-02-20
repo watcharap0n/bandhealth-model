@@ -13,6 +13,7 @@ The pipeline:
 ## 1) Project structure
 
 - `run_pipeline.py`: end-to-end pipeline entrypoint
+- `notebooks/databricks/`: Azure Databricks + MLflow notebook pack
 - `src/data_load.py`: loading, validation, join diagnostics
 - `src/features.py`: feature engineering
 - `src/segments.py`: canonical segment KPIs
@@ -91,6 +92,12 @@ If you add new brand/app_ids, update `BRAND_APP_ID_FILTERS` in:
 - `run_pipeline.py`
 
 ## 4) Run pipeline
+
+Full CLI argument table and usage examples are documented in:
+- `RUN_PIPELINE_INSTRUCTIONS.md`
+
+Databricks notebook instructions are documented in:
+- `notebooks/databricks/README.md`
 
 ### 4.1 Quick sampling mode (fastest, Mac-safe)
 
