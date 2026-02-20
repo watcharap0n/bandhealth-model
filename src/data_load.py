@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
@@ -55,9 +56,71 @@ class JoinDiagnostics:
 # Loading helpers
 # -----------------------------
 
-def list_brands(dataset_root: str | Path) -> List[str]:
+def list_brands(
+    dataset_root: str | Path,
+    brand_app_ids: Optional[Mapping[str, Sequence[int | str]]] = None,
+) -> List[str]:
+    if brand_app_ids:
+        return sorted(str(k) for k in brand_app_ids.keys())
     root = Path(dataset_root)
     return sorted([p.name for p in root.iterdir() if p.is_dir()])
+
+
+def list_subsets(dataset_root: str | Path) -> List[str]:
+    root = Path(dataset_root)
+    return sorted([p.name for p in root.iterdir() if p.is_dir()])
+
+
+def _subset_paths(dataset_root: str | Path) -> List[Path]:
+    root = Path(dataset_root)
+    return sorted([p for p in root.iterdir() if p.is_dir()])
+
+
+def _app_to_brand_map(brand_app_ids: Optional[Mapping[str, Sequence[int | str]]]) -> Dict[int, str]:
+    out: Dict[int, str] = {}
+    if not brand_app_ids:
+        return out
+
+    for brand_id, app_ids in brand_app_ids.items():
+        for app_id in app_ids:
+            aid = int(app_id)
+            prev = out.get(aid)
+            if prev is not None and prev != str(brand_id):
+                raise ValueError(f"app_id {aid} is mapped to multiple brands: {prev}, {brand_id}")
+            out[aid] = str(brand_id)
+    return out
+
+
+def _infer_brand_from_subset_name(
+    subset_name: str,
+    app_to_brand: Mapping[int, str],
+    brand_app_ids: Optional[Mapping[str, Sequence[int | str]]],
+) -> Optional[str]:
+    name = str(subset_name).strip()
+    if not name:
+        return None
+
+    if brand_app_ids and name in brand_app_ids:
+        return str(name)
+
+    try:
+        numeric_name = int(name)
+    except (TypeError, ValueError):
+        numeric_name = None
+    if numeric_name is not None and numeric_name in app_to_brand:
+        return app_to_brand[numeric_name]
+
+    # Fallback for names like "subset_1993744540760190".
+    for token in re.split(r"[^0-9]+", name):
+        if not token:
+            continue
+        try:
+            aid = int(token)
+        except ValueError:
+            continue
+        if aid in app_to_brand:
+            return app_to_brand[aid]
+    return None
 
 
 def _available_columns(parquet_path: str | Path) -> List[str]:
@@ -105,42 +168,95 @@ def _filter_brand_app_id(
     return df.loc[app_numeric.isin(list(allowed_ids))].copy()
 
 
+def _load_table_multi_subset(
+    dataset_root: str | Path,
+    file_name: str,
+    columns: Optional[Sequence[str]],
+    brand_app_ids: Optional[Mapping[str, Sequence[int | str]]],
+) -> pd.DataFrame:
+    subset_paths = _subset_paths(dataset_root)
+    app_to_brand = _app_to_brand_map(brand_app_ids)
+    use_app_map = bool(app_to_brand)
+
+    requested = list(columns) if columns is not None else None
+    read_cols = requested
+    if use_app_map and requested is not None and "app_id" not in requested:
+        read_cols = requested + ["app_id"]
+
+    frames: List[pd.DataFrame] = []
+    for subset_path in subset_paths:
+        fp = subset_path / file_name
+        if not fp.exists():
+            continue
+        df = safe_read_parquet(fp, columns=read_cols)
+        if df.empty:
+            continue
+
+        subset_brand = _infer_brand_from_subset_name(
+            subset_name=subset_path.name,
+            app_to_brand=app_to_brand,
+            brand_app_ids=brand_app_ids,
+        ) if use_app_map else subset_path.name
+
+        if use_app_map:
+            if "app_id" in df.columns:
+                app_numeric = pd.to_numeric(df["app_id"], errors="coerce").astype("Int64")
+                mapped_brand = app_numeric.map(app_to_brand)
+                mask = mapped_brand.notna()
+                if mask.any():
+                    df = df.loc[mask].copy()
+                    df["brand_id"] = mapped_brand.loc[mask].astype(str).to_numpy()
+                elif subset_brand is not None:
+                    # Fallback when app_id values are missing/unparseable but subset is app- or brand-scoped.
+                    df = df.copy()
+                    df["brand_id"] = str(subset_brand)
+                else:
+                    continue
+            elif subset_brand is not None:
+                # Fallback when file schema omits app_id but subset scope is deterministic.
+                df = df.copy()
+                df["brand_id"] = str(subset_brand)
+            else:
+                continue
+        else:
+            df = df.copy()
+            df["brand_id"] = str(subset_brand)
+
+        frames.append(df)
+
+    if frames:
+        return pd.concat(frames, ignore_index=True)
+
+    cols = list(columns) if columns is not None else []
+    if use_app_map and ("app_id" not in cols):
+        cols.append("app_id")
+    if "brand_id" not in cols:
+        cols.append("brand_id")
+    return pd.DataFrame(columns=cols)
+
+
 def load_tables(
     dataset_root: str | Path,
     table_files: Sequence[str] = TABLE_FILES,
     columns_map: Optional[Mapping[str, Sequence[str]]] = None,
     brand_app_ids: Optional[Mapping[str, Sequence[int | str]]] = None,
 ) -> Dict[str, pd.DataFrame]:
-    """Load all tables across brands; add brand_id to each row.
+    """Load tables across all subset folders under dataset_root.
 
-    Returns a dict keyed by table stem (e.g., "purchase") with brand-concatenated frames.
+    If brand_app_ids is provided, rows are assigned to brand_id by app_id mapping
+    across all subset folders. This supports mixed app_ids inside any subset folder.
     """
-    root = Path(dataset_root)
-    brands = list_brands(root)
-
-    out: Dict[str, List[pd.DataFrame]] = {}
+    out: Dict[str, pd.DataFrame] = {}
     for file_name in table_files:
         table_name = Path(file_name).stem
-        out[table_name] = []
-        for brand_id in brands:
-            fp = root / brand_id / file_name
-            req_cols = None if columns_map is None else columns_map.get(table_name)
-            df = safe_read_parquet(fp, columns=req_cols)
-            df = _filter_brand_app_id(df, brand_id=brand_id, brand_app_ids=brand_app_ids)
-            df["brand_id"] = brand_id
-            out[table_name].append(df)
-
-    merged: Dict[str, pd.DataFrame] = {}
-    for k, frames in out.items():
-        if not frames:
-            merged[k] = pd.DataFrame()
-            continue
-        non_empty = [f for f in frames if not f.empty]
-        if non_empty:
-            merged[k] = pd.concat(non_empty, ignore_index=True)
-        else:
-            merged[k] = frames[0].iloc[0:0].copy()
-    return merged
+        req_cols = None if columns_map is None else columns_map.get(table_name)
+        out[table_name] = _load_table_multi_subset(
+            dataset_root=dataset_root,
+            file_name=file_name,
+            columns=req_cols,
+            brand_app_ids=brand_app_ids,
+        )
+    return out
 
 
 # -----------------------------
@@ -162,30 +278,38 @@ def profile_dataset(
     key_relations: Sequence[Tuple[str, str, str]] = DEFAULT_KEY_RELATIONS,
     brand_app_ids: Optional[Mapping[str, Sequence[int | str]]] = None,
 ) -> DataProfile:
-    root = Path(dataset_root)
-    brands = list_brands(root)
-
     table_rows: List[dict] = []
     schema_rows: List[dict] = []
+    brands = list_brands(dataset_root, brand_app_ids=brand_app_ids)
+    tables = load_tables(
+        dataset_root=dataset_root,
+        table_files=table_files,
+        columns_map=None,
+        brand_app_ids=brand_app_ids,
+    )
 
-    for brand_id in brands:
-        for file_name in table_files:
-            table_name = Path(file_name).stem
-            fp = root / brand_id / file_name
-            df = safe_read_parquet(fp)
-            df = _filter_brand_app_id(df, brand_id=brand_id, brand_app_ids=brand_app_ids)
+    for file_name in table_files:
+        table_name = Path(file_name).stem
+        df_all = tables.get(table_name, pd.DataFrame())
 
+        for brand_id in brands:
+            if not df_all.empty and "brand_id" in df_all.columns:
+                df = df_all.loc[df_all["brand_id"] == brand_id].copy()
+            else:
+                df = pd.DataFrame()
+
+            source_cols = [c for c in df.columns if c != "brand_id"]
             table_rows.append(
                 {
                     "brand_id": brand_id,
                     "table": table_name,
                     "rows": int(len(df)),
-                    "columns": int(df.shape[1]),
+                    "columns": int(len(source_cols)),
                 }
             )
 
-            dt_cols = set(_detect_datetime_columns(df))
-            for col in df.columns:
+            dt_cols = set(_detect_datetime_columns(df[source_cols] if source_cols else df))
+            for col in source_cols:
                 s = df[col]
                 missing_count = int(s.isna().sum())
                 row = {
@@ -210,7 +334,7 @@ def profile_dataset(
     table_profile = pd.DataFrame(table_rows).sort_values(["brand_id", "table"]).reset_index(drop=True)
     schema_profile = pd.DataFrame(schema_rows).sort_values(["brand_id", "table", "column"]).reset_index(drop=True)
     join_coverage = validate_join_coverage(
-        root,
+        dataset_root,
         table_files=table_files,
         key_relations=key_relations,
         brand_app_ids=brand_app_ids,
@@ -225,32 +349,40 @@ def validate_join_coverage(
     key_relations: Sequence[Tuple[str, str, str]] = DEFAULT_KEY_RELATIONS,
     brand_app_ids: Optional[Mapping[str, Sequence[int | str]]] = None,
 ) -> pd.DataFrame:
-    root = Path(dataset_root)
-    brands = list_brands(root)
-
+    brands = list_brands(dataset_root, brand_app_ids=brand_app_ids)
     table_name_to_file = {Path(x).stem: x for x in table_files}
     rows: List[dict] = []
 
+    needed: Dict[str, set] = {}
+    for left, right, key in key_relations:
+        needed.setdefault(left, set()).add(key)
+        needed.setdefault(right, set()).add(key)
+
+    columns_map: Dict[str, List[str]] = {}
+    for table_name, cols in needed.items():
+        if table_name in table_name_to_file:
+            columns_map[table_name] = sorted(set(cols).union({"app_id"}))
+
+    key_frames = load_tables(
+        dataset_root=dataset_root,
+        table_files=[table_name_to_file[t] for t in columns_map.keys()],
+        columns_map=columns_map,
+        brand_app_ids=brand_app_ids,
+    )
+
     for brand_id in brands:
-        key_frames: Dict[str, pd.DataFrame] = {}
-
-        needed: Dict[str, set] = {}
-        for left, right, key in key_relations:
-            needed.setdefault(left, set()).add(key)
-            needed.setdefault(right, set()).add(key)
-
-        for table_name, cols in needed.items():
-            if table_name not in table_name_to_file:
-                continue
-            fp = root / brand_id / table_name_to_file[table_name]
-            read_cols = sorted(set(cols).union({"app_id"}))
-            df = safe_read_parquet(fp, columns=read_cols)
-            df = _filter_brand_app_id(df, brand_id=brand_id, brand_app_ids=brand_app_ids)
-            key_frames[table_name] = df
-
         for left_table, right_table, key in key_relations:
-            left_df = key_frames.get(left_table, pd.DataFrame())
-            right_df = key_frames.get(right_table, pd.DataFrame())
+            left_all = key_frames.get(left_table, pd.DataFrame())
+            right_all = key_frames.get(right_table, pd.DataFrame())
+
+            if not left_all.empty and "brand_id" in left_all.columns:
+                left_df = left_all.loc[left_all["brand_id"] == brand_id].copy()
+            else:
+                left_df = pd.DataFrame(columns=[key])
+            if not right_all.empty and "brand_id" in right_all.columns:
+                right_df = right_all.loc[right_all["brand_id"] == brand_id].copy()
+            else:
+                right_df = pd.DataFrame(columns=[key])
 
             if key not in left_df.columns or key not in right_df.columns:
                 rows.append(
@@ -307,6 +439,26 @@ def validate_join_coverage(
                     "row_coverage_norm": coverage_norm,
                 }
             )
+
+    if not rows:
+        return pd.DataFrame(
+            columns=[
+                "brand_id",
+                "left_table",
+                "right_table",
+                "key",
+                "left_rows",
+                "right_rows",
+                "left_unique",
+                "right_unique",
+                "overlap_unique",
+                "row_coverage",
+                "left_unique_norm",
+                "right_unique_norm",
+                "overlap_unique_norm",
+                "row_coverage_norm",
+            ]
+        )
 
     return pd.DataFrame(rows).sort_values(["brand_id", "left_table", "right_table", "key"]).reset_index(drop=True)
 
@@ -411,8 +563,19 @@ def build_purchase_item_join_diagnostics(
     sample_n: int = 5000,
     random_n: int = 20,
 ) -> JoinDiagnostics:
-    root = Path(dataset_root)
-    brands = list_brands(root)
+    brands = list_brands(dataset_root, brand_app_ids=brand_app_ids)
+
+    tables = load_tables(
+        dataset_root=dataset_root,
+        table_files=["purchase.parquet", "purchase_items.parquet"],
+        columns_map={
+            "purchase": ["app_id", "transaction_id", "user_id", "create_datetime", "paid_datetime"],
+            "purchase_items": ["app_id", "transaction_id", "user_id", "create_datetime", "paid_datetime", "delivered_datetime"],
+        },
+        brand_app_ids=brand_app_ids,
+    )
+    purchase_all = tables.get("purchase", pd.DataFrame())
+    purchase_items_all = tables.get("purchase_items", pd.DataFrame())
 
     coverage_rows: List[dict] = []
     time_rows: List[dict] = []
@@ -422,23 +585,15 @@ def build_purchase_item_join_diagnostics(
     joinable_map: Dict[str, bool] = {}
 
     for brand_id in brands:
-        purchase = safe_read_parquet(
-            root / brand_id / "purchase.parquet",
-            columns=["app_id", "transaction_id", "user_id", "create_datetime", "paid_datetime"],
-        )
-        purchase_items = safe_read_parquet(
-            root / brand_id / "purchase_items.parquet",
-            columns=[
-                "app_id",
-                "transaction_id",
-                "user_id",
-                "create_datetime",
-                "paid_datetime",
-                "delivered_datetime",
-            ],
-        )
-        purchase = _filter_brand_app_id(purchase, brand_id=brand_id, brand_app_ids=brand_app_ids)
-        purchase_items = _filter_brand_app_id(purchase_items, brand_id=brand_id, brand_app_ids=brand_app_ids)
+        if not purchase_all.empty and "brand_id" in purchase_all.columns:
+            purchase = purchase_all.loc[purchase_all["brand_id"] == brand_id].copy()
+        else:
+            purchase = pd.DataFrame(columns=["transaction_id", "user_id", "create_datetime", "paid_datetime"])
+
+        if not purchase_items_all.empty and "brand_id" in purchase_items_all.columns:
+            purchase_items = purchase_items_all.loc[purchase_items_all["brand_id"] == brand_id].copy()
+        else:
+            purchase_items = pd.DataFrame(columns=["transaction_id", "user_id", "create_datetime", "paid_datetime", "delivered_datetime"])
 
         purchase["transaction_id_norm"] = normalize_id(purchase.get("transaction_id"))
         purchase["user_id_norm"] = normalize_id(purchase.get("user_id"))

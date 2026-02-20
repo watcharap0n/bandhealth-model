@@ -5,79 +5,78 @@ Diagnostic normalized key columns used: `transaction_id_norm`, `user_id_norm`.
 ## Coverage Before/After Normalization
 
 brand_id left_table    right_table            key  left_unique  right_unique  overlap_unique  row_coverage  left_unique_norm  right_unique_norm  overlap_unique_norm  row_coverage_norm
-   c-vit   purchase purchase_items transaction_id        10000          5326               0      0.000000             10000               5326                    0           0.000000
-   c-vit   purchase purchase_items        user_id         1250             1               0      0.000000              1250                  1                    0           0.000000
+   c-vit   purchase purchase_items transaction_id      2741452       2741452         2741452      1.000000           2741452            2741452              2741452           1.000000
+   c-vit   purchase purchase_items        user_id       118703        118703          118703      1.000000            118703             118703               118703           1.000000
 see-chan   purchase purchase_items transaction_id      1399583       1378053         1378053      0.983918           1399566            1378053              1378053           0.983929
 see-chan   purchase purchase_items        user_id        10359            19              19      0.002058             10359                 19                   19           0.002058
 
 ## Time Range Overlap Check
 
 brand_id             purchase_overall_min             purchase_overall_max       purchase_items_overall_min       purchase_items_overall_max  time_range_overlap     purchase_create_datetime_min     purchase_create_datetime_max       purchase_paid_datetime_min       purchase_paid_datetime_max purchase_items_create_datetime_min purchase_items_create_datetime_max purchase_items_paid_datetime_min purchase_items_paid_datetime_max purchase_items_delivered_datetime_min purchase_items_delivered_datetime_max
-   c-vit 2021-08-31 09:54:55.280000+00:00 2024-06-16 20:39:37.433000+00:00 2023-09-09 12:30:35.430000+00:00 2024-03-05 18:03:38.485000+00:00                True 2021-08-31 09:54:55.280000+00:00 2024-06-16 20:39:37.433000+00:00 2021-08-31 09:54:55.280000+00:00 2024-06-16 20:39:37.433000+00:00   2023-09-09 12:30:35.430000+00:00   2024-03-05 18:03:38.485000+00:00 2023-09-09 12:30:35.430000+00:00 2024-03-05 18:03:38.485000+00:00                                  None                                  None
+   c-vit 2021-05-17 18:16:06.873000+00:00 2024-06-17 00:16:03.019000+00:00 2021-05-17 18:16:06.873000+00:00 2024-06-17 00:16:03.019000+00:00                True 2021-05-17 18:16:06.873000+00:00 2024-06-17 00:16:03.019000+00:00 2021-05-17 18:16:06.873000+00:00 2024-06-17 00:16:03.019000+00:00   2021-05-17 18:16:06.873000+00:00   2024-06-17 00:16:03.019000+00:00 2021-05-17 18:16:06.873000+00:00 2024-06-17 00:16:03.019000+00:00                                  None                                  None
 see-chan        2023-02-23 00:00:00+00:00        2026-02-02 00:00:00+00:00        2023-04-06 00:00:00+00:00        2026-02-02 00:00:00+00:00                True        2023-02-23 00:00:00+00:00        2026-02-02 00:00:00+00:00        2023-02-23 00:00:00+00:00        2026-02-02 00:00:00+00:00          2023-04-06 00:00:00+00:00          2026-02-02 00:00:00+00:00        2023-04-06 00:00:00+00:00        2026-02-02 00:00:00+00:00                                  None                                  None
 
 ## Brand: c-vit
 
-- `transaction_id` normalized row coverage: 0.0000
+- `transaction_id` normalized row coverage: 1.0000
 - time range overlap: True
-- decision: commerce_joinable=false
-- "Join quality below threshold (<0.80); commerce join is not valid for this brand."
+- decision: commerce_joinable=true
 
 ### transaction_id_norm pattern/length
 
 brand_id          table  len_min  len_median  len_max                                                                   prefix_samples  share_alnum_dash_underscore  share_numeric_only  share_has_dash  share_has_underscore
-   c-vit       purchase     33.0        33.0     33.0 ["smkx", "sml9", "smlb", "smlz", "smma", "smmq", "smms", "smnb", "smnd", "smns"]                          1.0                 0.0        0.555000              0.355000
-   c-vit purchase_items     33.0        33.0     33.0 ["sme1", "sme2", "sme3", "sme4", "sme5", "sme7", "smee", "smef", "smeh", "smei"]                          1.0                 0.0        0.571429              0.369888
+   c-vit       purchase     33.0        33.0     33.0 ["smkx", "sml9", "smlb", "smlz", "smma", "smmq", "smms", "smnb", "smnd", "smns"]                          1.0                 0.0        0.555121              0.367175
+   c-vit purchase_items     33.0        33.0     33.0 ["sme1", "sme2", "sme3", "sme4", "sme5", "sme7", "smee", "smef", "smeh", "smei"]                          1.0                 0.0        0.555454              0.366958
 
 ### sampled merge on transaction_id_norm
 
 brand_id  sampled_merge_match_rate_norm_sample_vs_sample  sampled_merge_match_rate_norm_left_sample_vs_full_right  sample_size_left  sample_size_right
-   c-vit                                             0.0                                                      0.0              5000               5000
+   c-vit                                          0.0038                                                      1.0              5000               5000
 
 ### random transaction_id samples (20 each table)
 
 purchase:
-- SmIInUwfNrBnM528fVRsAC4nURtqlAl7k
-- SmNa0ZlO2Rs6UPBjKySLQ8CmHfGky3zwV
-- SmIwzdJu2yRjVgI8m1YHdh8_Eiq7Xh1AV
-- SmOAvXFIokBxMJFpJd7eOSDG1G1KXdR2k
-- SmOnYG6Xm7kKqjGO46ZydhCIpoEyNcWBF
-- SmEqjCKZSb3_UCAshmyYct-J5PUw9gS0F
-- SmKGsouE0uV9G45vy2VrPC7PH3kut4l6k
-- SmGWZrt9nORFOPdleV7H703U-mjKJS0IF
-- SmDnIJFuaCoJSbsOVG5ZsG6Ue3botZAAV
-- SmHkFntD37kKD6vNeub4Q0Bc_N4qsFNmk
-- SmLZRD4pQJgQ3GoOF-Iyep4OHWnVhmSpk
-- SmIepy5uyu3atUklJT-hdlEwfd1n_jq0k
-- SmOWqI4mLyF9_JYt90jKedCym4AwILzs-
-- SmMg6Qv1dUByeepcX4JBAW27u0-SfHb4F
-- SmDywKIazxcvb84_K6EIOd5c95asiEwzF
-- SmOrGcTU2ZNlIa6G8EdS844V3j70UG41F
-- SmH2UZhDiCJhO8Cg9IhfA_6JKnmZ5IOI-
-- SmOtovaabigfr2GyA-eQdt4KenemWD0-F
-- SmHcxwAdV7kMP8BUR_9ctp5bDLTX4eTc-
-- SmOAJKSFMCwMMriJMEdDuCAtY87ruS1KF
+- SmJqdxvXZrsXJjZlam7R8S2NYDD3rt8dV
+- SmE1Kql2ILsKSP_1m5I3tt8Vi5Rmqfgu-
+- SmFD7SMhxsocxV4ZtMv9e89xqYG11Kyb-
+- SmNUAGKYHX3xUx0hryFXfK20DUEPaQYZk
+- SmNESuHy-TBEkDHtHm1Kfh2zu2SVpUEOk
+- SmH67OEM587pEMV5RCoK74EkwfflcXIck
+- SmFPIT0UpHccubYLcNEHPK2H2cbz0ytF-
+- SmJhxpscseV4QniSvLJZ8xDo5f791VPK-
+- SmK9gtumnaNHJsY7d--y9hDknk1cVCaPV
+- SmDPzR0lRqR7HhaLRGot9lACMj3PDYV2k
+- SmEdBQbRapsK5BpSMnbROdBGw-tFITHA-
+- SmIZYY2W483XoElTj53ncO5kUbUdKfScF
+- SmDTfOs7C-NIakZETd2QNW9ORUNmpfe7-
+- SmDpkgyiEMRQTZiyxd1IAO2lT2C-RxjzV
+- SmKOFKKjBcNMy54I7vdWAt6EYXPvSwJwF
+- SmEW_eTBD5ZTvZVjnwveAC2FBkOm9jrIF
+- SmIWtPrJTewx2VM6uSHufxBlsJQCjsPQk
+- SmE3NzceHa-FRVesnxr37dEsDnGRXofN-
+- SmOOJMwguLcpASLcT8nQ9C4cVIU65NS-k
+- SmKftlCWezg5cPh-w-nMcG1GyovLTocq-
 purchase_items:
-- SmEjhc426C3LkWScI3RSfW3z0SNUWkUYF
-- SmG9v8yEfO3By2chvF88fl4Jw1rZt0hoV
-- SmFnq7O0iVJ6XJFDe-7P8tCzQ23AC9_MV
-- SmFQW7UQV1sjJf3_zP7atG24pmrsELUtk
-- SmEK5CNgyVJK8lrvw2TGAdBFBpO8PGkJV
-- SmFcMQnANtZihz4mH7sTQ8ADPFfDjQ5sk
-- SmEJEYJduAJtNoGrI-tg840W-WYqvhMX-
-- SmFcqbg0gzFJUpRa8xP_dK0y2gqa0cISV
-- SmEH0OS74R73mfIXrpqYc_AW3nTsL22Kk
-- SmFLFAhW5m7iHfsYrgOFsl4INCs4nbvyk
-- SmFMo5q9Y_74QmC4OxLRsWDvq84Yw53Ik
-- SmFMo0EboHoR1ULQLilTtK6DyLBrazgmV
-- SmFEp9LejvB25PMySbsDQK9yVaS8tgtpF
-- SmF6y9rPQlVY_CMn8KK7O47WN75e6do9F
-- SmEcX_gXGUJXI-GOwduYO_DXWuyyvfSiV
-- SmFMnfgH5bow7nSbxOwcvSEif491Oz5Ok
-- SmFT5ptKNRJwGihF5mNc9K8K1Tr3UGIzF
-- SmFYSoQAaZR8AKVcusZJcW2ZPFMS60-NF
-- SmFWN_LQY53l8fMR7NJzOl1xtYmdZzb6F
-- SmE7Yd55flkkfpdgfpevf44kNa7vmndg-
+- SmKPSNp1kpRQkSgugNQuOl60B8h6pZHC-
+- SmJdwixs1lgpQL5sTbz7N8EpsOfwyRptF
+- SmP-lc_xjgVaFfM69-2e8G4-jqKmA0wCF
+- SmLQ7Tb6_QNfyTTWBO1SeCCXtcBpceLdk
+- SmFiV9r-m-JMDJtSz3Sms4AXoUqBA8gDk
+- SmHspXE6B1gyvSO3a7d2Ph1ryw7f5ZaGV
+- SmH45bkD1_3XAeh3arfmsp1VU5LlI01A-
+- SmHCWiLU5lNDxQbZTT889t3rjPIjXH6N-
+- SmGVy80eA-sAT69Qzp22flAElFvNn1v8-
+- SmDKQtgYZbRn-_zpQ_US8p1gwS6Yk_lGk
+- SmHRNbmv36Bv6H2UsKN-uC55Irn8iGzU-
+- SmHCN6LmRqFPPhG3bRjCs8BhBMR78s9pk
+- SmE1xdvAqoghnIAuRCEetSBGsbirBO5tF
+- SmD0j6_hrFBxqsAoCq0ofG0LcUJbdA1MV
+- SmODA7cR-NNa9RX1JnDnf87Sxu24WwaAV
+- SmHTwPSk33wTuwLH60j8Pp24XJINvqcPF
+- SmDmNOWfrsBg6mkoQUBF7tDyw6Rr-51ek
+- SmHSFlkHq-ohxX8IotoYet0K4lFkEBKY-
+- SmD0iV-ybVo9SRutxDqAvt5Sx12kPYJLV
+- SmLAXXoiIRBNLMxj6ImTOt9RnHCCGUzs-
 
 ## Brand: see-chan
 
