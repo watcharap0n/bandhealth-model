@@ -20,6 +20,7 @@ The pipeline:
 - `src/labeling.py`: weak-label generation
 - `src/train.py`: sklearn training/evaluation
 - `src/infer.py`: inference + attribution + QA guardrails
+- `src/memory_opt.py`: memory optimization helpers (dtype downcast, chunked parquet, RSS logging)
 - `src/drivers.py`: driver extraction
 - `src/playbook.py`: action mapping
 
@@ -199,6 +200,8 @@ python3 run_pipeline.py \
 - `outputs/join_diagnostics.md`
 - `outputs/coverage_notes.md`
 - `outputs/profiling_report.md`
+- `outputs/memory_optimization_report.json`
+- `outputs/memory_dtype_optimization.csv` (when memory optimization is enabled)
 
 ### Features/labels
 - `outputs/feature_table.parquet`
@@ -209,6 +212,7 @@ python3 run_pipeline.py \
 ### Predictions/attribution
 - `outputs/predictions_with_drivers.jsonl`
 - `outputs/predictions_with_drivers.csv`
+- `outputs/predictions_with_drivers.parquet`
 - `outputs/examples_last4_with_segments.json`
 - `outputs/examples_before_after_2windows.json`
 - `outputs/attribution_qa.json`

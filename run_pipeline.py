@@ -24,6 +24,12 @@ from src.labeling import generate_weak_labels, labeling_thresholds
 from src.sampling import TrainSampleConfig, build_train_eval_samples, save_sample_outputs
 from src.segments import compute_segment_kpis
 from src.train import train_models
+from src.memory_opt import (
+    collect_garbage,
+    log_memory_rss,
+    optimize_table_dict,
+    write_parquet_chunked,
+)
 
 BRAND_APP_ID_FILTERS = {
     "c-vit": [1993744540760190],
@@ -408,6 +414,10 @@ def main() -> None:
     parser.add_argument("--train_group_col", type=str, default="brand_id")
     parser.add_argument("--train_weight_classes", type=str, default="true")
     parser.add_argument("--n_jobs", type=int, default=4)
+    parser.add_argument("--memory_optimize", type=str, default="true")
+    parser.add_argument("--memory_float_downcast", type=str, default="false")
+    parser.add_argument("--memory_cat_ratio_threshold", type=float, default=0.5)
+    parser.add_argument("--memory_validate_downcast", type=str, default="true")
     args = parser.parse_args()
 
     dataset_root = Path(args.dataset_root)
@@ -419,6 +429,12 @@ def main() -> None:
     outputs_dir.mkdir(parents=True, exist_ok=True)
     artifacts_dir.mkdir(parents=True, exist_ok=True)
     _set_thread_limits(args.n_jobs)
+    memory_events: List[Dict[str, object]] = []
+    log_memory_rss("pipeline_start", sink=memory_events)
+
+    memory_optimize = _parse_bool_flag(args.memory_optimize)
+    memory_float_downcast = _parse_bool_flag(args.memory_float_downcast)
+    memory_validate_downcast = _parse_bool_flag(args.memory_validate_downcast)
 
     before_examples_path = outputs_dir / "examples_last4_with_segments.json"
     before_examples = pd.DataFrame()
@@ -511,6 +527,30 @@ def main() -> None:
         columns_map=columns_map,
         brand_app_ids=BRAND_APP_ID_FILTERS,
     )
+    table_rows_before_opt = {k: int(len(v)) for k, v in tables.items() if isinstance(v, pd.DataFrame)}
+    log_memory_rss("after_load_tables", sink=memory_events)
+
+    dtype_opt_summary = pd.DataFrame()
+    if memory_optimize:
+        tables, dtype_opt_summary = optimize_table_dict(
+            tables,
+            allow_float_downcast=memory_float_downcast,
+            float_rtol=1e-6,
+            cat_ratio_threshold=float(args.memory_cat_ratio_threshold),
+            protect_columns=("brand_id",),
+            validate=memory_validate_downcast,
+        )
+        for k, v in tables.items():
+            if isinstance(v, pd.DataFrame):
+                before_n = table_rows_before_opt.get(k, int(len(v)))
+                after_n = int(len(v))
+                if before_n != after_n:
+                    raise AssertionError(
+                        f"Row count changed after dtype optimization for table={k}: before={before_n}, after={after_n}"
+                    )
+        if not dtype_opt_summary.empty:
+            dtype_opt_summary.to_csv(outputs_dir / "memory_dtype_optimization.csv", index=False)
+    log_memory_rss("after_optimize_tables", sink=memory_events)
 
     print("[3/7] Building features...")
     feature_df = build_feature_table(
@@ -520,8 +560,9 @@ def main() -> None:
     )
     if feature_df.empty:
         raise RuntimeError("Feature table is empty; check source timestamps and schema.")
-    feature_df.to_parquet(outputs_dir / "feature_table.parquet", index=False)
+    write_parquet_chunked(feature_df, outputs_dir / "feature_table.parquet", chunk_rows=100_000)
     feature_df.to_csv(outputs_dir / "feature_table_sample.csv", index=False)
+    log_memory_rss("after_build_feature_table", sink=memory_events)
 
     print("[4/7] Building segment KPIs for Marketing Automation...")
     segment_kpi_df = compute_segment_kpis(
@@ -531,8 +572,13 @@ def main() -> None:
         activity_enrichment_joinable_by_brand=activity_enrichment_joinable,
     )
     if not segment_kpi_df.empty:
-        segment_kpi_df.to_parquet(outputs_dir / "segment_kpis.parquet", index=False)
+        write_parquet_chunked(segment_kpi_df, outputs_dir / "segment_kpis.parquet", chunk_rows=100_000)
         segment_kpi_df.to_csv(outputs_dir / "segment_kpis.csv", index=False)
+    log_memory_rss("after_build_segment_kpis", sink=memory_events)
+
+    # Release raw event tables as soon as all derived frames are built.
+    del tables
+    collect_garbage("release_raw_tables", sink=memory_events)
 
     feature_defs = feature_definitions(feature_df)
     feature_defs.to_csv(outputs_dir / "feature_definitions.csv", index=False)
@@ -541,7 +587,12 @@ def main() -> None:
     labeled_df = generate_weak_labels(feature_df)
     labeled_df = labeled_df.reset_index(drop=True)
     labeled_df["__row_id"] = np.arange(len(labeled_df), dtype=int)
-    labeled_df.to_parquet(outputs_dir / "labeled_feature_table.parquet", index=False)
+    write_parquet_chunked(labeled_df, outputs_dir / "labeled_feature_table.parquet", chunk_rows=100_000)
+    log_memory_rss("after_generate_labels", sink=memory_events)
+
+    # No longer needed after labels/definitions are generated.
+    del feature_df
+    collect_garbage("release_feature_df", sink=memory_events)
 
     sample_mode = str(args.train_sample_mode).strip().lower()
     sample_result = None
@@ -565,8 +616,8 @@ def main() -> None:
         sample_result = build_train_eval_samples(labeled_df, config=sample_cfg)
         save_sample_outputs(sample_result, output_dir=outputs_dir)
 
-        train_input_df = sample_result.sampled_df.copy()
-        infer_input_df = sample_result.sampled_df.copy()
+        train_input_df = sample_result.sampled_df
+        infer_input_df = sample_result.sampled_df
         train_row_ids = sample_result.train_row_ids
         eval_row_ids = sample_result.eval_row_ids
         print(
@@ -580,7 +631,12 @@ def main() -> None:
         )
         print("Sample QA representative_pass={}".format(sample_result.qa_report.get("representative_pass")))
 
+        # In sampled mode, full labeled_df can be released.
+        del labeled_df
+        collect_garbage("release_labeled_full_after_sampling", sink=memory_events)
+
     print("[6/7] Training and evaluating models...")
+    log_memory_rss("before_train_stage", sink=memory_events)
     train_weight_classes = _parse_bool_flag(args.train_weight_classes)
     if args.skip_train:
         loaded = load_model_artifacts(artifact_dir=artifacts_dir)
@@ -617,6 +673,7 @@ def main() -> None:
         class_labels = artifacts.class_labels
         metrics = artifacts.metrics
         selected_model = artifacts.metrics.get("selected_model")
+    log_memory_rss("after_train_stage", sink=memory_events)
 
     print("[7/7] Running inference + drivers + actions...")
     pred_df = predict_with_drivers(
@@ -630,9 +687,20 @@ def main() -> None:
         top_n_actions=3,
         top_n_target_segments=3,
     )
+    log_memory_rss("after_inference_stage", sink=memory_events)
     save_predictions(pred_df, output_dir=outputs_dir)
     attribution_qa = dict(pred_df.attrs.get("attribution_qa", {}))
     (outputs_dir / "attribution_qa.json").write_text(json.dumps(attribution_qa, indent=2), encoding="utf-8")
+
+    # Train/infer inputs can be released after predictions are materialized.
+    if train_input_df is infer_input_df:
+        del train_input_df, infer_input_df
+    else:
+        del train_input_df
+        del infer_input_df
+    if "labeled_df" in locals():
+        del labeled_df
+    collect_garbage("release_train_infer_frames", sink=memory_events)
 
     if sample_mode != "off":
         sample_metrics_payload = {
@@ -689,6 +757,25 @@ def main() -> None:
     )
 
     # Also write compact summary JSON for backend usage.
+    dtype_opt_records = (
+        dtype_opt_summary.to_dict(orient="records")
+        if isinstance(dtype_opt_summary, pd.DataFrame) and not dtype_opt_summary.empty
+        else []
+    )
+    log_memory_rss("before_pipeline_summary_write", sink=memory_events)
+    memory_payload = {
+        "memory_optimize": bool(memory_optimize),
+        "memory_float_downcast": bool(memory_float_downcast),
+        "memory_cat_ratio_threshold": float(args.memory_cat_ratio_threshold),
+        "memory_validate_downcast": bool(memory_validate_downcast),
+        "events": memory_events,
+        "dtype_optimization": dtype_opt_records,
+    }
+    (outputs_dir / "memory_optimization_report.json").write_text(
+        json.dumps(memory_payload, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
     summary = {
         "join_coverage": profile.join_coverage.to_dict(orient="records"),
         "commerce_joinable": join_diag.commerce_joinable,
@@ -699,6 +786,11 @@ def main() -> None:
         "feature_count": len(feature_columns),
         "example_count": len(examples),
         "attribution_qa": attribution_qa,
+        "memory_optimization": {
+            "enabled": bool(memory_optimize),
+            "dtype_tables_optimized": int(len(dtype_opt_records)),
+            "memory_events": memory_events,
+        },
     }
     (reports_dir / "pipeline_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
 

@@ -16,6 +16,7 @@ from .driver_mapping import (
     infer_metric_family_from_key,
 )
 from .drivers import attach_drivers
+from .memory_opt import write_parquet_chunked
 from .playbook import attach_actions, build_actions_i18n
 from .segments import ACTIVITY_SEGMENT_KEYS, COMMERCE_SEGMENT_KEYS, SEGMENT_KEYS, SEGMENT_METRIC_SUFFIXES
 
@@ -718,6 +719,19 @@ def save_predictions(pred_df: pd.DataFrame, output_dir: str | Path) -> None:
     ] + [c for c in pred_df.columns if c.startswith("prob_")]
 
     pred_df[save_cols].to_csv(out_dir / "predictions_with_drivers.csv", index=False)
+    parquet_df = pred_df[save_cols].copy()
+    for c in parquet_df.columns:
+        if not pd.api.types.is_object_dtype(parquet_df[c]):
+            continue
+        non_null = parquet_df[c].dropna()
+        if non_null.empty:
+            continue
+        sample = non_null.iloc[0]
+        if isinstance(sample, (dict, list, tuple)):
+            parquet_df[c] = parquet_df[c].apply(
+                lambda x: json.dumps(x, ensure_ascii=False) if isinstance(x, (dict, list, tuple)) else ("" if pd.isna(x) else str(x))
+            )
+    write_parquet_chunked(parquet_df, out_dir / "predictions_with_drivers.parquet", chunk_rows=100_000)
 
     with (out_dir / "predictions_with_drivers.jsonl").open("w", encoding="utf-8") as f:
         for payload in pred_df["payload"]:

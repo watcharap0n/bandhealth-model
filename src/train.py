@@ -153,6 +153,7 @@ def _evaluate_model(model, X_test: pd.DataFrame, y_test: pd.Series, class_labels
     proba = model.predict_proba(X_test)
 
     macro_f1 = float(f1_score(y_test, pred, average="macro"))
+    weighted_f1 = float(f1_score(y_test, pred, average="weighted"))
     bal_acc = float(balanced_accuracy_score(y_test, pred))
     cm = confusion_matrix(y_test, pred, labels=class_labels)
 
@@ -160,6 +161,7 @@ def _evaluate_model(model, X_test: pd.DataFrame, y_test: pd.Series, class_labels
 
     return {
         "macro_f1": macro_f1,
+        "weighted_f1": weighted_f1,
         "balanced_accuracy": bal_acc,
         "confusion_matrix": cm.tolist(),
         "class_labels": class_labels,

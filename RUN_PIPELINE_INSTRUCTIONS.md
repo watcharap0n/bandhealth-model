@@ -56,12 +56,17 @@ python3 run_pipeline.py \
 | `--train_group_col` | `str` | `brand_id` | Group column for cross-brand evaluation and QA reporting. | quick/smart/off | `--train_group_col brand_id` |
 | `--train_weight_classes` | `bool-like str` | `true` | Enable class weighting (`balanced`) in Logistic/HGB models. | If class imbalance exists | `--train_weight_classes false` |
 | `--n_jobs` | `int` | `4` | Limits BLAS/OpenMP threads to reduce CPU pressure and prevent local hangs. | Always | `--n_jobs 2` |
+| `--memory_optimize` | `bool-like str` | `true` | Enables memory optimization pass (dtype downcast + memory logging). | Recommended for large runs | `--memory_optimize true` |
+| `--memory_float_downcast` | `bool-like str` | `false` | Allows float64→float32 downcast when `allclose(rtol=1e-6)` validation passes. Keep `false` for strict parity. | Large-memory datasets after parity check | `--memory_float_downcast true` |
+| `--memory_cat_ratio_threshold` | `float` | `0.5` | Converts object columns to category when `nunique/nrows < threshold`. | Memory-heavy string columns | `--memory_cat_ratio_threshold 0.4` |
+| `--memory_validate_downcast` | `bool-like str` | `true` | Validates value parity after downcast/categorical conversion. | Keep enabled for safety | `--memory_validate_downcast true` |
 
 Important notes:
 - `--train_sample_frac` is used only in `quick` mode.
 - `--train_recent_days` is used only in `smart` mode.
 - With `--train_sample_mode off`, sampling parameters are ignored for row reduction.
 - `predicted_health_class` in `--train_stratify_cols` is internally mapped to `label_health_class`.
+- Memory diagnostics are written to `outputs/memory_optimization_report.json`.
 
 ## 3) Recommended presets
 
@@ -143,9 +148,9 @@ python3 run_pipeline.py \
 
 | Category | Files |
 |---|---|
-| Main predictions | `outputs/predictions_with_drivers.jsonl`, `outputs/predictions_with_drivers.csv` |
+| Main predictions | `outputs/predictions_with_drivers.jsonl`, `outputs/predictions_with_drivers.csv`, `outputs/predictions_with_drivers.parquet` |
 | Dashboard examples | `outputs/examples_last4_with_segments.json` |
 | Attribution QA | `outputs/attribution_qa.json` |
 | Sampling QA | `outputs/sample_qa_report.json` |
+| Memory QA | `outputs/memory_optimization_report.json`, `outputs/memory_dtype_optimization.csv` |
 | Metrics summary | `reports/pipeline_summary.json`, `outputs/model_metrics_sample.json` |
-

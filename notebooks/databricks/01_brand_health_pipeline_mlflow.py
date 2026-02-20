@@ -35,6 +35,13 @@ from src.features import build_feature_table, feature_definitions
 from src.id_utils import normalize_id
 from src.infer import load_model_artifacts, predict_with_drivers, save_predictions
 from src.labeling import generate_weak_labels, labeling_thresholds
+from src.memory_opt import (
+    collect_garbage,
+    log_memory_rss,
+    optimize_dataframe_dtypes,
+    optimize_table_dict,
+    write_parquet_chunked,
+)
 from src.sampling import TrainSampleConfig, build_train_eval_samples, save_sample_outputs
 from src.segments import compute_segment_kpis
 from src.train import train_models
@@ -88,6 +95,18 @@ TRAIN_STRATIFY_COLS = ("brand_id", "predicted_health_class")
 TRAIN_GROUP_COL = "brand_id"
 TRAIN_WEIGHT_CLASSES = True
 N_JOBS = 4
+
+# Memory optimization controls
+MEMORY_OPTIMIZE = True
+MEMORY_FLOAT_DOWNCAST = False
+MEMORY_CAT_RATIO_THRESHOLD = 0.5
+MEMORY_VALIDATE_DOWNCAST = True
+
+# Spark -> Pandas conversion controls
+ENABLE_ARROW = True
+EXPLAIN_PUSHDOWN = True
+SPARK_TO_PANDAS_CHUNK_THRESHOLD = 2_000_000
+SPARK_TO_PANDAS_CHUNK_ROWS = 200_000
 
 # Output and artifact paths (DBFS URI supported)
 DBFS_OUTPUT_DIR = "dbfs:/tmp/band-health/outputs"
@@ -183,6 +202,11 @@ COLUMN_ALIASES: Dict[str, Dict[str, str]] = {
 print("Config loaded")
 print("SOURCE_MODE:", SOURCE_MODE)
 print("BRAND_APP_ID_FILTERS:", BRAND_APP_ID_FILTERS)
+if ENABLE_ARROW:
+    spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
+    print("Arrow enabled: spark.sql.execution.arrow.pyspark.enabled=true")
+memory_events: List[Dict[str, object]] = []
+log_memory_rss("notebook_start", sink=memory_events)
 
 # COMMAND ----------
 # MAGIC %md
@@ -232,6 +256,54 @@ def _ensure_columns(df: pd.DataFrame, cols: Sequence[str]) -> pd.DataFrame:
 def _safe_existing_columns(sdf: SparkDataFrame, requested_cols: Sequence[str]) -> List[str]:
     existing = set(sdf.columns)
     return [c for c in requested_cols if c in existing]
+
+
+def _spark_to_pandas_memory_safe(
+    sdf: SparkDataFrame,
+    selected_cols: Sequence[str],
+    table_label: str,
+    chunk_threshold_rows: int = 2_000_000,
+    chunk_rows: int = 200_000,
+    explain_pushdown: bool = False,
+) -> Tuple[pd.DataFrame, int]:
+    q = sdf.select(*selected_cols)
+    if explain_pushdown:
+        print(f"Spark plan for {table_label}:")
+        q.explain(True)
+
+    row_count = int(q.count())
+    if row_count == 0:
+        return pd.DataFrame(columns=list(selected_cols)), 0
+
+    if row_count <= int(chunk_threshold_rows):
+        pdf = q.toPandas()
+        if len(pdf) != row_count:
+            raise AssertionError(f"Row count mismatch for {table_label}: pandas={len(pdf)} spark={row_count}")
+        return pdf, row_count
+
+    print(
+        f"{table_label}: using chunked toLocalIterator conversion "
+        f"(rows={row_count:,}, chunk_rows={int(chunk_rows):,})"
+    )
+    parts: List[pd.DataFrame] = []
+    buf: List[dict] = []
+    for row in q.toLocalIterator():
+        buf.append(row.asDict(recursive=False))
+        if len(buf) >= int(chunk_rows):
+            part = pd.DataFrame.from_records(buf, columns=list(selected_cols))
+            parts.append(part)
+            buf = []
+    if buf:
+        parts.append(pd.DataFrame.from_records(buf, columns=list(selected_cols)))
+
+    if parts:
+        pdf = pd.concat(parts, axis=0, ignore_index=True)
+    else:
+        pdf = pd.DataFrame(columns=list(selected_cols))
+
+    if len(pdf) != row_count:
+        raise AssertionError(f"Chunked row count mismatch for {table_label}: pandas={len(pdf)} spark={row_count}")
+    return pdf, row_count
 
 
 def _to_datetime_series(s: pd.Series) -> pd.Series:
@@ -425,6 +497,7 @@ def _load_tables_from_catalog(
         sdf = spark_session.table(full_name)
         if "app_id" not in sdf.columns:
             raise ValueError(f"{full_name} is missing required column: app_id")
+        base_count = int(sdf.count())
 
         sdf = sdf.filter(F.col("app_id").cast("string").isin(app_keys))
 
@@ -433,6 +506,7 @@ def _load_tables_from_catalog(
                 if dt_col in sdf.columns:
                     sdf = sdf.filter(F.to_timestamp(F.col(dt_col)) >= F.date_sub(F.current_timestamp(), int(recent_days)))
                     break
+        filtered_count = int(sdf.count())
 
         cols_to_pull = list(dict.fromkeys(list(requested_cols) + ["app_id"]))
         cols_existing = _safe_existing_columns(sdf, cols_to_pull)
@@ -442,7 +516,14 @@ def _load_tables_from_catalog(
         if max_rows_per_table and max_rows_per_table > 0:
             sdf = sdf.limit(int(max_rows_per_table))
 
-        pdf = sdf.select(*cols_existing).toPandas()
+        pdf, spark_rows = _spark_to_pandas_memory_safe(
+            sdf=sdf,
+            selected_cols=cols_existing,
+            table_label=full_name,
+            chunk_threshold_rows=int(SPARK_TO_PANDAS_CHUNK_THRESHOLD),
+            chunk_rows=int(SPARK_TO_PANDAS_CHUNK_ROWS),
+            explain_pushdown=bool(EXPLAIN_PUSHDOWN),
+        )
 
         aliases = (column_aliases or {}).get(canonical_table, {})
         pdf = _apply_aliases(pdf, aliases)
@@ -452,8 +533,23 @@ def _load_tables_from_catalog(
         pdf["brand_id"] = app_series.map(app_to_brand)
         pdf = pdf[pdf["brand_id"].notna()].reset_index(drop=True)
 
+        if MEMORY_OPTIMIZE:
+            pdf, _ = optimize_dataframe_dtypes(
+                pdf,
+                table_name=canonical_table,
+                allow_float_downcast=bool(MEMORY_FLOAT_DOWNCAST),
+                float_rtol=1e-6,
+                cat_ratio_threshold=float(MEMORY_CAT_RATIO_THRESHOLD),
+                protect_columns=("brand_id",),
+                validate=bool(MEMORY_VALIDATE_DOWNCAST),
+            )
+
         out[canonical_table] = pdf
-        print(f"Loaded {canonical_table} from {full_name}: rows={len(pdf):,}")
+        print(
+            f"Loaded {canonical_table} from {full_name}: "
+            f"base_rows={base_count:,} filtered_rows={filtered_count:,} "
+            f"spark_rows={spark_rows:,} pandas_rows={len(pdf):,}"
+        )
 
     return out
 
@@ -484,6 +580,30 @@ else:
     )
 
 print("Data load complete")
+log_memory_rss("after_data_load", sink=memory_events)
+table_rows_before_opt = {k: int(len(v)) for k, v in tables.items() if isinstance(v, pd.DataFrame)}
+
+dtype_opt_summary = pd.DataFrame()
+if MEMORY_OPTIMIZE:
+    tables, dtype_opt_summary = optimize_table_dict(
+        tables,
+        allow_float_downcast=bool(MEMORY_FLOAT_DOWNCAST),
+        float_rtol=1e-6,
+        cat_ratio_threshold=float(MEMORY_CAT_RATIO_THRESHOLD),
+        protect_columns=("brand_id",),
+        validate=bool(MEMORY_VALIDATE_DOWNCAST),
+    )
+    for k, v in tables.items():
+        if isinstance(v, pd.DataFrame):
+            before_n = table_rows_before_opt.get(k, int(len(v)))
+            after_n = int(len(v))
+            if before_n != after_n:
+                raise AssertionError(
+                    f"Row count changed after dtype optimization for table={k}: before={before_n}, after={after_n}"
+                )
+    if not dtype_opt_summary.empty:
+        display(dtype_opt_summary[["table_name", "rows", "cols", "bytes_before", "bytes_after", "reduced_pct"]])
+log_memory_rss("after_dtype_optimization", sink=memory_events)
 
 # COMMAND ----------
 # MAGIC %md
@@ -536,6 +656,11 @@ labeled_df["__row_id"] = np.arange(len(labeled_df), dtype=int)
 print("feature rows:", len(feature_df))
 print("segment kpi rows:", len(segment_kpi_df))
 print("labeled rows:", len(labeled_df))
+log_memory_rss("after_feature_label_build", sink=memory_events)
+
+# Raw source tables are no longer needed after all derived frames are built.
+del tables
+collect_garbage("release_raw_tables", sink=memory_events)
 
 # COMMAND ----------
 # MAGIC %md
@@ -545,8 +670,8 @@ print("labeled rows:", len(labeled_df))
 
 sample_mode = str(TRAIN_SAMPLE_MODE).strip().lower()
 sample_result = None
-train_input_df = labeled_df.copy()
-infer_input_df = labeled_df.copy()
+train_input_df = labeled_df
+infer_input_df = labeled_df
 train_row_ids: Optional[Sequence[int]] = None
 eval_row_ids: Optional[Sequence[int]] = None
 
@@ -562,8 +687,8 @@ if sample_mode != "off":
         group_col=str(TRAIN_GROUP_COL),
     )
     sample_result = build_train_eval_samples(labeled_df, config=sample_cfg)
-    train_input_df = sample_result.sampled_df.copy()
-    infer_input_df = sample_result.sampled_df.copy()
+    train_input_df = sample_result.sampled_df
+    infer_input_df = sample_result.sampled_df
     train_row_ids = sample_result.train_row_ids
     eval_row_ids = sample_result.eval_row_ids
 
@@ -577,6 +702,10 @@ if sample_mode != "off":
         )
     )
 
+    # Full labeled frame can be released in sampled mode.
+    del labeled_df
+    collect_garbage("release_full_labeled_after_sampling", sink=memory_events)
+
 # COMMAND ----------
 # MAGIC %md
 # MAGIC ## 7) Train / load model and infer
@@ -585,6 +714,7 @@ if sample_mode != "off":
 
 artifact_dir_local = _dbfs_uri_to_local_path(DBFS_ARTIFACT_DIR)
 artifact_dir_local.mkdir(parents=True, exist_ok=True)
+log_memory_rss("before_train_stage", sink=memory_events)
 
 if SKIP_TRAIN:
     loaded = load_model_artifacts(artifact_dir=artifact_dir_local)
@@ -613,6 +743,7 @@ else:
     class_labels = artifacts.class_labels
     metrics = artifacts.metrics
     selected_model = metrics.get("selected_model")
+log_memory_rss("after_train_stage", sink=memory_events)
 
 pred_df = predict_with_drivers(
     feature_df=infer_input_df,
@@ -627,6 +758,11 @@ pred_df = predict_with_drivers(
 )
 
 print("predicted rows:", len(pred_df))
+log_memory_rss("after_inference_stage", sink=memory_events)
+
+if train_input_df is not infer_input_df:
+    del train_input_df
+collect_garbage("release_train_frame", sink=memory_events)
 
 # COMMAND ----------
 # MAGIC %md
@@ -637,12 +773,16 @@ print("predicted rows:", len(pred_df))
 output_dir_local = _dbfs_uri_to_local_path(DBFS_OUTPUT_DIR)
 output_dir_local.mkdir(parents=True, exist_ok=True)
 
-feature_df.to_parquet(output_dir_local / "feature_table.parquet", index=False)
+write_parquet_chunked(feature_df, output_dir_local / "feature_table.parquet", chunk_rows=100_000)
 feature_defs_df.to_csv(output_dir_local / "feature_definitions.csv", index=False)
-labeled_df.to_parquet(output_dir_local / "labeled_feature_table.parquet", index=False)
+if "labeled_df" in locals():
+    write_parquet_chunked(labeled_df, output_dir_local / "labeled_feature_table.parquet", chunk_rows=100_000)
+else:
+    # Keep output contract even when labeled_df has been released in sampled mode.
+    write_parquet_chunked(infer_input_df, output_dir_local / "labeled_feature_table.parquet", chunk_rows=100_000)
 
 if not segment_kpi_df.empty:
-    segment_kpi_df.to_parquet(output_dir_local / "segment_kpis.parquet", index=False)
+    write_parquet_chunked(segment_kpi_df, output_dir_local / "segment_kpis.parquet", chunk_rows=100_000)
 
 save_predictions(pred_df, output_dir=output_dir_local)
 
@@ -672,6 +812,32 @@ if sample_result is not None:
         "qa_report": sample_result.qa_report,
     }
 
+dtype_opt_records = (
+    dtype_opt_summary.to_dict(orient="records")
+    if isinstance(dtype_opt_summary, pd.DataFrame) and not dtype_opt_summary.empty
+    else []
+)
+memory_payload = {
+    "memory_optimize": bool(MEMORY_OPTIMIZE),
+    "memory_float_downcast": bool(MEMORY_FLOAT_DOWNCAST),
+    "memory_cat_ratio_threshold": float(MEMORY_CAT_RATIO_THRESHOLD),
+    "memory_validate_downcast": bool(MEMORY_VALIDATE_DOWNCAST),
+    "events": memory_events,
+    "dtype_optimization": dtype_opt_records,
+}
+(output_dir_local / "memory_optimization_report.json").write_text(
+    json.dumps(memory_payload, indent=2, ensure_ascii=False),
+    encoding="utf-8",
+)
+if not dtype_opt_summary.empty:
+    dtype_opt_summary.to_csv(output_dir_local / "memory_dtype_optimization.csv", index=False)
+
+sample_metrics_payload["memory_optimization"] = {
+    "enabled": bool(MEMORY_OPTIMIZE),
+    "dtype_tables_optimized": int(len(dtype_opt_records)),
+    "events": memory_events,
+}
+
 (output_dir_local / "pipeline_run_summary.json").write_text(
     json.dumps(sample_metrics_payload, indent=2, ensure_ascii=False),
     encoding="utf-8",
@@ -693,41 +859,93 @@ print(f"Saved outputs to: {output_dir_local}")
 # MAGIC ## 9) Log to MLflow
 
 # COMMAND ----------
+from mlflow.models.signature import infer_signature
 
-mlflow.set_experiment(MLFLOW_EXPERIMENT)
-with mlflow.start_run(run_name=MLFLOW_RUN_NAME):
-    mlflow.log_param("source_mode", SOURCE_MODE)
-    mlflow.log_param("snapshot_freq", SNAPSHOT_FREQ)
-    mlflow.log_param("skip_train", bool(SKIP_TRAIN))
-    mlflow.log_param("train_sample_mode", sample_mode)
-    mlflow.log_param("n_jobs", int(N_JOBS))
-    mlflow.log_param("train_weight_classes", bool(TRAIN_WEIGHT_CLASSES))
-    mlflow.log_param("brand_app_id_filters", json.dumps(BRAND_APP_ID_FILTERS, ensure_ascii=False))
+# End any lingering run
+mlflow.end_run()
 
-    # Log key scalar metrics when available.
-    time_split = metrics.get("time_split", {}) if isinstance(metrics, dict) else {}
-    if isinstance(time_split, dict):
-        for model_name, m in time_split.items():
-            if not isinstance(m, dict):
-                continue
-            macro_f1 = m.get("macro_f1")
-            bal_acc = m.get("balanced_accuracy")
-            if macro_f1 is not None:
-                mlflow.log_metric(f"{model_name}_macro_f1", float(macro_f1))
-            if bal_acc is not None:
-                mlflow.log_metric(f"{model_name}_balanced_accuracy", float(bal_acc))
+# Set experiment by id or name/path.
+if str(MLFLOW_EXPERIMENT).strip().isdigit():
+    mlflow.set_experiment(experiment_id=str(MLFLOW_EXPERIMENT).strip())
+else:
+    mlflow.set_experiment(experiment_name=str(MLFLOW_EXPERIMENT))
 
+with mlflow.start_run(run_name=MLFLOW_RUN_NAME) as run:
+
+    # --- Params ---
+    mlflow.log_params({
+        "source_mode": SOURCE_MODE,
+        "snapshot_freq": SNAPSHOT_FREQ,
+        "skip_train": bool(SKIP_TRAIN),
+        "train_sample_mode": sample_mode,
+        "n_jobs": int(N_JOBS),
+        "train_weight_classes": bool(TRAIN_WEIGHT_CLASSES),
+        "selected_model": str(selected_model),
+        "rows_scored": int(len(pred_df)),
+    })
+
+    # --- Tags ---
+    mlflow.set_tags({
+        "pipeline": "brand-health",
+        "brands": ",".join(sorted(BRAND_APP_ID_FILTERS.keys())),
+    })
+
+    # --- Metrics (safe) ---
+    if isinstance(metrics, dict):
+        time_split = metrics.get("time_split", {})
+        if isinstance(time_split, dict):
+            for model_name, m in time_split.items():
+                if not isinstance(m, dict):
+                    continue
+                for metric_key in ["macro_f1", "balanced_accuracy",
+                                   "weighted_f1", "accuracy"]:
+                    val = m.get(metric_key)
+                    if val is not None:
+                        try:
+                            mlflow.log_metric(
+                                f"{model_name}_{metric_key}", float(val)
+                            )
+                        except (ValueError, TypeError):
+                            pass
+
+    # --- JSON artifacts ---
     mlflow.log_dict(sample_metrics_payload, "pipeline_run_summary.json")
-    mlflow.log_dict({"commerce_joinable": commerce_joinable}, "commerce_joinable.json")
-    mlflow.log_dict({"activity_enrichment_joinable": activity_enrichment_joinable}, "activity_enrichment_joinable.json")
+    mlflow.log_dict(attribution_qa, "attribution_qa.json")
+    mlflow.log_dict(memory_payload, "memory_optimization_report.json")
 
-    if not SKIP_TRAIN:
-        mlflow.sklearn.log_model(model, artifact_path="model")
+    # --- Model with signature ---
+    if not SKIP_TRAIN and model is not None and feature_columns:
+        try:
+            X_sample = infer_input_df[feature_columns].head(5)
+            y_sample = model.predict(X_sample)
+            sig = infer_signature(X_sample, y_sample)
+        except Exception:
+            sig = None
 
+        mlflow.sklearn.log_model(
+            model,
+            artifact_path="model",
+            signature=sig,
+        )
+
+    # --- Output files (selective) ---
     if LOG_OUTPUTS_TO_MLFLOW:
-        mlflow.log_artifacts(str(output_dir_local), artifact_path="outputs")
+        for fname in [
+            "feature_definitions.csv",
+            "join_diagnostics_catalog.csv",
+            "examples_last4_with_segments.json",
+        ]:
+            fpath = output_dir_local / fname
+            if fpath.exists():
+                mlflow.log_artifact(str(fpath), artifact_path="outputs")
 
-print("MLflow logging complete")
+    print(f"MLflow run logged: {run.info.run_id}")
+
+# Release heavy frames after outputs and logging are complete.
+for _name in ["infer_input_df", "feature_df", "segment_kpi_df", "sample_result"]:
+    if _name in locals():
+        del globals()[_name]
+collect_garbage("release_post_mlflow", sink=memory_events)
 
 # COMMAND ----------
 # MAGIC %md
@@ -750,4 +968,3 @@ display(
         ]
     ].sort_values(["brand_id", "window_end_date", "window_size"]).tail(30)
 )
-

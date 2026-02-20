@@ -26,6 +26,8 @@ This folder contains notebooks to run the full Brand Health pipeline on Azure Da
    - `SOURCE_MODE` (`catalog` or `parquet`)
    - `CATALOG_SCHEMA` and `CATALOG_TABLE_MAP`
    - `BRAND_APP_ID_FILTERS`
+   - memory controls (`MEMORY_OPTIMIZE`, `MEMORY_FLOAT_DOWNCAST`, `MEMORY_CAT_RATIO_THRESHOLD`)
+   - Spark conversion controls (`ENABLE_ARROW`, `SPARK_TO_PANDAS_CHUNK_THRESHOLD`, `SPARK_TO_PANDAS_CHUNK_ROWS`)
    - sampling and training flags
    - output/artifact DBFS paths
    - MLflow experiment path
@@ -74,11 +76,14 @@ Saved to `DBFS_OUTPUT_DIR`:
 - `segment_kpis.parquet`
 - `predictions_with_drivers.jsonl`
 - `predictions_with_drivers.csv`
+- `predictions_with_drivers.parquet`
 - `examples_last4_with_segments.json`
 - `attribution_qa.json`
 - `pipeline_run_summary.json`
 - `join_diagnostics_catalog.csv`
 - `join_time_ranges_catalog.csv`
+- `memory_optimization_report.json`
+- `memory_dtype_optimization.csv` (when optimization runs)
 - sample files (`sample_train_indices.csv`, `sample_eval_indices.csv`, `sample_qa_report.json`) when sampling is enabled
 
 ## MLflow
