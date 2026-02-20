@@ -84,6 +84,10 @@ python3 run_pipeline.py \
   --report-name band_health_report_V2.md
 ```
 
+Notes:
+- If `--report-name` is omitted, default report file is `reports/brand_health_report.md`.
+- Use `--report-name band_health_report_V2.md` when you want the V2 report filename.
+
 ### 4.2 Reuse existing model artifacts (skip training)
 
 Use when you already have:
@@ -115,7 +119,8 @@ python3 run_pipeline.py \
 ## 6) Main outputs
 
 ### Reports
-- `reports/band_health_report_V2.md`: final markdown report
+- `reports/brand_health_report.md`: default final markdown report (when `--report-name` is not set)
+- `reports/band_health_report_V2.md`: optional final markdown report filename (when `--report-name band_health_report_V2.md`)
 - `reports/pipeline_summary.json`: model + metrics + joinability summary
 - `reports/data_profile/table_profile.csv`
 - `reports/data_profile/schema_profile.csv`
@@ -138,6 +143,14 @@ python3 run_pipeline.py \
 - `outputs/examples_last4_with_segments.json`
 - `outputs/examples_before_after_2windows.json`
 - `outputs/attribution_qa.json`
+
+Important i18n fields in prediction payload:
+- `predicted_health_class_i18n`: `{ \"en\": \"...\", \"th\": \"...\" }`
+- `predicted_health_statement_i18n`: `{ \"en\": \"...\", \"th\": \"...\" }`
+- `confidence_band_i18n`: `{ \"en\": \"...\", \"th\": \"...\" }`
+- driver-level `key_i18n`, `statement_i18n`, `direction_i18n`
+- target-segment `reason_statement_i18n`, `metric_family_i18n`, `segment_label_i18n`, `direction_i18n`
+- `suggested_actions_i18n`: list of `{ \"en\": \"...\", \"th\": \"...\" }`
 
 ## 7) Cloud run checklist
 

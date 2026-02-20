@@ -266,6 +266,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "reward_efficiency_zscore": 1.1039320711,
         "importance": -0.0011973589
+      },
+      "key_i18n": {
+        "en": "model_reward_efficiency_zscore",
+        "th": "model_reward_efficiency_zscore"
+      },
+      "direction_i18n": {
+        "en": "up",
+        "th": "เพิ่มขึ้น"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted anomaly: reward_efficiency_zscore=1.10 (up vs baseline)",
+        "th": "ความผิดปกติที่โมเดลเน้น: reward_efficiency_zscore=1.10 (up เทียบ baseline)"
       }
     },
     {
@@ -277,6 +289,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "reward_efficiency_wow_pct": 0.10599078340000001,
         "importance": -0.0024705340000000004
+      },
+      "key_i18n": {
+        "en": "model_reward_efficiency_wow_pct",
+        "th": "model_reward_efficiency_wow_pct"
+      },
+      "direction_i18n": {
+        "en": "up",
+        "th": "เพิ่มขึ้น"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted signal: reward_efficiency_wow_pct up +10.6%",
+        "th": "สัญญาณที่โมเดลเน้น: reward_efficiency_wow_pct เพิ่มขึ้น +10.6%"
       }
     }
   ],
@@ -285,6 +309,32 @@ Selected model based on time-split macro F1: **hgb_calibrated**
     "Recalibrate reward economics: trim low-yield rewards and raise completion-linked value.",
     "Prioritize activities with best completion-per-point efficiency.",
     "Set guardrails so point inflation does not outpace engagement conversion."
+  ],
+  "predicted_health_class_i18n": {
+    "en": "Healthy",
+    "th": "สุขภาพแบรนด์ดี"
+  },
+  "confidence_band_i18n": {
+    "en": "high",
+    "th": "สูง"
+  },
+  "predicted_health_statement_i18n": {
+    "en": "Healthy",
+    "th": "สุขภาพแบรนด์ดี"
+  },
+  "suggested_actions_i18n": [
+    {
+      "en": "Recalibrate reward economics: trim low-yield rewards and raise completion-linked value.",
+      "th": "ปรับเศรษฐศาสตร์รางวัล: ตัดรางวัลที่ผลตอบแทนต่ำ และเพิ่มมูลค่าที่ผูกกับการทำสำเร็จ"
+    },
+    {
+      "en": "Prioritize activities with best completion-per-point efficiency.",
+      "th": "ให้ความสำคัญกับกิจกรรมที่มีประสิทธิภาพ completion-per-point สูง"
+    },
+    {
+      "en": "Set guardrails so point inflation does not outpace engagement conversion.",
+      "th": "ตั้ง guardrail ไม่ให้การเพิ่มแต้มเร็วกว่า conversion ของ engagement"
+    }
   ]
 }
 ```
@@ -313,6 +363,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "active_users_wow_pct": 0.1343283582,
         "importance": 0.2281448401
+      },
+      "key_i18n": {
+        "en": "model_active_users_wow_pct",
+        "th": "model_active_users_wow_pct"
+      },
+      "direction_i18n": {
+        "en": "up",
+        "th": "เพิ่มขึ้น"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted signal: active_users_wow_pct up +13.4%",
+        "th": "สัญญาณที่โมเดลเน้น: active_users_wow_pct เพิ่มขึ้น +13.4%"
       }
     },
     {
@@ -324,6 +386,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "reward_efficiency_zscore": 1.1004054403,
         "importance": -0.0011973589
+      },
+      "key_i18n": {
+        "en": "model_reward_efficiency_zscore",
+        "th": "model_reward_efficiency_zscore"
+      },
+      "direction_i18n": {
+        "en": "up",
+        "th": "เพิ่มขึ้น"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted anomaly: reward_efficiency_zscore=1.10 (up vs baseline)",
+        "th": "ความผิดปกติที่โมเดลเน้น: reward_efficiency_zscore=1.10 (up เทียบ baseline)"
       }
     }
   ],
@@ -343,13 +417,55 @@ Selected model based on time-split macro F1: **hgb_calibrated**
         "cold_start_increase": false,
         "note": "stable"
       },
-      "segment_confidence": "medium"
+      "segment_confidence": "medium",
+      "metric_family_i18n": {
+        "en": "Active users",
+        "th": "ผู้ใช้งานที่แอคทีฟ"
+      },
+      "segment_label_i18n": {
+        "en": "redeemers",
+        "th": "กลุ่มผู้แลกรับ"
+      },
+      "direction_i18n": {
+        "en": "up",
+        "th": "เพิ่มขึ้น"
+      },
+      "reason_statement_i18n": {
+        "en": "Active users up driven by `redeemers` (driver: Model-highlighted signal: active_users_wow_pct up +13.4%)",
+        "th": "ผู้ใช้งานที่แอคทีฟ เพิ่มขึ้น โดยมีแรงขับหลักจาก `กลุ่มผู้แลกรับ`"
+      }
     }
   ],
   "suggested_actions": [
     "Launch dormant-user reactivation campaigns with segmented incentives.",
     "Reduce message fatigue via tighter frequency caps and send-time optimization.",
     "Retarget recently lapsed cohorts with low-friction missions."
+  ],
+  "predicted_health_class_i18n": {
+    "en": "Healthy",
+    "th": "สุขภาพแบรนด์ดี"
+  },
+  "confidence_band_i18n": {
+    "en": "high",
+    "th": "สูง"
+  },
+  "predicted_health_statement_i18n": {
+    "en": "Healthy",
+    "th": "สุขภาพแบรนด์ดี"
+  },
+  "suggested_actions_i18n": [
+    {
+      "en": "Launch dormant-user reactivation campaigns with segmented incentives.",
+      "th": "ทำแคมเปญกระตุ้นผู้ใช้ไม่เคลื่อนไหว โดยแยกสิทธิประโยชน์ตามเซกเมนต์"
+    },
+    {
+      "en": "Reduce message fatigue via tighter frequency caps and send-time optimization.",
+      "th": "ลดความล้าจากการสื่อสารด้วยการคุมความถี่และปรับเวลาส่งให้เหมาะสม"
+    },
+    {
+      "en": "Retarget recently lapsed cohorts with low-friction missions.",
+      "th": "ทำรีทาร์เก็ตกลุ่มที่เพิ่งเริ่มหลุด ด้วยมิชชันที่ทำได้ง่าย"
+    }
   ]
 }
 ```
@@ -377,6 +493,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metric_family": "active_users",
       "metrics": {
         "active_users_wow_pct": -0.1842105263
+      },
+      "key_i18n": {
+        "en": "active_down",
+        "th": "ผู้ใช้งานลดลง"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "statement_i18n": {
+        "en": "Active users 30d down -18.4% WoW",
+        "th": "ผู้ใช้งานที่แอคทีฟ 30d ลดลง -18.4% WoW"
       }
     },
     {
@@ -388,6 +516,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "active_users_wow_pct": -0.1842105263,
         "importance": 0.2281448401
+      },
+      "key_i18n": {
+        "en": "model_active_users_wow_pct",
+        "th": "model_active_users_wow_pct"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted signal: active_users_wow_pct down -18.4%",
+        "th": "สัญญาณที่โมเดลเน้น: active_users_wow_pct ลดลง -18.4%"
       }
     },
     {
@@ -399,6 +539,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "reward_efficiency_zscore": 1.041596399,
         "importance": -0.0011973589
+      },
+      "key_i18n": {
+        "en": "model_reward_efficiency_zscore",
+        "th": "model_reward_efficiency_zscore"
+      },
+      "direction_i18n": {
+        "en": "up",
+        "th": "เพิ่มขึ้น"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted anomaly: reward_efficiency_zscore=1.04 (up vs baseline)",
+        "th": "ความผิดปกติที่โมเดลเน้น: reward_efficiency_zscore=1.04 (up เทียบ baseline)"
       }
     }
   ],
@@ -418,7 +570,23 @@ Selected model based on time-split macro F1: **hgb_calibrated**
         "cold_start_increase": false,
         "note": "stable"
       },
-      "segment_confidence": "high"
+      "segment_confidence": "high",
+      "metric_family_i18n": {
+        "en": "Active users",
+        "th": "ผู้ใช้งานที่แอคทีฟ"
+      },
+      "segment_label_i18n": {
+        "en": "dormant_60d_plus",
+        "th": "ผู้ใช้ไม่เคลื่อนไหวมากกว่า 60 วัน"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "reason_statement_i18n": {
+        "en": "Active users down driven by `dormant_60d_plus` (driver: Active users 30d down -18.4% WoW)",
+        "th": "ผู้ใช้งานที่แอคทีฟ ลดลง โดยมีแรงขับหลักจาก `ผู้ใช้ไม่เคลื่อนไหวมากกว่า 60 วัน`"
+      }
     },
     {
       "metric_family": "active_users",
@@ -435,13 +603,55 @@ Selected model based on time-split macro F1: **hgb_calibrated**
         "cold_start_increase": false,
         "note": "stable"
       },
-      "segment_confidence": "high"
+      "segment_confidence": "high",
+      "metric_family_i18n": {
+        "en": "Active users",
+        "th": "ผู้ใช้งานที่แอคทีฟ"
+      },
+      "segment_label_i18n": {
+        "en": "non_redeemers",
+        "th": "ผู้ใช้ที่ยังไม่แลกรับ"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "reason_statement_i18n": {
+        "en": "Active users down driven by `non_redeemers` (driver: Active users 30d down -18.4% WoW)",
+        "th": "ผู้ใช้งานที่แอคทีฟ ลดลง โดยมีแรงขับหลักจาก `ผู้ใช้ที่ยังไม่แลกรับ`"
+      }
     }
   ],
   "suggested_actions": [
     "Trigger winback rewards for `dormant_60d_plus` with short expiry and capped frequency.",
     "Set reactivation journeys for `dormant_60d_plus` using low-friction missions first.",
     "Launch dormant-user reactivation campaigns with segmented incentives."
+  ],
+  "predicted_health_class_i18n": {
+    "en": "Healthy",
+    "th": "สุขภาพแบรนด์ดี"
+  },
+  "confidence_band_i18n": {
+    "en": "medium",
+    "th": "กลาง"
+  },
+  "predicted_health_statement_i18n": {
+    "en": "Healthy",
+    "th": "สุขภาพแบรนด์ดี"
+  },
+  "suggested_actions_i18n": [
+    {
+      "en": "Trigger winback rewards for `dormant_60d_plus` with short expiry and capped frequency.",
+      "th": "ส่งรางวัล winback ให้เซกเมนต์ `dormant_60d_plus` โดยกำหนดอายุสั้นและคุมความถี่การส่ง"
+    },
+    {
+      "en": "Set reactivation journeys for `dormant_60d_plus` using low-friction missions first.",
+      "th": "ตั้ง reactivation journey สำหรับ `dormant_60d_plus` โดยเริ่มจากมิชชันที่ทำได้ง่าย"
+    },
+    {
+      "en": "Launch dormant-user reactivation campaigns with segmented incentives.",
+      "th": "ทำแคมเปญกระตุ้นผู้ใช้ไม่เคลื่อนไหว โดยแยกสิทธิประโยชน์ตามเซกเมนต์"
+    }
   ]
 }
 ```
@@ -469,6 +679,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metric_family": "active_users",
       "metrics": {
         "active_users_wow_pct": -0.2419354839
+      },
+      "key_i18n": {
+        "en": "active_down",
+        "th": "ผู้ใช้งานลดลง"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "statement_i18n": {
+        "en": "Active users 30d down -24.2% WoW",
+        "th": "ผู้ใช้งานที่แอคทีฟ 30d ลดลง -24.2% WoW"
       }
     },
     {
@@ -480,6 +702,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "dormant_share_zscore": 2.1106124424,
         "importance": 0.0433168721
+      },
+      "key_i18n": {
+        "en": "model_dormant_share_zscore",
+        "th": "model_dormant_share_zscore"
+      },
+      "direction_i18n": {
+        "en": "up",
+        "th": "เพิ่มขึ้น"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted anomaly: dormant_share_zscore=2.11 (up vs baseline)",
+        "th": "ความผิดปกติที่โมเดลเน้น: dormant_share_zscore=2.11 (up เทียบ baseline)"
       }
     },
     {
@@ -491,6 +725,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "active_users_wow_pct": -0.2419354839,
         "importance": 0.2281448401
+      },
+      "key_i18n": {
+        "en": "model_active_users_wow_pct",
+        "th": "model_active_users_wow_pct"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted signal: active_users_wow_pct down -24.2%",
+        "th": "สัญญาณที่โมเดลเน้น: active_users_wow_pct ลดลง -24.2%"
       }
     },
     {
@@ -502,6 +748,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "active_users_zscore": -2.0949193662,
         "importance": 0.0224481823
+      },
+      "key_i18n": {
+        "en": "model_active_users_zscore",
+        "th": "model_active_users_zscore"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted anomaly: active_users_zscore=-2.09 (down vs baseline)",
+        "th": "ความผิดปกติที่โมเดลเน้น: active_users_zscore=-2.09 (down เทียบ baseline)"
       }
     }
   ],
@@ -510,6 +768,32 @@ Selected model based on time-split macro F1: **hgb_calibrated**
     "Launch dormant-user reactivation campaigns with segmented incentives.",
     "Reduce message fatigue via tighter frequency caps and send-time optimization.",
     "Retarget recently lapsed cohorts with low-friction missions."
+  ],
+  "predicted_health_class_i18n": {
+    "en": "Warning",
+    "th": "เริ่มน่ากังวล"
+  },
+  "confidence_band_i18n": {
+    "en": "medium",
+    "th": "กลาง"
+  },
+  "predicted_health_statement_i18n": {
+    "en": "Warning",
+    "th": "เริ่มน่ากังวล"
+  },
+  "suggested_actions_i18n": [
+    {
+      "en": "Launch dormant-user reactivation campaigns with segmented incentives.",
+      "th": "ทำแคมเปญกระตุ้นผู้ใช้ไม่เคลื่อนไหว โดยแยกสิทธิประโยชน์ตามเซกเมนต์"
+    },
+    {
+      "en": "Reduce message fatigue via tighter frequency caps and send-time optimization.",
+      "th": "ลดความล้าจากการสื่อสารด้วยการคุมความถี่และปรับเวลาส่งให้เหมาะสม"
+    },
+    {
+      "en": "Retarget recently lapsed cohorts with low-friction missions.",
+      "th": "ทำรีทาร์เก็ตกลุ่มที่เพิ่งเริ่มหลุด ด้วยมิชชันที่ทำได้ง่าย"
+    }
   ]
 }
 ```
@@ -539,6 +823,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metric_family": "active_users",
       "metrics": {
         "active_users_wow_pct": -0.12731099240000002
+      },
+      "key_i18n": {
+        "en": "active_down",
+        "th": "ผู้ใช้งานลดลง"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "statement_i18n": {
+        "en": "Active users 30d down -12.7% WoW",
+        "th": "ผู้ใช้งานที่แอคทีฟ 30d ลดลง -12.7% WoW"
       }
     },
     {
@@ -550,6 +846,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "dormant_share_zscore": 1.3129149663,
         "importance": 0.0433168721
+      },
+      "key_i18n": {
+        "en": "model_dormant_share_zscore",
+        "th": "model_dormant_share_zscore"
+      },
+      "direction_i18n": {
+        "en": "up",
+        "th": "เพิ่มขึ้น"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted anomaly: dormant_share_zscore=1.31 (up vs baseline)",
+        "th": "ความผิดปกติที่โมเดลเน้น: dormant_share_zscore=1.31 (up เทียบ baseline)"
       }
     },
     {
@@ -561,6 +869,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "active_users_zscore": -1.4197443642,
         "importance": 0.0224481823
+      },
+      "key_i18n": {
+        "en": "model_active_users_zscore",
+        "th": "model_active_users_zscore"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted anomaly: active_users_zscore=-1.42 (down vs baseline)",
+        "th": "ความผิดปกติที่โมเดลเน้น: active_users_zscore=-1.42 (down เทียบ baseline)"
       }
     },
     {
@@ -572,6 +892,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "active_users_wow_pct": -0.12731099240000002,
         "importance": 0.2281448401
+      },
+      "key_i18n": {
+        "en": "model_active_users_wow_pct",
+        "th": "model_active_users_wow_pct"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted signal: active_users_wow_pct down -12.7%",
+        "th": "สัญญาณที่โมเดลเน้น: active_users_wow_pct ลดลง -12.7%"
       }
     }
   ],
@@ -591,7 +923,23 @@ Selected model based on time-split macro F1: **hgb_calibrated**
         "cold_start_increase": false,
         "note": "stable"
       },
-      "segment_confidence": "high"
+      "segment_confidence": "high",
+      "metric_family_i18n": {
+        "en": "Active users",
+        "th": "ผู้ใช้งานที่แอคทีฟ"
+      },
+      "segment_label_i18n": {
+        "en": "dormant_31_60d",
+        "th": "ผู้ใช้ไม่เคลื่อนไหว 31-60 วัน"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "reason_statement_i18n": {
+        "en": "Active users down driven by `dormant_31_60d` (driver: Active users 30d down -12.7% WoW)",
+        "th": "ผู้ใช้งานที่แอคทีฟ ลดลง โดยมีแรงขับหลักจาก `ผู้ใช้ไม่เคลื่อนไหว 31-60 วัน`"
+      }
     },
     {
       "metric_family": "active_users",
@@ -608,7 +956,23 @@ Selected model based on time-split macro F1: **hgb_calibrated**
         "cold_start_increase": false,
         "note": "stable"
       },
-      "segment_confidence": "medium"
+      "segment_confidence": "medium",
+      "metric_family_i18n": {
+        "en": "Active users",
+        "th": "ผู้ใช้งานที่แอคทีฟ"
+      },
+      "segment_label_i18n": {
+        "en": "active_0_7d",
+        "th": "ผู้ใช้งานแอคทีฟ 0-7 วัน"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "reason_statement_i18n": {
+        "en": "Active users down driven by `active_0_7d` (driver: Active users 30d down -12.7% WoW)",
+        "th": "ผู้ใช้งานที่แอคทีฟ ลดลง โดยมีแรงขับหลักจาก `ผู้ใช้งานแอคทีฟ 0-7 วัน`"
+      }
     },
     {
       "metric_family": "active_users",
@@ -625,7 +989,23 @@ Selected model based on time-split macro F1: **hgb_calibrated**
         "cold_start_increase": false,
         "note": "stable"
       },
-      "segment_confidence": "medium"
+      "segment_confidence": "medium",
+      "metric_family_i18n": {
+        "en": "Active users",
+        "th": "ผู้ใช้งานที่แอคทีฟ"
+      },
+      "segment_label_i18n": {
+        "en": "new_users_0_7d",
+        "th": "ผู้ใช้ใหม่ 0-7 วัน"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "reason_statement_i18n": {
+        "en": "Active users down driven by `new_users_0_7d` (driver: Active users 30d down -12.7% WoW)",
+        "th": "ผู้ใช้งานที่แอคทีฟ ลดลง โดยมีแรงขับหลักจาก `ผู้ใช้ใหม่ 0-7 วัน`"
+      }
     },
     {
       "metric_family": "dormant_share",
@@ -642,13 +1022,55 @@ Selected model based on time-split macro F1: **hgb_calibrated**
         "cold_start_increase": false,
         "note": "stable"
       },
-      "segment_confidence": "high"
+      "segment_confidence": "high",
+      "metric_family_i18n": {
+        "en": "Dormant share",
+        "th": "สัดส่วนผู้ใช้ไม่เคลื่อนไหว"
+      },
+      "segment_label_i18n": {
+        "en": "non_redeemers",
+        "th": "ผู้ใช้ที่ยังไม่แลกรับ"
+      },
+      "direction_i18n": {
+        "en": "up",
+        "th": "เพิ่มขึ้น"
+      },
+      "reason_statement_i18n": {
+        "en": "Dormant share up driven by `non_redeemers` (driver: Model-highlighted anomaly: dormant_share_zscore=1.31 (up vs baseline))",
+        "th": "สัดส่วนผู้ใช้ไม่เคลื่อนไหว เพิ่มขึ้น โดยมีแรงขับหลักจาก `ผู้ใช้ที่ยังไม่แลกรับ`"
+      }
     }
   ],
   "suggested_actions": [
     "Trigger winback rewards for `dormant_31_60d` with short expiry and capped frequency.",
     "Set reactivation journeys for `dormant_31_60d` using low-friction missions first.",
     "Boost first-7-day activation missions for `new_users_0_7d` with immediate low-friction rewards."
+  ],
+  "predicted_health_class_i18n": {
+    "en": "Healthy",
+    "th": "สุขภาพแบรนด์ดี"
+  },
+  "confidence_band_i18n": {
+    "en": "low",
+    "th": "ต่ำ"
+  },
+  "predicted_health_statement_i18n": {
+    "en": "Healthy (borderline)",
+    "th": "สุขภาพแบรนด์ดี (ใกล้เส้นแบ่ง)"
+  },
+  "suggested_actions_i18n": [
+    {
+      "en": "Trigger winback rewards for `dormant_31_60d` with short expiry and capped frequency.",
+      "th": "ส่งรางวัล winback ให้เซกเมนต์ `dormant_31_60d` โดยกำหนดอายุสั้นและคุมความถี่การส่ง"
+    },
+    {
+      "en": "Set reactivation journeys for `dormant_31_60d` using low-friction missions first.",
+      "th": "ตั้ง reactivation journey สำหรับ `dormant_31_60d` โดยเริ่มจากมิชชันที่ทำได้ง่าย"
+    },
+    {
+      "en": "Boost first-7-day activation missions for `new_users_0_7d` with immediate low-friction rewards.",
+      "th": "เพิ่มมิชชัน activation ช่วง 7 วันแรกสำหรับ `new_users_0_7d` พร้อมรางวัลที่รับได้ง่ายทันที"
+    }
   ]
 }
 ```
@@ -676,6 +1098,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metric_family": "active_users",
       "metrics": {
         "active_users_wow_pct": -0.4463696064
+      },
+      "key_i18n": {
+        "en": "active_down",
+        "th": "ผู้ใช้งานลดลง"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "statement_i18n": {
+        "en": "Active users 30d down -44.6% WoW",
+        "th": "ผู้ใช้งานที่แอคทีฟ 30d ลดลง -44.6% WoW"
       }
     },
     {
@@ -686,6 +1120,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metric_family": "gmv_net",
       "metrics": {
         "gmv_net_wow_pct": -0.2295684274
+      },
+      "key_i18n": {
+        "en": "gmv_down",
+        "th": "GMV ลดลง"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "statement_i18n": {
+        "en": "GMV down -23.0% WoW",
+        "th": "GMV ลดลง -23.0% WoW"
       }
     },
     {
@@ -696,6 +1142,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metric_family": "transaction_count",
       "metrics": {
         "transaction_count_wow_pct": -0.22383860790000001
+      },
+      "key_i18n": {
+        "en": "transactions_down",
+        "th": "จำนวนธุรกรรมลดลง"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "statement_i18n": {
+        "en": "Transactions down -22.4% WoW",
+        "th": "จำนวนธุรกรรม ลดลง -22.4% WoW"
       }
     },
     {
@@ -707,6 +1165,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "active_users_wow_pct": -0.4463696064,
         "importance": 0.2281448401
+      },
+      "key_i18n": {
+        "en": "model_active_users_wow_pct",
+        "th": "model_active_users_wow_pct"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted signal: active_users_wow_pct down -44.6%",
+        "th": "สัญญาณที่โมเดลเน้น: active_users_wow_pct ลดลง -44.6%"
       }
     },
     {
@@ -717,6 +1187,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metric_family": "dormant_share",
       "metrics": {
         "dormant_share_wow_pct": 0.0845419109
+      },
+      "key_i18n": {
+        "en": "dormant_up",
+        "th": "สัดส่วนผู้ใช้ไม่เคลื่อนไหวเพิ่มขึ้น"
+      },
+      "direction_i18n": {
+        "en": "up",
+        "th": "เพิ่มขึ้น"
+      },
+      "statement_i18n": {
+        "en": "Dormant share up +8.5% WoW",
+        "th": "สัดส่วนผู้ใช้ไม่เคลื่อนไหว เพิ่มขึ้น +8.5% WoW"
       }
     }
   ],
@@ -736,7 +1218,23 @@ Selected model based on time-split macro F1: **hgb_calibrated**
         "cold_start_increase": false,
         "note": "stable"
       },
-      "segment_confidence": "medium"
+      "segment_confidence": "medium",
+      "metric_family_i18n": {
+        "en": "Active users",
+        "th": "ผู้ใช้งานที่แอคทีฟ"
+      },
+      "segment_label_i18n": {
+        "en": "recently_lapsed_8_14d",
+        "th": "ผู้ใช้ที่เพิ่งหลุด 8-14 วัน"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "reason_statement_i18n": {
+        "en": "Active users down driven by `recently_lapsed_8_14d` (driver: Active users 30d down -44.6% WoW)",
+        "th": "ผู้ใช้งานที่แอคทีฟ ลดลง โดยมีแรงขับหลักจาก `ผู้ใช้ที่เพิ่งหลุด 8-14 วัน`"
+      }
     },
     {
       "metric_family": "active_users",
@@ -753,7 +1251,23 @@ Selected model based on time-split macro F1: **hgb_calibrated**
         "cold_start_increase": false,
         "note": "stable"
       },
-      "segment_confidence": "high"
+      "segment_confidence": "high",
+      "metric_family_i18n": {
+        "en": "Active users",
+        "th": "ผู้ใช้งานที่แอคทีฟ"
+      },
+      "segment_label_i18n": {
+        "en": "dormant_15_30d",
+        "th": "ผู้ใช้ไม่เคลื่อนไหว 15-30 วัน"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "reason_statement_i18n": {
+        "en": "Active users down driven by `dormant_15_30d` (driver: Active users 30d down -44.6% WoW)",
+        "th": "ผู้ใช้งานที่แอคทีฟ ลดลง โดยมีแรงขับหลักจาก `ผู้ใช้ไม่เคลื่อนไหว 15-30 วัน`"
+      }
     },
     {
       "metric_family": "dormant_share",
@@ -770,13 +1284,55 @@ Selected model based on time-split macro F1: **hgb_calibrated**
         "cold_start_increase": false,
         "note": "stable"
       },
-      "segment_confidence": "high"
+      "segment_confidence": "high",
+      "metric_family_i18n": {
+        "en": "Dormant share",
+        "th": "สัดส่วนผู้ใช้ไม่เคลื่อนไหว"
+      },
+      "segment_label_i18n": {
+        "en": "non_redeemers",
+        "th": "ผู้ใช้ที่ยังไม่แลกรับ"
+      },
+      "direction_i18n": {
+        "en": "up",
+        "th": "เพิ่มขึ้น"
+      },
+      "reason_statement_i18n": {
+        "en": "Dormant share up driven by `non_redeemers` (driver: Dormant share up +8.5% WoW)",
+        "th": "สัดส่วนผู้ใช้ไม่เคลื่อนไหว เพิ่มขึ้น โดยมีแรงขับหลักจาก `ผู้ใช้ที่ยังไม่แลกรับ`"
+      }
     }
   ],
   "suggested_actions": [
     "Trigger winback rewards for `recently_lapsed_8_14d` with short expiry and capped frequency.",
     "Set reactivation journeys for `recently_lapsed_8_14d` using low-friction missions first.",
     "Trigger winback rewards for `dormant_15_30d` with short expiry and capped frequency."
+  ],
+  "predicted_health_class_i18n": {
+    "en": "AtRisk",
+    "th": "เสี่ยงสูง"
+  },
+  "confidence_band_i18n": {
+    "en": "high",
+    "th": "สูง"
+  },
+  "predicted_health_statement_i18n": {
+    "en": "AtRisk",
+    "th": "เสี่ยงสูง"
+  },
+  "suggested_actions_i18n": [
+    {
+      "en": "Trigger winback rewards for `recently_lapsed_8_14d` with short expiry and capped frequency.",
+      "th": "ส่งรางวัล winback ให้เซกเมนต์ `recently_lapsed_8_14d` โดยกำหนดอายุสั้นและคุมความถี่การส่ง"
+    },
+    {
+      "en": "Set reactivation journeys for `recently_lapsed_8_14d` using low-friction missions first.",
+      "th": "ตั้ง reactivation journey สำหรับ `recently_lapsed_8_14d` โดยเริ่มจากมิชชันที่ทำได้ง่าย"
+    },
+    {
+      "en": "Trigger winback rewards for `dormant_15_30d` with short expiry and capped frequency.",
+      "th": "ส่งรางวัล winback ให้เซกเมนต์ `dormant_15_30d` โดยกำหนดอายุสั้นและคุมความถี่การส่ง"
+    }
   ]
 }
 ```
@@ -804,6 +1360,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metric_family": "active_users",
       "metrics": {
         "active_users_wow_pct": -0.08899611310000001
+      },
+      "key_i18n": {
+        "en": "active_down",
+        "th": "ผู้ใช้งานลดลง"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "statement_i18n": {
+        "en": "Active users 30d down -8.9% WoW",
+        "th": "ผู้ใช้งานที่แอคทีฟ 30d ลดลง -8.9% WoW"
       }
     },
     {
@@ -815,6 +1383,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "dormant_share_zscore": 1.5243361915,
         "importance": 0.0433168721
+      },
+      "key_i18n": {
+        "en": "model_dormant_share_zscore",
+        "th": "model_dormant_share_zscore"
+      },
+      "direction_i18n": {
+        "en": "up",
+        "th": "เพิ่มขึ้น"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted anomaly: dormant_share_zscore=1.52 (up vs baseline)",
+        "th": "ความผิดปกติที่โมเดลเน้น: dormant_share_zscore=1.52 (up เทียบ baseline)"
       }
     },
     {
@@ -826,6 +1406,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "active_users_wow_pct": -0.08899611310000001,
         "importance": 0.2281448401
+      },
+      "key_i18n": {
+        "en": "model_active_users_wow_pct",
+        "th": "model_active_users_wow_pct"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted signal: active_users_wow_pct down -8.9%",
+        "th": "สัญญาณที่โมเดลเน้น: active_users_wow_pct ลดลง -8.9%"
       }
     },
     {
@@ -837,6 +1429,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "transaction_count_wow_pct": -0.056942941500000004,
         "importance": 0.0864165412
+      },
+      "key_i18n": {
+        "en": "model_transaction_count_wow_pct",
+        "th": "model_transaction_count_wow_pct"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted signal: transaction_count_wow_pct down -5.7%",
+        "th": "สัญญาณที่โมเดลเน้น: transaction_count_wow_pct ลดลง -5.7%"
       }
     }
   ],
@@ -856,7 +1460,23 @@ Selected model based on time-split macro F1: **hgb_calibrated**
         "cold_start_increase": false,
         "note": "stable"
       },
-      "segment_confidence": "high"
+      "segment_confidence": "high",
+      "metric_family_i18n": {
+        "en": "Active users",
+        "th": "ผู้ใช้งานที่แอคทีฟ"
+      },
+      "segment_label_i18n": {
+        "en": "dormant_15_30d",
+        "th": "ผู้ใช้ไม่เคลื่อนไหว 15-30 วัน"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "reason_statement_i18n": {
+        "en": "Active users down driven by `dormant_15_30d` (driver: Active users 30d down -8.9% WoW)",
+        "th": "ผู้ใช้งานที่แอคทีฟ ลดลง โดยมีแรงขับหลักจาก `ผู้ใช้ไม่เคลื่อนไหว 15-30 วัน`"
+      }
     },
     {
       "metric_family": "active_users",
@@ -873,7 +1493,23 @@ Selected model based on time-split macro F1: **hgb_calibrated**
         "cold_start_increase": false,
         "note": "stable"
       },
-      "segment_confidence": "high"
+      "segment_confidence": "high",
+      "metric_family_i18n": {
+        "en": "Active users",
+        "th": "ผู้ใช้งานที่แอคทีฟ"
+      },
+      "segment_label_i18n": {
+        "en": "dormant_31_60d",
+        "th": "ผู้ใช้ไม่เคลื่อนไหว 31-60 วัน"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "reason_statement_i18n": {
+        "en": "Active users down driven by `dormant_31_60d` (driver: Active users 30d down -8.9% WoW)",
+        "th": "ผู้ใช้งานที่แอคทีฟ ลดลง โดยมีแรงขับหลักจาก `ผู้ใช้ไม่เคลื่อนไหว 31-60 วัน`"
+      }
     },
     {
       "metric_family": "active_users",
@@ -890,13 +1526,55 @@ Selected model based on time-split macro F1: **hgb_calibrated**
         "cold_start_increase": false,
         "note": "stable"
       },
-      "segment_confidence": "medium"
+      "segment_confidence": "medium",
+      "metric_family_i18n": {
+        "en": "Active users",
+        "th": "ผู้ใช้งานที่แอคทีฟ"
+      },
+      "segment_label_i18n": {
+        "en": "new_users_0_7d",
+        "th": "ผู้ใช้ใหม่ 0-7 วัน"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "reason_statement_i18n": {
+        "en": "Active users down driven by `new_users_0_7d` (driver: Active users 30d down -8.9% WoW)",
+        "th": "ผู้ใช้งานที่แอคทีฟ ลดลง โดยมีแรงขับหลักจาก `ผู้ใช้ใหม่ 0-7 วัน`"
+      }
     }
   ],
   "suggested_actions": [
     "Trigger winback rewards for `dormant_15_30d` with short expiry and capped frequency.",
     "Set reactivation journeys for `dormant_15_30d` using low-friction missions first.",
     "Trigger winback rewards for `dormant_31_60d` with short expiry and capped frequency."
+  ],
+  "predicted_health_class_i18n": {
+    "en": "Healthy",
+    "th": "สุขภาพแบรนด์ดี"
+  },
+  "confidence_band_i18n": {
+    "en": "high",
+    "th": "สูง"
+  },
+  "predicted_health_statement_i18n": {
+    "en": "Healthy",
+    "th": "สุขภาพแบรนด์ดี"
+  },
+  "suggested_actions_i18n": [
+    {
+      "en": "Trigger winback rewards for `dormant_15_30d` with short expiry and capped frequency.",
+      "th": "ส่งรางวัล winback ให้เซกเมนต์ `dormant_15_30d` โดยกำหนดอายุสั้นและคุมความถี่การส่ง"
+    },
+    {
+      "en": "Set reactivation journeys for `dormant_15_30d` using low-friction missions first.",
+      "th": "ตั้ง reactivation journey สำหรับ `dormant_15_30d` โดยเริ่มจากมิชชันที่ทำได้ง่าย"
+    },
+    {
+      "en": "Trigger winback rewards for `dormant_31_60d` with short expiry and capped frequency.",
+      "th": "ส่งรางวัล winback ให้เซกเมนต์ `dormant_31_60d` โดยกำหนดอายุสั้นและคุมความถี่การส่ง"
+    }
   ]
 }
 ```
@@ -924,6 +1602,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metric_family": "active_users",
       "metrics": {
         "active_users_wow_pct": -0.5650286891
+      },
+      "key_i18n": {
+        "en": "active_down",
+        "th": "ผู้ใช้งานลดลง"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "statement_i18n": {
+        "en": "Active users 30d down -56.5% WoW",
+        "th": "ผู้ใช้งานที่แอคทีฟ 30d ลดลง -56.5% WoW"
       }
     },
     {
@@ -935,6 +1625,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "active_users_wow_pct": -0.5650286891,
         "importance": 0.2281448401
+      },
+      "key_i18n": {
+        "en": "model_active_users_wow_pct",
+        "th": "model_active_users_wow_pct"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted signal: active_users_wow_pct down -56.5%",
+        "th": "สัญญาณที่โมเดลเน้น: active_users_wow_pct ลดลง -56.5%"
       }
     },
     {
@@ -946,6 +1648,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "gmv_net_wow_pct": 0.0754885396,
         "importance": 0.1670575099
+      },
+      "key_i18n": {
+        "en": "model_gmv_net_wow_pct",
+        "th": "model_gmv_net_wow_pct"
+      },
+      "direction_i18n": {
+        "en": "up",
+        "th": "เพิ่มขึ้น"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted signal: gmv_net_wow_pct up +7.5%",
+        "th": "สัญญาณที่โมเดลเน้น: gmv_net_wow_pct เพิ่มขึ้น +7.5%"
       }
     },
     {
@@ -957,6 +1671,18 @@ Selected model based on time-split macro F1: **hgb_calibrated**
       "metrics": {
         "transaction_count_wow_pct": 0.1250403841,
         "importance": 0.0864165412
+      },
+      "key_i18n": {
+        "en": "model_transaction_count_wow_pct",
+        "th": "model_transaction_count_wow_pct"
+      },
+      "direction_i18n": {
+        "en": "up",
+        "th": "เพิ่มขึ้น"
+      },
+      "statement_i18n": {
+        "en": "Model-highlighted signal: transaction_count_wow_pct up +12.5%",
+        "th": "สัญญาณที่โมเดลเน้น: transaction_count_wow_pct เพิ่มขึ้น +12.5%"
       }
     }
   ],
@@ -976,7 +1702,23 @@ Selected model based on time-split macro F1: **hgb_calibrated**
         "cold_start_increase": false,
         "note": "stable"
       },
-      "segment_confidence": "medium"
+      "segment_confidence": "medium",
+      "metric_family_i18n": {
+        "en": "Active users",
+        "th": "ผู้ใช้งานที่แอคทีฟ"
+      },
+      "segment_label_i18n": {
+        "en": "dormant_15_30d",
+        "th": "ผู้ใช้ไม่เคลื่อนไหว 15-30 วัน"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "reason_statement_i18n": {
+        "en": "Active users down driven by `dormant_15_30d` (driver: Active users 30d down -56.5% WoW)",
+        "th": "ผู้ใช้งานที่แอคทีฟ ลดลง โดยมีแรงขับหลักจาก `ผู้ใช้ไม่เคลื่อนไหว 15-30 วัน`"
+      }
     },
     {
       "metric_family": "active_users",
@@ -993,7 +1735,23 @@ Selected model based on time-split macro F1: **hgb_calibrated**
         "cold_start_increase": false,
         "note": "stable"
       },
-      "segment_confidence": "high"
+      "segment_confidence": "high",
+      "metric_family_i18n": {
+        "en": "Active users",
+        "th": "ผู้ใช้งานที่แอคทีฟ"
+      },
+      "segment_label_i18n": {
+        "en": "dormant_31_60d",
+        "th": "ผู้ใช้ไม่เคลื่อนไหว 31-60 วัน"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "reason_statement_i18n": {
+        "en": "Active users down driven by `dormant_31_60d` (driver: Active users 30d down -56.5% WoW)",
+        "th": "ผู้ใช้งานที่แอคทีฟ ลดลง โดยมีแรงขับหลักจาก `ผู้ใช้ไม่เคลื่อนไหว 31-60 วัน`"
+      }
     },
     {
       "metric_family": "active_users",
@@ -1010,13 +1768,55 @@ Selected model based on time-split macro F1: **hgb_calibrated**
         "cold_start_increase": false,
         "note": "stable"
       },
-      "segment_confidence": "medium"
+      "segment_confidence": "medium",
+      "metric_family_i18n": {
+        "en": "Active users",
+        "th": "ผู้ใช้งานที่แอคทีฟ"
+      },
+      "segment_label_i18n": {
+        "en": "recently_lapsed_8_14d",
+        "th": "ผู้ใช้ที่เพิ่งหลุด 8-14 วัน"
+      },
+      "direction_i18n": {
+        "en": "down",
+        "th": "ลดลง"
+      },
+      "reason_statement_i18n": {
+        "en": "Active users down driven by `recently_lapsed_8_14d` (driver: Active users 30d down -56.5% WoW)",
+        "th": "ผู้ใช้งานที่แอคทีฟ ลดลง โดยมีแรงขับหลักจาก `ผู้ใช้ที่เพิ่งหลุด 8-14 วัน`"
+      }
     }
   ],
   "suggested_actions": [
     "Trigger winback rewards for `dormant_15_30d` with short expiry and capped frequency.",
     "Set reactivation journeys for `dormant_15_30d` using low-friction missions first.",
     "Trigger winback rewards for `dormant_31_60d` with short expiry and capped frequency."
+  ],
+  "predicted_health_class_i18n": {
+    "en": "AtRisk",
+    "th": "เสี่ยงสูง"
+  },
+  "confidence_band_i18n": {
+    "en": "high",
+    "th": "สูง"
+  },
+  "predicted_health_statement_i18n": {
+    "en": "AtRisk",
+    "th": "เสี่ยงสูง"
+  },
+  "suggested_actions_i18n": [
+    {
+      "en": "Trigger winback rewards for `dormant_15_30d` with short expiry and capped frequency.",
+      "th": "ส่งรางวัล winback ให้เซกเมนต์ `dormant_15_30d` โดยกำหนดอายุสั้นและคุมความถี่การส่ง"
+    },
+    {
+      "en": "Set reactivation journeys for `dormant_15_30d` using low-friction missions first.",
+      "th": "ตั้ง reactivation journey สำหรับ `dormant_15_30d` โดยเริ่มจากมิชชันที่ทำได้ง่าย"
+    },
+    {
+      "en": "Trigger winback rewards for `dormant_31_60d` with short expiry and capped frequency.",
+      "th": "ส่งรางวัล winback ให้เซกเมนต์ `dormant_31_60d` โดยกำหนดอายุสั้นและคุมความถี่การส่ง"
+    }
   ]
 }
 ```

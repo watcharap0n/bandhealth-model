@@ -16,7 +16,7 @@ from .driver_mapping import (
     infer_metric_family_from_key,
 )
 from .drivers import attach_drivers
-from .playbook import attach_actions
+from .playbook import attach_actions, build_actions_i18n
 from .segments import ACTIVITY_SEGMENT_KEYS, COMMERCE_SEGMENT_KEYS, SEGMENT_KEYS, SEGMENT_METRIC_SUFFIXES
 
 
@@ -24,6 +24,46 @@ CLASS_SCORE_MAP = {
     "Healthy": 90.0,
     "Warning": 60.0,
     "AtRisk": 25.0,
+}
+
+HEALTH_CLASS_TH = {
+    "Healthy": "สุขภาพแบรนด์ดี",
+    "Warning": "เริ่มน่ากังวล",
+    "AtRisk": "เสี่ยงสูง",
+}
+
+CONFIDENCE_BAND_TH = {
+    "high": "สูง",
+    "medium": "กลาง",
+    "low": "ต่ำ",
+}
+
+METRIC_FAMILY_LABELS = {
+    "active_users": ("Active users", "ผู้ใช้งานที่แอคทีฟ"),
+    "gmv_net": ("GMV", "GMV"),
+    "transaction_count": ("Transactions", "จำนวนธุรกรรม"),
+    "dormant_share": ("Dormant share", "สัดส่วนผู้ใช้ไม่เคลื่อนไหว"),
+    "activity_completion_rate": ("Completion rate", "อัตราการทำกิจกรรมสำเร็จ"),
+    "reward_efficiency": ("Reward efficiency", "ประสิทธิภาพรางวัล"),
+    "redeem_rate": ("Redeem rate", "อัตราการแลกรับ"),
+    "sku_concentration": ("SKU concentration", "ความกระจุกตัวของ SKU"),
+}
+
+SEGMENT_LABEL_TH = {
+    "new_users_0_7d": "ผู้ใช้ใหม่ 0-7 วัน",
+    "active_0_7d": "ผู้ใช้งานแอคทีฟ 0-7 วัน",
+    "engaged_no_redeem": "มีส่วนร่วมสูงแต่ยังไม่แลก",
+    "redeemers": "กลุ่มผู้แลกรับ",
+    "recently_lapsed_8_14d": "ผู้ใช้ที่เพิ่งหลุด 8-14 วัน",
+    "dormant_15_30d": "ผู้ใช้ไม่เคลื่อนไหว 15-30 วัน",
+    "dormant_31_60d": "ผู้ใช้ไม่เคลื่อนไหว 31-60 วัน",
+    "dormant_60d_plus": "ผู้ใช้ไม่เคลื่อนไหวมากกว่า 60 วัน",
+    "non_redeemers": "ผู้ใช้ที่ยังไม่แลกรับ",
+    "buyers": "ผู้ซื้อ",
+    "repeat_buyers": "ผู้ซื้อซ้ำ",
+    "high_aov_buyers": "ผู้ซื้อ AOV สูง",
+    "discount_sensitive": "ผู้ใช้ไวต่อส่วนลด",
+    "sku_affinity_top1": "ผู้ใช้ที่ชอบ SKU อันดับ 1",
 }
 
 
@@ -215,6 +255,47 @@ def _health_statement(health_class: str, score: float, confidence_band: str) -> 
     return health_class
 
 
+def _i18n(en: str, th: Optional[str] = None) -> dict:
+    return {"en": str(en), "th": str(th if th is not None else en)}
+
+
+def _direction_th(direction: str) -> str:
+    return {"up": "เพิ่มขึ้น", "down": "ลดลง", "flat": "ทรงตัว"}.get(direction, direction)
+
+
+def _health_class_i18n(health_class: str) -> dict:
+    en = str(health_class)
+    th = HEALTH_CLASS_TH.get(en, en)
+    return _i18n(en, th)
+
+
+def _confidence_band_i18n(conf_band: str) -> dict:
+    en = str(conf_band)
+    th = CONFIDENCE_BAND_TH.get(en, en)
+    return _i18n(en, th)
+
+
+def _health_statement_i18n(health_class: str, score: float, confidence_band: str) -> dict:
+    stmt_en = _health_statement(health_class, score, confidence_band)
+    class_th = HEALTH_CLASS_TH.get(str(health_class), str(health_class))
+    near_threshold = min(abs(score - 70.0), abs(score - 45.0)) <= 5.0
+    if confidence_band == "low" and near_threshold:
+        return _i18n(stmt_en, f"{class_th} (ใกล้เส้นแบ่ง)")
+    return _i18n(stmt_en, class_th)
+
+
+def _metric_family_label(metric_family: str) -> tuple[str, str]:
+    if metric_family in METRIC_FAMILY_LABELS:
+        return METRIC_FAMILY_LABELS[metric_family]
+    return metric_family, metric_family
+
+
+def _segment_label_i18n(segment_key: str) -> dict:
+    en = str(segment_key)
+    th = SEGMENT_LABEL_TH.get(en, en)
+    return _i18n(en, th)
+
+
 def _segment_candidates(metric_family: str, commerce_joinable: bool) -> Sequence[str]:
     if metric_family in COMMERCE_METRIC_FAMILIES:
         return COMMERCE_SEGMENT_KEYS if commerce_joinable else ()
@@ -252,16 +333,8 @@ def _segment_confidence(
 
 
 def _format_metric_family_label(metric_family: str) -> str:
-    return {
-        "active_users": "Active users",
-        "gmv_net": "GMV",
-        "transaction_count": "Transactions",
-        "dormant_share": "Dormant share",
-        "activity_completion_rate": "Completion rate",
-        "reward_efficiency": "Reward efficiency",
-        "redeem_rate": "Redeem rate",
-        "sku_concentration": "SKU concentration",
-    }.get(metric_family, metric_family)
+    en, _ = _metric_family_label(metric_family)
+    return en
 
 
 def _build_target_segments_for_row(
@@ -376,6 +449,10 @@ def _build_target_segments_for_row(
             elif pd.isna(wow_pct_seg):
                 wow_pct_seg = None
 
+            driver_stmt_i18n = driver.get("statement_i18n", _i18n(str(driver.get("statement", "")).strip()))
+            if not isinstance(driver_stmt_i18n, Mapping):
+                driver_stmt_i18n = _i18n(str(driver.get("statement", "")).strip())
+
             eligible.append(
                 {
                     "metric_family": metric_family,
@@ -389,6 +466,7 @@ def _build_target_segments_for_row(
                     "note": note,
                     "cold_start_increase": cold_start or note == "cold_start",
                     "driver_statement": str(driver.get("statement", "")).strip(),
+                    "driver_statement_i18n": driver_stmt_i18n,
                 }
             )
 
@@ -404,7 +482,7 @@ def _build_target_segments_for_row(
             continue
 
         top = sorted(eligible, key=lambda x: abs(x["delta_seg"]), reverse=True)[:top_k_per_family]
-        family_label = _format_metric_family_label(metric_family)
+        family_label_en, family_label_th = _metric_family_label(metric_family)
 
         for e in top:
             seg_conf = _segment_confidence(
@@ -414,16 +492,26 @@ def _build_target_segments_for_row(
                 commerce_joinable=commerce_joinable,
                 note=e["note"],
             )
+            seg_label = _segment_label_i18n(e["segment_key"])
+            reason_en = (
+                f"{family_label_en} {e['direction']} driven by `{e['segment_key']}` "
+                f"(driver: {e['driver_statement']})"
+            )
+            reason_th = (
+                f"{family_label_th} {_direction_th(e['direction'])} โดยมีแรงขับหลักจาก `{seg_label['th']}` "
+                f"(driver: {e['driver_statement_i18n'].get('th', e['driver_statement'])})"
+            )
             out.append(
                 {
                     "metric_family": metric_family,
+                    "metric_family_i18n": _i18n(family_label_en, family_label_th),
                     "segment_key": e["segment_key"],
+                    "segment_label_i18n": seg_label,
                     "direction": e["direction"],
+                    "direction_i18n": _i18n(e["direction"], _direction_th(e["direction"])),
                     "contribution_share": float(abs(e["delta_seg"]) / denom),
-                    "reason_statement": (
-                        f"{family_label} {e['direction']} driven by `{e['segment_key']}` "
-                        f"(driver: {e['driver_statement']})"
-                    ),
+                    "reason_statement": reason_en,
+                    "reason_statement_i18n": _i18n(reason_en, reason_th),
                     "evidence_metrics": {
                         "delta_seg": float(e["delta_seg"]),
                         "delta_total": float(e["delta_total"]),
@@ -535,6 +623,16 @@ def predict_with_drivers(
         ),
         axis=1,
     )
+    out["predicted_health_class_i18n"] = out["predicted_health_class"].apply(lambda x: _health_class_i18n(str(x)))
+    out["confidence_band_i18n"] = out["confidence_band"].apply(lambda x: _confidence_band_i18n(str(x)))
+    out["predicted_health_statement_i18n"] = out.apply(
+        lambda r: _health_statement_i18n(
+            str(r.get("predicted_health_class", "")),
+            float(r.get("predicted_health_score", 0.0)),
+            str(r.get("confidence_band", "low")),
+        ),
+        axis=1,
+    )
 
     out = attach_drivers(out, feature_importance=feature_importance, top_n=top_n_drivers)
 
@@ -569,6 +667,7 @@ def predict_with_drivers(
     out["target_segments"] = targets
     out["attribution_warnings"] = warns_col
     out = attach_actions(out, top_n=top_n_actions)
+    out["suggested_actions_i18n"] = out["suggested_actions"].apply(lambda acts: build_actions_i18n(acts if isinstance(acts, list) else []))
 
     def _to_payload(row: pd.Series) -> dict:
         probs = {c: float(row[f"prob_{c}"]) for c in class_labels}
@@ -577,13 +676,17 @@ def predict_with_drivers(
             "window_end_date": str(row.get("window_end_date")),
             "window_size": str(row.get("window_size")),
             "predicted_health_class": str(row.get("predicted_health_class")),
+            "predicted_health_class_i18n": row.get("predicted_health_class_i18n", _i18n(str(row.get("predicted_health_class", "")))),
             "predicted_health_statement": str(row.get("predicted_health_statement")),
+            "predicted_health_statement_i18n": row.get("predicted_health_statement_i18n", _i18n(str(row.get("predicted_health_statement", "")))),
             "predicted_health_score": float(row.get("predicted_health_score", 0.0)),
             "confidence_band": str(row.get("confidence_band", "low")),
+            "confidence_band_i18n": row.get("confidence_band_i18n", _i18n(str(row.get("confidence_band", "low")))),
             "probabilities": probs,
             "drivers": row.get("drivers", []),
             "target_segments": row.get("target_segments", []),
             "suggested_actions": row.get("suggested_actions", []),
+            "suggested_actions_i18n": row.get("suggested_actions_i18n", []),
             "attribution_warnings": row.get("attribution_warnings", []),
         }
 
@@ -601,12 +704,16 @@ def save_predictions(pred_df: pd.DataFrame, output_dir: str | Path) -> None:
         "window_end_date",
         "window_size",
         "predicted_health_class",
+        "predicted_health_class_i18n",
         "predicted_health_statement",
+        "predicted_health_statement_i18n",
         "predicted_health_score",
         "confidence_band",
+        "confidence_band_i18n",
         "drivers",
         "target_segments",
         "suggested_actions",
+        "suggested_actions_i18n",
         "attribution_warnings",
     ] + [c for c in pred_df.columns if c.startswith("prob_")]
 

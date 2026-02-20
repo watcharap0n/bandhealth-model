@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Dict, List, Mapping, Optional, Sequence
 
 from .driver_mapping import canonical_driver_key, infer_metric_family_from_key
@@ -54,6 +55,39 @@ COMMERCE_SEGMENT_KEYS = {
     "high_aov_buyers",
     "discount_sensitive",
     "sku_affinity_top1",
+}
+
+
+ACTION_TH_MAP: Dict[str, str] = {
+    "Launch dormant-user reactivation campaigns with segmented incentives.": "ทำแคมเปญกระตุ้นผู้ใช้ไม่เคลื่อนไหว โดยแยกสิทธิประโยชน์ตามเซกเมนต์",
+    "Reduce message fatigue via tighter frequency caps and send-time optimization.": "ลดความล้าจากการสื่อสารด้วยการคุมความถี่และปรับเวลาส่งให้เหมาะสม",
+    "Retarget recently lapsed cohorts with low-friction missions.": "ทำรีทาร์เก็ตกลุ่มที่เพิ่งเริ่มหลุด ด้วยมิชชันที่ทำได้ง่าย",
+    "Audit mission completion friction (steps, UX, rules) and simplify top drop-off flows.": "ตรวจจุดฝืดของการทำมิชชัน (ขั้นตอน UX กติกา) และลดความซับซ้อนในจุดที่หลุดมากที่สุด",
+    "Shift reward mix toward lower-friction, faster-win activities.": "ปรับสัดส่วนรางวัลไปที่กิจกรรมที่ทำง่ายและเห็นผลเร็ว",
+    "A/B test mission copy and CTA clarity on the highest-volume activities.": "ทำ A/B test ข้อความมิชชันและ CTA ในกิจกรรมที่มีปริมาณสูงสุด",
+    "Increase redemption visibility with in-app reminders and redemption-specific triggers.": "เพิ่มการมองเห็นการแลกรับด้วย in-app reminder และ trigger เฉพาะการแลก",
+    "Rebalance point thresholds to reduce perceived redemption effort.": "ปรับ threshold การใช้แต้มให้แลกได้ง่ายขึ้น",
+    "Promote expiring-value nudges to accelerate redemption intent.": "กระตุ้นการแลกด้วยข้อความแจ้งมูลค่าใกล้หมดอายุ",
+    "Run short-cycle conversion pushes for high-intent audiences.": "ทำแคมเปญปิดการขายระยะสั้นกับกลุ่มที่มี intent สูง",
+    "Bundle offers to lift average order value and repeat basket behavior.": "ทำข้อเสนอแบบ bundle เพื่อดัน AOV และเพิ่มการซื้อซ้ำ",
+    "Check checkout/payment friction and recover abandoned purchase attempts.": "ตรวจจุดติดขัด checkout/payment และกู้คืนคำสั่งซื้อที่หลุดกลางทาง",
+    "Introduce repeat-purchase triggers based on product replenishment cadence.": "ตั้ง trigger การซื้อซ้ำตามรอบการเติมสินค้า",
+    "Activate personalized offer ladders for near-churn buyers.": "ทำลำดับข้อเสนอแบบ personalized สำหรับผู้ซื้อที่เสี่ยงหลุด",
+    "Prioritize retention promotions for buyers with recent order decline.": "ให้โปร retention กับผู้ซื้อที่ออเดอร์ลดลงล่าสุด",
+    "Create dormant-tier win-back journeys with escalating incentives.": "ออกแบบ win-back journey ตามระดับ dormancy พร้อมเพิ่มแรงจูงใจเป็นขั้น",
+    "Use triggered education content to reintroduce loyalty value.": "ใช้คอนเทนต์แบบ trigger เพื่อสื่อสารคุณค่าของ loyalty อีกครั้ง",
+    "Suppress low-intent users from broad blasts and target by propensity.": "ลดการยิงกว้างกับผู้ใช้ intent ต่ำ และยิงตาม propensity",
+    "Recalibrate reward economics: trim low-yield rewards and raise completion-linked value.": "ปรับเศรษฐศาสตร์รางวัล: ตัดรางวัลที่ผลตอบแทนต่ำ และเพิ่มมูลค่าที่ผูกกับการทำสำเร็จ",
+    "Prioritize activities with best completion-per-point efficiency.": "ให้ความสำคัญกับกิจกรรมที่มีประสิทธิภาพ completion-per-point สูง",
+    "Set guardrails so point inflation does not outpace engagement conversion.": "ตั้ง guardrail ไม่ให้การเพิ่มแต้มเร็วกว่า conversion ของ engagement",
+    "Diversify reward/product mix to reduce dependence on top SKU(s).": "กระจาย reward/product mix เพื่อลดการพึ่งพา SKU อันดับต้น",
+    "Promote under-indexed SKUs through personalized recommendations.": "ดัน SKU ที่ยัง under-indexed ด้วยคำแนะนำแบบ personalized",
+    "Use rotation strategy for featured SKUs to broaden basket composition.": "หมุน SKU ที่แสดงผลเพื่อกระจายองค์ประกอบตะกร้าสินค้า",
+    "Active base is stable; run purchase triggers for `buyers_recent`-like cohorts (active/redeemers).": "ฐาน active ยังทรงตัว ให้รัน purchase trigger กับกลุ่มคล้าย `buyers_recent` (active/redeemers)",
+    "Offer replenishment coupon to `repeat_buyers` cohort; test 7d expiry.": "ให้คูปองเติมสินค้ากับกลุ่ม `repeat_buyers` และทดสอบอายุคูปอง 7 วัน",
+    "Monitor the next 1-2 windows and trigger targeted interventions for the weakest KPI.": "ติดตามอีก 1-2 window แล้วยิง intervention เฉพาะ KPI ที่อ่อนที่สุด",
+    "Run controlled experiments on campaign cadence and reward mix.": "ทำ controlled experiment เรื่อง cadence แคมเปญและ reward mix",
+    "Review segment-level funnel drops and prioritize high-impact fixes.": "ทบทวนจุดหลุดใน funnel ระดับเซกเมนต์และแก้จุดที่ impact สูงก่อน",
 }
 
 
@@ -128,6 +162,63 @@ def _segment_specific_actions(
     return actions
 
 
+def _action_to_i18n(action: str) -> dict:
+    en = str(action)
+    if en in ACTION_TH_MAP:
+        return {"en": en, "th": ACTION_TH_MAP[en]}
+
+    patterns = [
+        (
+            r"^Trigger winback rewards for `([^`]+)` with short expiry and capped frequency\.$",
+            lambda seg: f"ส่งรางวัล winback ให้เซกเมนต์ `{seg}` โดยกำหนดอายุสั้นและคุมความถี่การส่ง",
+        ),
+        (
+            r"^Set reactivation journeys for `([^`]+)` using low-friction missions first\.$",
+            lambda seg: f"ตั้ง reactivation journey สำหรับ `{seg}` โดยเริ่มจากมิชชันที่ทำได้ง่าย",
+        ),
+        (
+            r"^Boost first-7-day activation missions for `([^`]+)` with immediate low-friction rewards\.$",
+            lambda seg: f"เพิ่มมิชชัน activation ช่วง 7 วันแรกสำหรับ `{seg}` พร้อมรางวัลที่รับได้ง่ายทันที",
+        ),
+        (
+            r"^Apply reactivation \+ frequency caps specifically for `([^`]+)`\.$",
+            lambda seg: f"ทำ reactivation และคุมความถี่เฉพาะเซกเมนต์ `{seg}`",
+        ),
+        (
+            r"^Use low-friction missions for `([^`]+)` before high-effort offers\.$",
+            lambda seg: f"ใช้มิชชันที่ทำง่ายกับ `{seg}` ก่อนข้อเสนอที่ต้องใช้ effort สูง",
+        ),
+        (
+            r"^Reduce mission friction for `([^`]+)` and A/B test mission flow copy\.$",
+            lambda seg: f"ลดความฝืดของมิชชันสำหรับ `{seg}` และทำ A/B test ข้อความใน flow",
+        ),
+        (
+            r"^Launch basket-building offers for `([^`]+)` to recover GMV quickly\.$",
+            lambda seg: f"ปล่อยข้อเสนอเพิ่มมูลค่าตะกร้าให้ `{seg}` เพื่อกู้ GMV อย่างรวดเร็ว",
+        ),
+        (
+            r"^Trigger repeat-purchase journeys for `([^`]+)` using replenishment cadence\.$",
+            lambda seg: f"ตั้ง journey ซื้อซ้ำให้ `{seg}` ตามรอบการเติมสินค้า",
+        ),
+        (
+            r"^Send redemption-intent nudges to `([^`]+)` with easier point thresholds and expiry reminders\.$",
+            lambda seg: f"ส่งข้อความกระตุ้นการแลกให้ `{seg}` โดยลด threshold แต้มและเตือนก่อนหมดอายุ",
+        ),
+    ]
+    for pat, builder in patterns:
+        m = re.match(pat, en)
+        if m:
+            return {"en": en, "th": builder(m.group(1))}
+
+    return {"en": en, "th": en}
+
+
+def build_actions_i18n(actions: Sequence[str]) -> List[dict]:
+    out: List[dict] = []
+    for action in actions:
+        out.append(_action_to_i18n(str(action)))
+    return out
+
 
 def map_drivers_to_actions(
     drivers: Sequence[Mapping],
@@ -199,7 +290,6 @@ def map_drivers_to_actions(
         ][:top_n]
 
     return actions
-
 
 
 def attach_actions(predictions_df, top_n: int = 3):

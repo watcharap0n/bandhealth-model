@@ -11,6 +11,16 @@ Generated at: `2026-02-20 09:50:27`
 
 - This report includes **all parquet files** under `datasets/see-chan/`.
 - Split is computed using the `app_id` column in each table.
+- This file is a point-in-time summary and is **not auto-refreshed** unless you regenerate it.
+
+## How Pipeline Uses This
+
+- Runtime loading is implemented in `src/data_load.py` via `load_tables(...)`.
+- Loader scans all subset folders under `datasets/*` and assigns `brand_id` by `app_id` mapping.
+- Current mapping is configured in `run_pipeline.py` (`BRAND_APP_ID_FILTERS`):
+  - `c-vit` -> `1993744540760190`
+  - `see-chan` -> `838315041537793`
+- This means c-vit rows inside `datasets/see-chan/*.parquet` are intentionally included for c-vit after app_id split.
 
 ## Table-Level Split
 

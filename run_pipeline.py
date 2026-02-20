@@ -214,13 +214,17 @@ def _write_markdown_report(
                 "window_end_date": str(row["window_end_date"]),
                 "window_size": row["window_size"],
                 "predicted_health_class": row["predicted_health_class"],
+                "predicted_health_class_i18n": row.get("predicted_health_class_i18n", {"en": str(row["predicted_health_class"]), "th": str(row["predicted_health_class"])}),
                 "predicted_health_statement": row.get("predicted_health_statement", row["predicted_health_class"]),
+                "predicted_health_statement_i18n": row.get("predicted_health_statement_i18n", {"en": str(row.get("predicted_health_statement", row["predicted_health_class"])), "th": str(row.get("predicted_health_statement", row["predicted_health_class"]))}),
                 "predicted_health_score": float(row["predicted_health_score"]),
                 "confidence_band": row.get("confidence_band", "low"),
+                "confidence_band_i18n": row.get("confidence_band_i18n", {"en": str(row.get("confidence_band", "low")), "th": str(row.get("confidence_band", "low"))}),
                 "probabilities": {k.replace("prob_", ""): float(row[k]) for k in row.index if k.startswith("prob_")},
                 "drivers": row["drivers"],
                 "target_segments": row.get("target_segments", []),
                 "suggested_actions": row["suggested_actions"],
+                "suggested_actions_i18n": row.get("suggested_actions_i18n", []),
             }
             lines.append(json.dumps(payload, ensure_ascii=False, indent=2))
             lines.append("```")

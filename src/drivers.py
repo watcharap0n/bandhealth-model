@@ -7,6 +7,26 @@ import pandas as pd
 
 from .driver_mapping import canonical_driver_key, infer_metric_family_from_key
 
+DRIVER_KEY_TH: Dict[str, str] = {
+    "active_down": "ผู้ใช้งานลดลง",
+    "completion_drop": "อัตราการทำกิจกรรมสำเร็จลดลง",
+    "redeem_down": "อัตราการแลกรับลดลง",
+    "gmv_down": "GMV ลดลง",
+    "transactions_down": "จำนวนธุรกรรมลดลง",
+    "dormant_up": "สัดส่วนผู้ใช้ไม่เคลื่อนไหวเพิ่มขึ้น",
+    "efficiency_drop": "ประสิทธิภาพรางวัลลดลง",
+    "sku_concentration_high": "ความกระจุกตัวของ SKU สูง",
+}
+
+LABEL_TH: Dict[str, str] = {
+    "Active users": "ผู้ใช้งานที่แอคทีฟ",
+    "Completion rate": "อัตราการทำกิจกรรมสำเร็จ",
+    "Redemption proxy rate": "อัตราการแลกรับ (proxy)",
+    "GMV": "GMV",
+    "Transactions": "จำนวนธุรกรรม",
+    "Dormant share": "สัดส่วนผู้ใช้ไม่เคลื่อนไหว",
+}
+
 
 def _pct(v: float) -> str:
     return f"{v * 100:+.1f}%"
@@ -28,10 +48,25 @@ def _direction(v: float, eps: float = 1e-4) -> str:
     return "flat"
 
 
+def _i18n(en: str, th: Optional[str] = None) -> dict:
+    return {"en": str(en), "th": str(th if th is not None else en)}
+
+
+def _direction_th(direction: str) -> str:
+    return {"up": "เพิ่มขึ้น", "down": "ลดลง", "flat": "ทรงตัว"}.get(direction, direction)
+
+
+def _driver_key_i18n(key: str) -> dict:
+    en = str(key)
+    th = DRIVER_KEY_TH.get(key, en)
+    return _i18n(en, th)
+
+
 def _add_driver(
     drivers: List[dict],
     key: str,
-    statement: str,
+    statement_en: str,
+    statement_th: Optional[str],
     severity: float,
     metrics: Mapping[str, float],
     direction: str,
@@ -42,33 +77,63 @@ def _add_driver(
     drivers.append(
         {
             "key": ckey,
-            "statement": statement,
+            "key_i18n": _driver_key_i18n(ckey),
+            "statement": statement_en,
+            "statement_i18n": _i18n(statement_en, statement_th),
             "severity": float(severity),
             "direction": direction,
+            "direction_i18n": _i18n(direction, _direction_th(direction)),
             "metric_family": mf,
             "metrics": {k: float(v) for k, v in metrics.items()},
         }
     )
 
 
-def _trend_statement(label: str, value: float, suffix: str = "WoW") -> str:
+def _trend_statement(label: str, value: float, suffix: str = "WoW") -> tuple[str, str]:
     d = _direction(value)
+    if label.startswith("Active users "):
+        window = label.replace("Active users ", "").strip()
+        label_th = f"ผู้ใช้งานที่แอคทีฟ {window}"
+    else:
+        label_th = LABEL_TH.get(label, label)
+    d_th = _direction_th(d)
     if d == "flat":
-        return f"{label} flat ({_pct(value)}) {suffix}"
-    return f"{label} {d} {_pct(value)} {suffix}"
+        return (
+            f"{label} flat ({_pct(value)}) {suffix}",
+            f"{label_th} {d_th} ({_pct(value)}) {suffix}",
+        )
+    return (
+        f"{label} {d} {_pct(value)} {suffix}",
+        f"{label_th} {d_th} {_pct(value)} {suffix}",
+    )
 
 
-def _model_signal_statement(feat: str, value: float) -> str:
+def _model_signal_statement(feat: str, value: float) -> tuple[str, str]:
     d = _direction(value)
     if feat.endswith("_wow_pct"):
         if d == "flat":
-            return f"Model-highlighted signal: {feat} flat ({_pct(value)})"
-        return f"Model-highlighted signal: {feat} {d} {_pct(value)}"
+            return (
+                f"Model-highlighted signal: {feat} flat ({_pct(value)})",
+                f"สัญญาณที่โมเดลเน้น: {feat} ทรงตัว ({_pct(value)})",
+            )
+        return (
+            f"Model-highlighted signal: {feat} {d} {_pct(value)}",
+            f"สัญญาณที่โมเดลเน้น: {feat} {_direction_th(d)} {_pct(value)}",
+        )
     if feat.endswith("_zscore"):
         if d == "flat":
-            return f"Model-highlighted anomaly: {feat}={_val(value)} (near baseline)"
-        return f"Model-highlighted anomaly: {feat}={_val(value)} ({d} vs baseline)"
-    return f"Model-highlighted signal: {feat}={_val(value)}"
+            return (
+                f"Model-highlighted anomaly: {feat}={_val(value)} (near baseline)",
+                f"ความผิดปกติที่โมเดลเน้น: {feat}={_val(value)} (ใกล้ค่า baseline)",
+            )
+        return (
+            f"Model-highlighted anomaly: {feat}={_val(value)} ({d} vs baseline)",
+            f"ความผิดปกติที่โมเดลเน้น: {feat}={_val(value)} ({_direction_th(d)} เทียบ baseline)",
+        )
+    return (
+        f"Model-highlighted signal: {feat}={_val(value)}",
+        f"สัญญาณที่โมเดลเน้น: {feat}={_val(value)}",
+    )
 
 
 
@@ -79,10 +144,12 @@ def build_metric_drivers(row: Mapping[str, float], top_n: int = 5) -> List[dict]
 
     active_wow = float(row.get("active_users_wow_pct", 0.0))
     if active_wow <= -0.08:
+        s_en, s_th = _trend_statement(f"Active users {window}", active_wow, suffix="WoW")
         _add_driver(
             drivers,
             "active_down",
-            _trend_statement(f"Active users {window}", active_wow, suffix="WoW"),
+            s_en,
+            s_th,
             abs(active_wow),
             {"active_users_wow_pct": active_wow},
             direction=_direction(active_wow),
@@ -91,10 +158,12 @@ def build_metric_drivers(row: Mapping[str, float], top_n: int = 5) -> List[dict]
 
     completion_wow = float(row.get("activity_completion_rate_wow_pct", 0.0))
     if completion_wow <= -0.06:
+        s_en, s_th = _trend_statement("Completion rate", completion_wow, suffix="WoW")
         _add_driver(
             drivers,
             "completion_drop",
-            _trend_statement("Completion rate", completion_wow, suffix="WoW"),
+            s_en,
+            s_th,
             abs(completion_wow),
             {"activity_completion_rate_wow_pct": completion_wow},
             direction=_direction(completion_wow),
@@ -103,10 +172,12 @@ def build_metric_drivers(row: Mapping[str, float], top_n: int = 5) -> List[dict]
 
     redeem_wow = float(row.get("activity_redeem_rate_wow_pct", 0.0))
     if redeem_wow <= -0.06:
+        s_en, s_th = _trend_statement("Redemption proxy rate", redeem_wow, suffix="WoW")
         _add_driver(
             drivers,
             "redeem_down",
-            _trend_statement("Redemption proxy rate", redeem_wow, suffix="WoW"),
+            s_en,
+            s_th,
             abs(redeem_wow),
             {"activity_redeem_rate_wow_pct": redeem_wow},
             direction=_direction(redeem_wow),
@@ -115,10 +186,12 @@ def build_metric_drivers(row: Mapping[str, float], top_n: int = 5) -> List[dict]
 
     gmv_wow = float(row.get("gmv_net_wow_pct", 0.0))
     if gmv_wow <= -0.10:
+        s_en, s_th = _trend_statement("GMV", gmv_wow, suffix="WoW")
         _add_driver(
             drivers,
             "gmv_down",
-            _trend_statement("GMV", gmv_wow, suffix="WoW"),
+            s_en,
+            s_th,
             abs(gmv_wow),
             {"gmv_net_wow_pct": gmv_wow},
             direction=_direction(gmv_wow),
@@ -127,10 +200,12 @@ def build_metric_drivers(row: Mapping[str, float], top_n: int = 5) -> List[dict]
 
     txn_wow = float(row.get("transaction_count_wow_pct", 0.0))
     if txn_wow <= -0.10:
+        s_en, s_th = _trend_statement("Transactions", txn_wow, suffix="WoW")
         _add_driver(
             drivers,
             "transactions_down",
-            _trend_statement("Transactions", txn_wow, suffix="WoW"),
+            s_en,
+            s_th,
             abs(txn_wow),
             {"transaction_count_wow_pct": txn_wow},
             direction=_direction(txn_wow),
@@ -139,10 +214,12 @@ def build_metric_drivers(row: Mapping[str, float], top_n: int = 5) -> List[dict]
 
     dormant_wow = float(row.get("dormant_share_wow_pct", 0.0))
     if dormant_wow >= 0.06:
+        s_en, s_th = _trend_statement("Dormant share", dormant_wow, suffix="WoW")
         _add_driver(
             drivers,
             "dormant_up",
-            _trend_statement("Dormant share", dormant_wow, suffix="WoW"),
+            s_en,
+            s_th,
             abs(dormant_wow),
             {"dormant_share_wow_pct": dormant_wow},
             direction=_direction(dormant_wow),
@@ -156,6 +233,7 @@ def build_metric_drivers(row: Mapping[str, float], top_n: int = 5) -> List[dict]
             drivers,
             "efficiency_drop",
             "Reward intensity increased while conversion efficiency declined",
+            "ความเข้มข้นของรางวัลเพิ่มขึ้น แต่ประสิทธิภาพการเปลี่ยนเป็นการกระทำลดลง",
             max(abs(reward_eff_wow), abs(points_wow), abs(completion_wow)),
             {
                 "reward_efficiency_wow_pct": reward_eff_wow,
@@ -172,6 +250,7 @@ def build_metric_drivers(row: Mapping[str, float], top_n: int = 5) -> List[dict]
             drivers,
             "sku_concentration_high",
             f"SKU mix concentration is high (top SKU share {_pct(sku_top)})",
+            f"ความกระจุกตัวของ SKU สูง (สัดส่วน SKU อันดับ 1 {_pct(sku_top)})",
             abs(sku_top),
             {"sku_top_share": sku_top},
             direction="up",
@@ -211,12 +290,16 @@ def build_model_importance_drivers(
         if feat.endswith("_wow_pct") and abs(val) >= 0.05:
             key = canonical_driver_key(f"model_{feat}")
             direction = _direction(val)
+            s_en, s_th = _model_signal_statement(feat, val)
             rows.append(
                 {
                     "key": key,
-                    "statement": _model_signal_statement(feat, val),
+                    "key_i18n": _driver_key_i18n(key),
+                    "statement": s_en,
+                    "statement_i18n": _i18n(s_en, s_th),
                     "severity": float(abs(val) * abs(float(imp))),
                     "direction": direction,
+                    "direction_i18n": _i18n(direction, _direction_th(direction)),
                     "metric_family": infer_metric_family_from_key(key),
                     "metrics": {feat: val, "importance": float(imp)},
                 }
@@ -225,12 +308,16 @@ def build_model_importance_drivers(
         elif feat.endswith("_zscore") and abs(val) >= 1.0:
             key = canonical_driver_key(f"model_{feat}")
             direction = _direction(val)
+            s_en, s_th = _model_signal_statement(feat, val)
             rows.append(
                 {
                     "key": key,
-                    "statement": _model_signal_statement(feat, val),
+                    "key_i18n": _driver_key_i18n(key),
+                    "statement": s_en,
+                    "statement_i18n": _i18n(s_en, s_th),
                     "severity": float(abs(val) * abs(float(imp))),
                     "direction": direction,
+                    "direction_i18n": _i18n(direction, _direction_th(direction)),
                     "metric_family": infer_metric_family_from_key(key),
                     "metrics": {feat: val, "importance": float(imp)},
                 }
