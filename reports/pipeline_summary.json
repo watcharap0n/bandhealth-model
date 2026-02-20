@@ -186,7 +186,7 @@
       "left_unique": 1399583,
       "right_unique": 1378053,
       "overlap_unique": 1378053,
-      "row_coverage": 0.9839175260667488,
+      "row_coverage": 0.9839175260667489,
       "left_unique_norm": 1399566,
       "right_unique_norm": 1378053,
       "overlap_unique_norm": 1378053,
@@ -202,11 +202,11 @@
       "left_unique": 10359,
       "right_unique": 19,
       "overlap_unique": 19,
-      "row_coverage": 0.0020581521535755,
+      "row_coverage": 0.0020581521535755717,
       "left_unique_norm": 10359,
       "right_unique_norm": 19,
       "overlap_unique_norm": 19,
-      "row_coverage_norm": 0.0020581521535755
+      "row_coverage_norm": 0.0020581521535755717
     },
     {
       "brand_id": "see-chan",
@@ -257,6 +257,14 @@
       "row_coverage_norm": 0.992218751080729
     }
   ],
+  "commerce_joinable": {
+    "c-vit": false,
+    "see-chan": true
+  },
+  "activity_enrichment_joinable": {
+    "c-vit": false,
+    "see-chan": true
+  },
   "selected_model": "hgb_calibrated",
   "metrics": {
     "time_split_cutoff": "2025-04-30 00:00:00+00:00",
@@ -626,5 +634,17 @@
     "selected_model": "hgb_calibrated"
   },
   "feature_count": 124,
-  "example_count": 8
+  "example_count": 8,
+  "attribution_qa": {
+    "rows_total": 1632,
+    "segments_output_total": 4125,
+    "segments_dropped_total": 13297,
+    "segments_dropped_sign_mismatch": 7338,
+    "segments_dropped_zero_presence": 2296,
+    "rows_with_target_segments": 1132,
+    "segments_dropped_min_presence": 2147,
+    "metric_family_noisy": 546,
+    "metric_family_no_eligible_segments": 235,
+    "segments_dropped_commerce_mode": 1516
+  }
 }

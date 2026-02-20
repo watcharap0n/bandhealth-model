@@ -1,0 +1,12 @@
+{
+  "rows_total": 1632,
+  "segments_output_total": 4125,
+  "segments_dropped_total": 13297,
+  "segments_dropped_sign_mismatch": 7338,
+  "segments_dropped_zero_presence": 2296,
+  "rows_with_target_segments": 1132,
+  "segments_dropped_min_presence": 2147,
+  "metric_family_noisy": 546,
+  "metric_family_no_eligible_segments": 235,
+  "segments_dropped_commerce_mode": 1516
+}

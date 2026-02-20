@@ -1,45 +1,46 @@
 from __future__ import annotations
 
-from typing import Dict, Iterable, List, Mapping, Optional, Sequence
+from typing import Dict, List, Mapping, Optional, Sequence
 
+from .driver_mapping import canonical_driver_key, infer_metric_family_from_key
 
 ACTION_MAP: Dict[str, List[str]] = {
-    "active_down": [
+    "active_users": [
         "Launch dormant-user reactivation campaigns with segmented incentives.",
         "Reduce message fatigue via tighter frequency caps and send-time optimization.",
         "Retarget recently lapsed cohorts with low-friction missions.",
     ],
-    "completion_down": [
+    "activity_completion_rate": [
         "Audit mission completion friction (steps, UX, rules) and simplify top drop-off flows.",
         "Shift reward mix toward lower-friction, faster-win activities.",
         "A/B test mission copy and CTA clarity on the highest-volume activities.",
     ],
-    "redeem_down": [
+    "redeem_rate": [
         "Increase redemption visibility with in-app reminders and redemption-specific triggers.",
         "Rebalance point thresholds to reduce perceived redemption effort.",
         "Promote expiring-value nudges to accelerate redemption intent.",
     ],
-    "gmv_down": [
+    "gmv_net": [
         "Run short-cycle conversion pushes for high-intent audiences.",
         "Bundle offers to lift average order value and repeat basket behavior.",
         "Check checkout/payment friction and recover abandoned purchase attempts.",
     ],
-    "transactions_down": [
+    "transaction_count": [
         "Introduce repeat-purchase triggers based on product replenishment cadence.",
         "Activate personalized offer ladders for near-churn buyers.",
         "Prioritize retention promotions for buyers with recent order decline.",
     ],
-    "dormant_up": [
+    "dormant_share": [
         "Create dormant-tier win-back journeys with escalating incentives.",
         "Use triggered education content to reintroduce loyalty value.",
         "Suppress low-intent users from broad blasts and target by propensity.",
     ],
-    "efficiency_drop": [
+    "reward_efficiency": [
         "Recalibrate reward economics: trim low-yield rewards and raise completion-linked value.",
         "Prioritize activities with best completion-per-point efficiency.",
         "Set guardrails so point inflation does not outpace engagement conversion.",
     ],
-    "sku_concentration_high": [
+    "sku_concentration": [
         "Diversify reward/product mix to reduce dependence on top SKU(s).",
         "Promote under-indexed SKUs through personalized recommendations.",
         "Use rotation strategy for featured SKUs to broaden basket composition.",
@@ -47,54 +48,58 @@ ACTION_MAP: Dict[str, List[str]] = {
 }
 
 
-def _normalize_driver_key(key: str) -> str:
-    if key.startswith("model_"):
-        k = key.replace("model_", "")
-        if "active_users" in k:
-            return "active_down"
-        if "completion" in k:
-            return "completion_down"
-        if "redeem" in k:
-            return "redeem_down"
-        if "gmv" in k:
-            return "gmv_down"
-        if "transaction" in k:
-            return "transactions_down"
-        if "dormant" in k:
-            return "dormant_up"
-        if "efficiency" in k or "points" in k:
-            return "efficiency_drop"
-        if "sku" in k:
-            return "sku_concentration_high"
-    return key
+COMMERCE_SEGMENT_KEYS = {
+    "buyers",
+    "repeat_buyers",
+    "high_aov_buyers",
+    "discount_sensitive",
+    "sku_affinity_top1",
+}
 
 
-def _segment_keys(target_segments: Optional[Sequence[Mapping]]) -> List[str]:
+def _segment_objects(target_segments: Optional[Sequence[Mapping]]) -> List[dict]:
     if not target_segments:
         return []
-    out: List[str] = []
+    out: List[dict] = []
     for s in target_segments:
+        if not isinstance(s, Mapping):
+            continue
         k = str(s.get("segment_key", "")).strip()
-        if k and k not in out:
-            out.append(k)
+        if not k:
+            continue
+        out.append(
+            {
+                "segment_key": k,
+                "metric_family": str(s.get("metric_family", "")).strip(),
+                "direction": str(s.get("direction", "")).strip(),
+                "contribution_share": float(s.get("contribution_share", 0.0) or 0.0),
+            }
+        )
+    out.sort(key=lambda x: x["contribution_share"], reverse=True)
     return out
 
 
-def _segment_specific_actions(driver_key: str, seg_key: str, row: Optional[Mapping] = None) -> List[str]:
+def _segment_specific_actions(
+    metric_family: str,
+    seg_key: str,
+    direction: str,
+    commerce_joinable: bool,
+    row: Optional[Mapping] = None,
+) -> List[str]:
     actions: List[str] = []
     active_wow = float(row.get("active_users_wow_pct", 0.0)) if row else 0.0
 
-    if driver_key == "active_down" and seg_key in {"recently_lapsed_8_14d", "dormant_15_30d"}:
+    if metric_family == "active_users" and direction == "down" and seg_key in {"recently_lapsed_8_14d", "dormant_15_30d", "dormant_31_60d", "dormant_60d_plus"}:
         actions.extend(
             [
                 f"Trigger winback rewards for `{seg_key}` with short expiry and capped frequency.",
                 f"Set reactivation journeys for `{seg_key}` using low-friction missions first.",
             ]
         )
-    if driver_key == "active_down" and seg_key == "engaged_no_redeem":
-        actions.append("Send redemption-intent nudges to `engaged_no_redeem` with easier point thresholds.")
+    if metric_family == "active_users" and direction == "down" and seg_key in {"new_users_0_7d"}:
+        actions.append("Boost first-7-day activation missions for `new_users_0_7d` with immediate low-friction rewards.")
 
-    if driver_key == "dormant_up" and seg_key in {"dormant_15_30d", "recently_lapsed_8_14d"}:
+    if metric_family == "dormant_share" and direction == "up" and seg_key in {"dormant_15_30d", "dormant_31_60d", "dormant_60d_plus", "recently_lapsed_8_14d"}:
         actions.extend(
             [
                 f"Apply reactivation + frequency caps specifically for `{seg_key}`.",
@@ -102,16 +107,23 @@ def _segment_specific_actions(driver_key: str, seg_key: str, row: Optional[Mappi
             ]
         )
 
-    if driver_key == "completion_down" and seg_key in {"active_0_7d", "engaged_no_redeem"}:
+    if metric_family == "activity_completion_rate" and direction == "down" and seg_key in {"active_0_7d", "non_redeemers"}:
         actions.append(f"Reduce mission friction for `{seg_key}` and A/B test mission flow copy.")
 
-    if driver_key == "gmv_down" and active_wow >= -0.05:
+    if metric_family == "gmv_net" and direction == "down" and active_wow >= -0.05 and commerce_joinable:
         actions.append("Active base is stable; run purchase triggers for `buyers_recent`-like cohorts (active/redeemers).")
-    if driver_key == "gmv_down" and seg_key in {"active_0_7d", "redeemers"}:
+    if metric_family == "gmv_net" and direction == "down" and seg_key in {"buyers", "repeat_buyers", "high_aov_buyers"} and commerce_joinable:
         actions.append(f"Launch basket-building offers for `{seg_key}` to recover GMV quickly.")
 
-    if driver_key == "transactions_down" and seg_key in {"active_0_7d", "redeemers"}:
+    if metric_family == "transaction_count" and direction == "down" and seg_key in {"buyers", "repeat_buyers"} and commerce_joinable:
         actions.append(f"Trigger repeat-purchase journeys for `{seg_key}` using replenishment cadence.")
+        actions.append("Offer replenishment coupon to `repeat_buyers` cohort; test 7d expiry.")
+
+    if metric_family == "redeem_rate" and direction == "down" and seg_key in {"non_redeemers", "active_0_7d"}:
+        actions.append(f"Send redemption-intent nudges to `{seg_key}` with easier point thresholds and expiry reminders.")
+
+    if not commerce_joinable and seg_key in COMMERCE_SEGMENT_KEYS:
+        return []
 
     return actions
 
@@ -125,24 +137,58 @@ def map_drivers_to_actions(
 ) -> List[str]:
     actions: List[str] = []
     seen: set = set()
-    seg_keys = _segment_keys(target_segments)
+    commerce_joinable = bool(float(row.get("commerce_joinable", 0.0))) if row is not None else False
+    seg_objs = _segment_objects(target_segments)
+
+    for seg in seg_objs:
+        seg_key = seg["segment_key"]
+        mf = seg["metric_family"]
+        direction = seg["direction"]
+        if not commerce_joinable and seg_key in COMMERCE_SEGMENT_KEYS:
+            continue
+        for action in _segment_specific_actions(
+            metric_family=mf,
+            seg_key=seg_key,
+            direction=direction,
+            commerce_joinable=commerce_joinable,
+            row=row,
+        ):
+            if action not in seen:
+                seen.add(action)
+                actions.append(action)
+            if len(actions) >= top_n:
+                return actions
 
     for d in drivers:
-        key = _normalize_driver_key(str(d.get("key", "")))
-        for seg_key in seg_keys:
-            for action in _segment_specific_actions(key, seg_key, row=row):
-                if action not in seen:
-                    seen.add(action)
-                    actions.append(action)
-                if len(actions) >= top_n:
-                    return actions
-
+        key = canonical_driver_key(str(d.get("key", "")))
+        mf = str(d.get("metric_family", "")).strip() or infer_metric_family_from_key(key) or ""
+        if mf in {"gmv_net", "transaction_count", "sku_concentration"} and not commerce_joinable:
+            continue
+        for action in ACTION_MAP.get(mf, []):
+            if action not in seen:
+                seen.add(action)
+                actions.append(action)
+            if len(actions) >= top_n:
+                return actions
         for action in ACTION_MAP.get(key, []):
             if action not in seen:
                 seen.add(action)
                 actions.append(action)
             if len(actions) >= top_n:
                 return actions
+
+    if not actions:
+        for d in drivers:
+            key = canonical_driver_key(str(d.get("key", "")))
+            mf = str(d.get("metric_family", "")).strip() or infer_metric_family_from_key(key) or ""
+            if mf in {"gmv_net", "transaction_count", "sku_concentration"} and not commerce_joinable:
+                continue
+            for action in ACTION_MAP.get(mf, []):
+                if action not in seen:
+                    seen.add(action)
+                    actions.append(action)
+                if len(actions) >= top_n:
+                    return actions
 
     # Fallback generic actions.
     if not actions:

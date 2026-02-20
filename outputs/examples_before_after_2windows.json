@@ -1,0 +1,296 @@
+[
+  {
+    "brand_id": "c-vit",
+    "window_end_date": "2026-02-08T00:00:00.000Z",
+    "window_size": "30d",
+    "before": {
+      "predicted_health_class": "Healthy",
+      "target_segments": [
+        {
+          "segment_key": "new_users_0_7d",
+          "contribution_share": 0.9945175805,
+          "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -18.4% WoW",
+          "evidence_metrics": {
+            "active_users_delta_seg": -20.0,
+            "active_users_wow_pct_seg": -1.0,
+            "segment_share": 0.0,
+            "driver_key": "active_down"
+          }
+        },
+        {
+          "segment_key": "recently_lapsed_8_14d",
+          "contribution_share": 0.0054824195,
+          "reason_statement": "Major contributor to completion_rate drop. Driver: Model-highlighted anomaly: reward_efficiency_zscore=1.04",
+          "evidence_metrics": {
+            "completion_rate_delta_seg": -1.0,
+            "completion_rate_wow_pct_seg": -1.0,
+            "segment_share": 0.2794117647,
+            "driver_key": "efficiency_drop"
+          }
+        }
+      ]
+    },
+    "after": {
+      "predicted_health_class": "Healthy",
+      "target_segments": [
+        {
+          "metric_family": "active_users",
+          "segment_key": "dormant_60d_plus",
+          "direction": "down",
+          "contribution_share": 0.5,
+          "reason_statement": "Active users down driven by `dormant_60d_plus` (driver: Active users 30d down -18.4% WoW)",
+          "evidence_metrics": {
+            "delta_seg": -2.0,
+            "delta_total": -14.0,
+            "segment_share_now": 0.9613259669,
+            "segment_count_now": 174,
+            "wow_pct_seg": -0.0113636364,
+            "cold_start_increase": false,
+            "note": "stable"
+          },
+          "segment_confidence": "high"
+        },
+        {
+          "metric_family": "active_users",
+          "segment_key": "non_redeemers",
+          "direction": "down",
+          "contribution_share": 0.5,
+          "reason_statement": "Active users down driven by `non_redeemers` (driver: Active users 30d down -18.4% WoW)",
+          "evidence_metrics": {
+            "delta_seg": -2.0,
+            "delta_total": -14.0,
+            "segment_share_now": 0.9613259669,
+            "segment_count_now": 174,
+            "wow_pct_seg": -0.0113636364,
+            "cold_start_increase": false,
+            "note": "stable"
+          },
+          "segment_confidence": "high"
+        }
+      ]
+    }
+  },
+  {
+    "brand_id": "c-vit",
+    "window_end_date": "2026-02-15T00:00:00.000Z",
+    "window_size": "30d",
+    "before": {
+      "predicted_health_class": "Warning",
+      "target_segments": [
+        {
+          "segment_key": "recently_lapsed_8_14d",
+          "contribution_share": 0.7368421053,
+          "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -24.2% WoW",
+          "evidence_metrics": {
+            "active_users_delta_seg": -14.0,
+            "active_users_wow_pct_seg": -0.7368421053,
+            "segment_share": 0.1020408163,
+            "driver_key": "active_down"
+          }
+        },
+        {
+          "segment_key": "active_0_7d",
+          "contribution_share": 0.2631578947,
+          "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -24.2% WoW",
+          "evidence_metrics": {
+            "active_users_delta_seg": -5.0,
+            "active_users_wow_pct_seg": -1.0,
+            "segment_share": 0.0,
+            "driver_key": "active_down"
+          }
+        }
+      ]
+    },
+    "after": {
+      "predicted_health_class": "Warning",
+      "target_segments": []
+    }
+  },
+  {
+    "brand_id": "see-chan",
+    "window_end_date": "2026-01-21T00:00:00.000Z",
+    "window_size": "30d",
+    "before": {
+      "predicted_health_class": "Healthy",
+      "target_segments": [
+        {
+          "segment_key": "dormant_15_30d",
+          "contribution_share": 0.6020240171,
+          "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -8.9% WoW",
+          "evidence_metrics": {
+            "active_users_delta_seg": -2374.0,
+            "active_users_wow_pct_seg": -0.1792509816,
+            "segment_share": 0.7908330302,
+            "driver_key": "active_down"
+          }
+        },
+        {
+          "segment_key": "recently_lapsed_8_14d",
+          "contribution_share": 0.2583398677,
+          "reason_statement": "Major contributor to active_users increase. Driver: Model-highlighted anomaly: dormant_share_zscore=1.52",
+          "evidence_metrics": {
+            "active_users_delta_seg": 536.0,
+            "active_users_wow_pct_seg": 0.6708385482,
+            "segment_share": 0.0971262277,
+            "driver_key": "dormant_up"
+          }
+        },
+        {
+          "segment_key": "active_0_7d",
+          "contribution_share": 0.1396361152,
+          "reason_statement": "Major contributor to active_users increase. Driver: Model-highlighted anomaly: dormant_share_zscore=1.52",
+          "evidence_metrics": {
+            "active_users_delta_seg": 272.0,
+            "active_users_wow_pct_seg": 0.2863157895,
+            "segment_share": 0.0889050564,
+            "driver_key": "dormant_up"
+          }
+        }
+      ]
+    },
+    "after": {
+      "predicted_health_class": "Healthy",
+      "target_segments": [
+        {
+          "metric_family": "active_users",
+          "segment_key": "dormant_15_30d",
+          "direction": "down",
+          "contribution_share": 0.7101405923,
+          "reason_statement": "Active users down driven by `dormant_15_30d` (driver: Active users 30d down -8.9% WoW)",
+          "evidence_metrics": {
+            "delta_seg": -2374.0,
+            "delta_total": -1328.0,
+            "segment_share_now": 0.0636678241,
+            "segment_count_now": 10873,
+            "wow_pct_seg": -0.1792103873,
+            "cold_start_increase": false,
+            "note": "stable"
+          },
+          "segment_confidence": "high"
+        },
+        {
+          "metric_family": "active_users",
+          "segment_key": "dormant_31_60d",
+          "direction": "down",
+          "contribution_share": 0.20729883340000002,
+          "reason_statement": "Active users down driven by `dormant_31_60d` (driver: Active users 30d down -8.9% WoW)",
+          "evidence_metrics": {
+            "delta_seg": -693.0,
+            "delta_total": -1328.0,
+            "segment_share_now": 0.1858212757,
+            "segment_count_now": 31734,
+            "wow_pct_seg": -0.0213710797,
+            "cold_start_increase": false,
+            "note": "stable"
+          },
+          "segment_confidence": "high"
+        },
+        {
+          "metric_family": "active_users",
+          "segment_key": "new_users_0_7d",
+          "direction": "down",
+          "contribution_share": 0.08256057430000001,
+          "reason_statement": "Active users down driven by `new_users_0_7d` (driver: Active users 30d down -8.9% WoW)",
+          "evidence_metrics": {
+            "delta_seg": -276.0,
+            "delta_total": -1328.0,
+            "segment_share_now": 0.0018327995000000001,
+            "segment_count_now": 313,
+            "wow_pct_seg": -0.4685908319,
+            "cold_start_increase": false,
+            "note": "stable"
+          },
+          "segment_confidence": "medium"
+        }
+      ]
+    }
+  },
+  {
+    "brand_id": "see-chan",
+    "window_end_date": "2026-01-28T00:00:00.000Z",
+    "window_size": "30d",
+    "before": {
+      "predicted_health_class": "AtRisk",
+      "target_segments": [
+        {
+          "segment_key": "dormant_15_30d",
+          "contribution_share": 0.9746090831,
+          "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -56.5% WoW",
+          "evidence_metrics": {
+            "active_users_delta_seg": -7997.0,
+            "active_users_wow_pct_seg": -0.7356945722,
+            "segment_share": 0.4341190692,
+            "driver_key": "active_down"
+          }
+        },
+        {
+          "segment_key": "recently_lapsed_8_14d",
+          "contribution_share": 0.0253909169,
+          "reason_statement": "Major contributor to transactions drop. Driver: Model-highlighted signal: transaction_count_wow_pct up +12.5%",
+          "evidence_metrics": {
+            "transactions_delta_seg": -33.0,
+            "transactions_wow_pct_seg": -0.4647887324,
+            "segment_share": 0.2000604412,
+            "driver_key": "transactions_down"
+          }
+        }
+      ]
+    },
+    "after": {
+      "predicted_health_class": "AtRisk",
+      "target_segments": [
+        {
+          "metric_family": "active_users",
+          "segment_key": "dormant_15_30d",
+          "direction": "down",
+          "contribution_share": 0.7924546985,
+          "reason_statement": "Active users down driven by `dormant_15_30d` (driver: Active users 30d down -56.5% WoW)",
+          "evidence_metrics": {
+            "delta_seg": -8003.0,
+            "delta_total": -7681.0,
+            "segment_share_now": 0.0167295238,
+            "segment_count_now": 2870,
+            "wow_pct_seg": -0.7360434103,
+            "cold_start_increase": false,
+            "note": "stable"
+          },
+          "segment_confidence": "medium"
+        },
+        {
+          "metric_family": "active_users",
+          "segment_key": "dormant_31_60d",
+          "direction": "down",
+          "contribution_share": 0.2069511833,
+          "reason_statement": "Active users down driven by `dormant_31_60d` (driver: Active users 30d down -56.5% WoW)",
+          "evidence_metrics": {
+            "delta_seg": -2090.0,
+            "delta_total": -7681.0,
+            "segment_share_now": 0.1727979108,
+            "segment_count_now": 29644,
+            "wow_pct_seg": -0.0658599609,
+            "cold_start_increase": false,
+            "note": "stable"
+          },
+          "segment_confidence": "high"
+        },
+        {
+          "metric_family": "active_users",
+          "segment_key": "recently_lapsed_8_14d",
+          "direction": "down",
+          "contribution_share": 0.0005941182,
+          "reason_statement": "Active users down driven by `recently_lapsed_8_14d` (driver: Active users 30d down -56.5% WoW)",
+          "evidence_metrics": {
+            "delta_seg": -6.0,
+            "delta_total": -7681.0,
+            "segment_share_now": 0.0077293898,
+            "segment_count_now": 1326,
+            "wow_pct_seg": -0.0045045045,
+            "cold_start_increase": false,
+            "note": "stable"
+          },
+          "segment_confidence": "medium"
+        }
+      ]
+    }
+  }
+]

@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Mapping, Optional
 
 import numpy as np
 import pandas as pd
@@ -18,7 +18,7 @@ from src.data_load import (
     write_join_diagnostics_markdown,
 )
 from src.features import build_feature_table, feature_definitions
-from src.infer import predict_with_drivers, save_predictions
+from src.infer import load_model_artifacts, predict_with_drivers, save_predictions
 from src.labeling import generate_weak_labels, labeling_thresholds
 from src.segments import compute_segment_kpis
 from src.train import train_models
@@ -61,6 +61,8 @@ def _write_markdown_report(
     thresholds: Dict,
     metrics: Dict,
     examples: pd.DataFrame,
+    before_after_examples: Optional[List[dict]] = None,
+    attribution_qa: Optional[Mapping[str, float]] = None,
 ) -> None:
     lines: List[str] = []
     lines.append("# Brand Health Modeling Report")
@@ -224,7 +226,108 @@ def _write_markdown_report(
             lines.append("```")
             lines.append("")
 
+    lines.append("## 6) Attribution QA")
+    lines.append("")
+    if attribution_qa:
+        qa_items = [
+            {"metric": k, "value": v}
+            for k, v in sorted(attribution_qa.items())
+            if k
+        ]
+        lines.append(_markdown_table(pd.DataFrame(qa_items)))
+    else:
+        lines.append("No attribution QA summary available.")
+    lines.append("")
+
+    lines.append("## 7) Before/After Target Segments (2 windows per brand)")
+    lines.append("")
+    if before_after_examples:
+        for ex in before_after_examples:
+            lines.append("```json")
+            lines.append(json.dumps(ex, ensure_ascii=False, indent=2))
+            lines.append("```")
+            lines.append("")
+    else:
+        lines.append("No before/after examples available.")
+        lines.append("")
+
     report_path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _compute_activity_enrichment_joinable(
+    join_coverage: pd.DataFrame,
+    threshold: float = 0.80,
+) -> Dict[str, bool]:
+    out: Dict[str, bool] = {}
+    if join_coverage.empty:
+        return out
+
+    for brand_id, sub in join_coverage.groupby("brand_id"):
+        view_row = sub[
+            (sub["left_table"] == "activity_transaction")
+            & (sub["right_table"] == "user_view")
+            & (sub["key"] == "user_id")
+        ]
+        visitor_row = sub[
+            (sub["left_table"] == "activity_transaction")
+            & (sub["right_table"] == "user_visitor")
+            & (sub["key"] == "user_id")
+        ]
+
+        view_cov = float(view_row["row_coverage_norm"].iloc[0]) if not view_row.empty and "row_coverage_norm" in view_row.columns else (
+            float(view_row["row_coverage"].iloc[0]) if not view_row.empty else np.nan
+        )
+        visitor_cov = float(visitor_row["row_coverage_norm"].iloc[0]) if not visitor_row.empty and "row_coverage_norm" in visitor_row.columns else (
+            float(visitor_row["row_coverage"].iloc[0]) if not visitor_row.empty else np.nan
+        )
+        ok_view = (not pd.isna(view_cov)) and view_cov >= threshold
+        ok_visitor = (not pd.isna(visitor_cov)) and visitor_cov >= threshold
+        out[str(brand_id)] = bool(ok_view and ok_visitor)
+
+    return out
+
+
+def _build_before_after_examples(
+    before_examples: Optional[pd.DataFrame],
+    after_examples: pd.DataFrame,
+    n_per_brand: int = 2,
+) -> List[dict]:
+    if after_examples.empty:
+        return []
+
+    def _norm_key(brand_id, window_end_date, window_size) -> tuple:
+        ts = pd.to_datetime(window_end_date, errors="coerce", utc=True)
+        ts_key = ts.isoformat() if pd.notna(ts) else str(window_end_date)
+        return str(brand_id), ts_key, str(window_size)
+
+    before_idx: Dict[tuple, dict] = {}
+    if isinstance(before_examples, pd.DataFrame) and not before_examples.empty:
+        for _, r in before_examples.iterrows():
+            key = _norm_key(r.get("brand_id"), r.get("window_end_date"), r.get("window_size"))
+            before_idx[key] = r.to_dict()
+
+    out: List[dict] = []
+    for brand_id, sub in after_examples.groupby("brand_id"):
+        rows = sub.sort_values("window_end_date").tail(n_per_brand)
+        for _, r in rows.iterrows():
+            key = _norm_key(r.get("brand_id"), r.get("window_end_date"), r.get("window_size"))
+            b = before_idx.get(key, {})
+            out.append(
+                {
+                    "brand_id": str(r.get("brand_id")),
+                    "window_end_date": str(r.get("window_end_date")),
+                    "window_size": str(r.get("window_size")),
+                    "before": {
+                        "predicted_health_class": b.get("predicted_health_class"),
+                        "target_segments": b.get("target_segments", []),
+                    },
+                    "after": {
+                        "predicted_health_class": r.get("predicted_health_class"),
+                        "target_segments": r.get("target_segments", []),
+                    },
+                }
+            )
+    return out
 
 
 def _write_profiling_report(
@@ -265,6 +368,7 @@ def main() -> None:
     parser.add_argument("--artifacts-dir", type=str, default="artifacts")
     parser.add_argument("--snapshot-freq", type=str, default="7D")
     parser.add_argument("--report-name", type=str, default="brand_health_report.md")
+    parser.add_argument("--skip-train", action="store_true", help="Skip training and reuse model artifacts.")
     args = parser.parse_args()
 
     dataset_root = Path(args.dataset_root)
@@ -276,6 +380,14 @@ def main() -> None:
     outputs_dir.mkdir(parents=True, exist_ok=True)
     artifacts_dir.mkdir(parents=True, exist_ok=True)
 
+    before_examples_path = outputs_dir / "examples_last4_with_segments.json"
+    before_examples = pd.DataFrame()
+    if before_examples_path.exists():
+        try:
+            before_examples = pd.read_json(before_examples_path)
+        except ValueError:
+            before_examples = pd.DataFrame()
+
     print(f"Using app_id filters: {BRAND_APP_ID_FILTERS}")
     print("[0/7] Building join diagnostics...")
     join_diag = build_purchase_item_join_diagnostics(dataset_root, brand_app_ids=BRAND_APP_ID_FILTERS)
@@ -285,6 +397,7 @@ def main() -> None:
     profile = profile_dataset(dataset_root, brand_app_ids=BRAND_APP_ID_FILTERS)
     save_profile(profile, reports_dir / "data_profile")
     write_coverage_notes_markdown(profile.join_coverage, join_diag, outputs_dir / "coverage_notes.md")
+    activity_enrichment_joinable = _compute_activity_enrichment_joinable(profile.join_coverage, threshold=0.80)
     _write_profiling_report(
         outputs_dir / "profiling_report.md",
         join_diag_df=join_diag.coverage_summary,
@@ -371,7 +484,12 @@ def main() -> None:
     feature_df.to_csv(outputs_dir / "feature_table_sample.csv", index=False)
 
     print("[4/7] Building segment KPIs for Marketing Automation...")
-    segment_kpi_df = compute_segment_kpis(tables=tables, snapshot_freq=args.snapshot_freq)
+    segment_kpi_df = compute_segment_kpis(
+        tables=tables,
+        snapshot_freq=args.snapshot_freq,
+        commerce_joinable_by_brand=join_diag.commerce_joinable,
+        activity_enrichment_joinable_by_brand=activity_enrichment_joinable,
+    )
     if not segment_kpi_df.empty:
         segment_kpi_df.to_parquet(outputs_dir / "segment_kpis.parquet", index=False)
         segment_kpi_df.to_csv(outputs_dir / "segment_kpis.csv", index=False)
@@ -384,21 +502,47 @@ def main() -> None:
     labeled_df.to_parquet(outputs_dir / "labeled_feature_table.parquet", index=False)
 
     print("[6/7] Training and evaluating models...")
-    artifacts = train_models(labeled_df, artifact_dir=artifacts_dir)
+    if args.skip_train:
+        loaded = load_model_artifacts(artifact_dir=artifacts_dir)
+        model = loaded["model"]
+        metadata = loaded.get("metadata", {})
+        feature_importance = loaded.get("feature_importance", {})
+        feature_columns = metadata.get("feature_columns", [])
+        class_labels = metadata.get("class_labels", ["AtRisk", "Healthy", "Warning"])
+
+        existing_summary = {}
+        summary_path = reports_dir / "pipeline_summary.json"
+        if summary_path.exists():
+            try:
+                existing_summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                existing_summary = {}
+        metrics = existing_summary.get("metrics", {})
+        selected_model = existing_summary.get("selected_model", "hist_gradient_boosting_calibrated")
+    else:
+        artifacts = train_models(labeled_df, artifact_dir=artifacts_dir)
+        model = artifacts.final_model
+        feature_importance = artifacts.feature_importance
+        feature_columns = artifacts.feature_columns
+        class_labels = artifacts.class_labels
+        metrics = artifacts.metrics
+        selected_model = artifacts.metrics.get("selected_model")
 
     print("[7/7] Running inference + drivers + actions...")
     pred_df = predict_with_drivers(
         feature_df=labeled_df,
-        model=artifacts.final_model,
-        feature_columns=artifacts.feature_columns,
-        class_labels=artifacts.class_labels,
-        feature_importance=artifacts.feature_importance,
+        model=model,
+        feature_columns=feature_columns,
+        class_labels=class_labels,
+        feature_importance=feature_importance,
         segment_kpis_df=segment_kpi_df if not segment_kpi_df.empty else None,
         top_n_drivers=5,
         top_n_actions=3,
         top_n_target_segments=3,
     )
     save_predictions(pred_df, output_dir=outputs_dir)
+    attribution_qa = dict(pred_df.attrs.get("attribution_qa", {}))
+    (outputs_dir / "attribution_qa.json").write_text(json.dumps(attribution_qa, indent=2), encoding="utf-8")
 
     # Last 4 windows per brand (prefer 30d windows for concise dashboard snapshots).
     ex = pred_df[pred_df["window_size"].astype(str) == "30d"].copy()
@@ -407,6 +551,11 @@ def main() -> None:
     examples = ex.sort_values("window_end_date").groupby("brand_id", as_index=False).tail(4)
     examples.to_json(outputs_dir / "examples_last4_windows.json", orient="records", indent=2, date_format="iso")
     examples.to_json(outputs_dir / "examples_last4_with_segments.json", orient="records", indent=2, date_format="iso")
+    before_after_examples = _build_before_after_examples(before_examples=before_examples, after_examples=examples, n_per_brand=2)
+    (outputs_dir / "examples_before_after_2windows.json").write_text(
+        json.dumps(before_after_examples, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
 
     # Final report.
     report_path = reports_dir / args.report_name
@@ -416,18 +565,22 @@ def main() -> None:
         join_coverage=profile.join_coverage,
         feature_defs=feature_defs,
         thresholds=labeling_thresholds(),
-        metrics=artifacts.metrics,
+        metrics=metrics,
         examples=examples,
+        before_after_examples=before_after_examples,
+        attribution_qa=attribution_qa,
     )
 
     # Also write compact summary JSON for backend usage.
     summary = {
         "join_coverage": profile.join_coverage.to_dict(orient="records"),
         "commerce_joinable": join_diag.commerce_joinable,
-        "selected_model": artifacts.metrics.get("selected_model"),
-        "metrics": artifacts.metrics,
-        "feature_count": len(artifacts.feature_columns),
+        "activity_enrichment_joinable": activity_enrichment_joinable,
+        "selected_model": selected_model,
+        "metrics": metrics,
+        "feature_count": len(feature_columns),
         "example_count": len(examples),
+        "attribution_qa": attribution_qa,
     }
     (reports_dir / "pipeline_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
 

@@ -5,6 +5,8 @@ from typing import Dict, List, Mapping, Optional
 import numpy as np
 import pandas as pd
 
+from .driver_mapping import canonical_driver_key, infer_metric_family_from_key
+
 
 def _pct(v: float) -> str:
     return f"{v * 100:+.1f}%"
@@ -18,15 +20,55 @@ def _val(v: float) -> str:
     return f"{v:.2f}"
 
 
-def _add_driver(drivers: List[dict], key: str, statement: str, severity: float, metrics: Mapping[str, float]) -> None:
+def _direction(v: float, eps: float = 1e-4) -> str:
+    if v > eps:
+        return "up"
+    if v < -eps:
+        return "down"
+    return "flat"
+
+
+def _add_driver(
+    drivers: List[dict],
+    key: str,
+    statement: str,
+    severity: float,
+    metrics: Mapping[str, float],
+    direction: str,
+    metric_family: Optional[str] = None,
+) -> None:
+    ckey = canonical_driver_key(key)
+    mf = metric_family or infer_metric_family_from_key(ckey)
     drivers.append(
         {
-            "key": key,
+            "key": ckey,
             "statement": statement,
             "severity": float(severity),
+            "direction": direction,
+            "metric_family": mf,
             "metrics": {k: float(v) for k, v in metrics.items()},
         }
     )
+
+
+def _trend_statement(label: str, value: float, suffix: str = "WoW") -> str:
+    d = _direction(value)
+    if d == "flat":
+        return f"{label} flat ({_pct(value)}) {suffix}"
+    return f"{label} {d} {_pct(value)} {suffix}"
+
+
+def _model_signal_statement(feat: str, value: float) -> str:
+    d = _direction(value)
+    if feat.endswith("_wow_pct"):
+        if d == "flat":
+            return f"Model-highlighted signal: {feat} flat ({_pct(value)})"
+        return f"Model-highlighted signal: {feat} {d} {_pct(value)}"
+    if feat.endswith("_zscore"):
+        if d == "flat":
+            return f"Model-highlighted anomaly: {feat}={_val(value)} (near baseline)"
+        return f"Model-highlighted anomaly: {feat}={_val(value)} ({d} vs baseline)"
+    return f"Model-highlighted signal: {feat}={_val(value)}"
 
 
 
@@ -40,19 +82,23 @@ def build_metric_drivers(row: Mapping[str, float], top_n: int = 5) -> List[dict]
         _add_driver(
             drivers,
             "active_down",
-            f"Active users {window} down {_pct(active_wow)} WoW",
+            _trend_statement(f"Active users {window}", active_wow, suffix="WoW"),
             abs(active_wow),
             {"active_users_wow_pct": active_wow},
+            direction=_direction(active_wow),
+            metric_family="active_users",
         )
 
     completion_wow = float(row.get("activity_completion_rate_wow_pct", 0.0))
     if completion_wow <= -0.06:
         _add_driver(
             drivers,
-            "completion_down",
-            f"Completion rate down {_pct(completion_wow)} WoW",
+            "completion_drop",
+            _trend_statement("Completion rate", completion_wow, suffix="WoW"),
             abs(completion_wow),
             {"activity_completion_rate_wow_pct": completion_wow},
+            direction=_direction(completion_wow),
+            metric_family="activity_completion_rate",
         )
 
     redeem_wow = float(row.get("activity_redeem_rate_wow_pct", 0.0))
@@ -60,9 +106,11 @@ def build_metric_drivers(row: Mapping[str, float], top_n: int = 5) -> List[dict]
         _add_driver(
             drivers,
             "redeem_down",
-            f"Redemption proxy rate down {_pct(redeem_wow)} WoW",
+            _trend_statement("Redemption proxy rate", redeem_wow, suffix="WoW"),
             abs(redeem_wow),
             {"activity_redeem_rate_wow_pct": redeem_wow},
+            direction=_direction(redeem_wow),
+            metric_family="redeem_rate",
         )
 
     gmv_wow = float(row.get("gmv_net_wow_pct", 0.0))
@@ -70,9 +118,11 @@ def build_metric_drivers(row: Mapping[str, float], top_n: int = 5) -> List[dict]
         _add_driver(
             drivers,
             "gmv_down",
-            f"GMV down {_pct(gmv_wow)} WoW",
+            _trend_statement("GMV", gmv_wow, suffix="WoW"),
             abs(gmv_wow),
             {"gmv_net_wow_pct": gmv_wow},
+            direction=_direction(gmv_wow),
+            metric_family="gmv_net",
         )
 
     txn_wow = float(row.get("transaction_count_wow_pct", 0.0))
@@ -80,9 +130,11 @@ def build_metric_drivers(row: Mapping[str, float], top_n: int = 5) -> List[dict]
         _add_driver(
             drivers,
             "transactions_down",
-            f"Transactions down {_pct(txn_wow)} WoW",
+            _trend_statement("Transactions", txn_wow, suffix="WoW"),
             abs(txn_wow),
             {"transaction_count_wow_pct": txn_wow},
+            direction=_direction(txn_wow),
+            metric_family="transaction_count",
         )
 
     dormant_wow = float(row.get("dormant_share_wow_pct", 0.0))
@@ -90,9 +142,11 @@ def build_metric_drivers(row: Mapping[str, float], top_n: int = 5) -> List[dict]
         _add_driver(
             drivers,
             "dormant_up",
-            f"Dormant share up {_pct(dormant_wow)} WoW",
+            _trend_statement("Dormant share", dormant_wow, suffix="WoW"),
             abs(dormant_wow),
             {"dormant_share_wow_pct": dormant_wow},
+            direction=_direction(dormant_wow),
+            metric_family="dormant_share",
         )
 
     reward_eff_wow = float(row.get("reward_efficiency_wow_pct", 0.0))
@@ -108,6 +162,8 @@ def build_metric_drivers(row: Mapping[str, float], top_n: int = 5) -> List[dict]
                 "activity_points_per_active_wow_pct": points_wow,
                 "activity_completion_rate_wow_pct": completion_wow,
             },
+            direction="down",
+            metric_family="reward_efficiency",
         )
 
     sku_top = float(row.get("sku_top_share", 0.0))
@@ -118,6 +174,8 @@ def build_metric_drivers(row: Mapping[str, float], top_n: int = 5) -> List[dict]
             f"SKU mix concentration is high (top SKU share {_pct(sku_top)})",
             abs(sku_top),
             {"sku_top_share": sku_top},
+            direction="up",
+            metric_family="sku_concentration",
         )
 
     # Keep strongest metric rules.
@@ -151,22 +209,29 @@ def build_model_importance_drivers(
 
         # Only surface interpretable change-like features.
         if feat.endswith("_wow_pct") and abs(val) >= 0.05:
-            direction = "down" if val < 0 else "up"
+            key = canonical_driver_key(f"model_{feat}")
+            direction = _direction(val)
             rows.append(
                 {
-                    "key": f"model_{feat}",
-                    "statement": f"Model-highlighted signal: {feat} {direction} {_pct(val)}",
+                    "key": key,
+                    "statement": _model_signal_statement(feat, val),
                     "severity": float(abs(val) * abs(float(imp))),
+                    "direction": direction,
+                    "metric_family": infer_metric_family_from_key(key),
                     "metrics": {feat: val, "importance": float(imp)},
                 }
             )
             used += 1
         elif feat.endswith("_zscore") and abs(val) >= 1.0:
+            key = canonical_driver_key(f"model_{feat}")
+            direction = _direction(val)
             rows.append(
                 {
-                    "key": f"model_{feat}",
-                    "statement": f"Model-highlighted anomaly: {feat}={_val(val)}",
+                    "key": key,
+                    "statement": _model_signal_statement(feat, val),
                     "severity": float(abs(val) * abs(float(imp))),
+                    "direction": direction,
+                    "metric_family": infer_metric_family_from_key(key),
                     "metrics": {feat: val, "importance": float(imp)},
                 }
             )

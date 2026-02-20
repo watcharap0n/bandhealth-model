@@ -245,50 +245,42 @@ Selected model based on time-split macro F1: **hgb_calibrated**
 ```json
 {
   "brand_id": "c-vit",
-  "window_end_date": "2026-01-25 00:00:00+00:00",
+  "window_end_date": "2026-01-25T00:00:00.000Z",
   "window_size": "30d",
   "predicted_health_class": "Healthy",
   "predicted_health_statement": "Healthy",
-  "predicted_health_score": 85.3504902842963,
+  "predicted_health_score": 85.3504902843,
   "confidence_band": "high",
   "probabilities": {
-    "AtRisk": 0.0031703971093804176,
-    "Healthy": 0.8487151394374873,
-    "Warning": 0.1481144634531322
+    "AtRisk": 0.0031703971,
+    "Healthy": 0.8487151394,
+    "Warning": 0.14811446350000002
   },
   "drivers": [
     {
       "key": "model_reward_efficiency_zscore",
-      "statement": "Model-highlighted anomaly: reward_efficiency_zscore=1.10",
-      "severity": 0.0013218029221820702,
+      "statement": "Model-highlighted anomaly: reward_efficiency_zscore=1.10 (up vs baseline)",
+      "severity": 0.0013218029,
+      "direction": "up",
+      "metric_family": "reward_efficiency",
       "metrics": {
-        "reward_efficiency_zscore": 1.1039320711075211,
-        "importance": -0.0011973589288478321
+        "reward_efficiency_zscore": 1.1039320711,
+        "importance": -0.0011973589
       }
     },
     {
       "key": "model_reward_efficiency_wow_pct",
       "statement": "Model-highlighted signal: reward_efficiency_wow_pct up +10.6%",
-      "severity": 0.0002618538336543813,
+      "severity": 0.0002618538,
+      "direction": "up",
+      "metric_family": "reward_efficiency",
       "metrics": {
-        "reward_efficiency_wow_pct": 0.10599078341013835,
-        "importance": -0.0024705339957826387
+        "reward_efficiency_wow_pct": 0.10599078340000001,
+        "importance": -0.0024705340000000004
       }
     }
   ],
-  "target_segments": [
-    {
-      "segment_key": "recently_lapsed_8_14d",
-      "contribution_share": 1.0,
-      "reason_statement": "Major contributor to completion_rate drop. Driver: Model-highlighted anomaly: reward_efficiency_zscore=1.10",
-      "evidence_metrics": {
-        "completion_rate_delta_seg": -1.0,
-        "completion_rate_wow_pct_seg": -1.0,
-        "segment_share": 0.21739130434782608,
-        "driver_key": "efficiency_drop"
-      }
-    }
-  ],
+  "target_segments": [],
   "suggested_actions": [
     "Recalibrate reward economics: trim low-yield rewards and raise completion-linked value.",
     "Prioritize activities with best completion-per-point efficiency.",
@@ -300,76 +292,64 @@ Selected model based on time-split macro F1: **hgb_calibrated**
 ```json
 {
   "brand_id": "c-vit",
-  "window_end_date": "2026-02-01 00:00:00+00:00",
+  "window_end_date": "2026-02-01T00:00:00.000Z",
   "window_size": "30d",
   "predicted_health_class": "Healthy",
   "predicted_health_statement": "Healthy",
-  "predicted_health_score": 85.90892643155102,
+  "predicted_health_score": 85.9089264316,
   "confidence_band": "high",
   "probabilities": {
-    "AtRisk": 0.003366989790721984,
-    "Healthy": 0.867559035807543,
-    "Warning": 0.12907397440173504
+    "AtRisk": 0.0033669898,
+    "Healthy": 0.8675590358,
+    "Warning": 0.1290739744
   },
   "drivers": [
     {
       "key": "model_active_users_wow_pct",
       "statement": "Model-highlighted signal: active_users_wow_pct up +13.4%",
-      "severity": 0.030646321803926638,
+      "severity": 0.0306463218,
+      "direction": "up",
+      "metric_family": "active_users",
       "metrics": {
-        "active_users_wow_pct": 0.13432835820895517,
-        "importance": 0.2281448400958984
+        "active_users_wow_pct": 0.1343283582,
+        "importance": 0.2281448401
       }
     },
     {
       "key": "model_reward_efficiency_zscore",
-      "statement": "Model-highlighted anomaly: reward_efficiency_zscore=1.10",
-      "severity": 0.0013175802793117248,
+      "statement": "Model-highlighted anomaly: reward_efficiency_zscore=1.10 (up vs baseline)",
+      "severity": 0.0013175803000000002,
+      "direction": "up",
+      "metric_family": "reward_efficiency",
       "metrics": {
-        "reward_efficiency_zscore": 1.100405440313187,
-        "importance": -0.0011973589288478321
+        "reward_efficiency_zscore": 1.1004054403,
+        "importance": -0.0011973589
       }
     }
   ],
   "target_segments": [
     {
-      "segment_key": "new_users_0_7d",
-      "contribution_share": 0.7142857142857144,
-      "reason_statement": "Major contributor to active_users increase. Driver: Model-highlighted signal: active_users_wow_pct up +13.4%",
-      "evidence_metrics": {
-        "active_users_delta_seg": 5.0,
-        "active_users_wow_pct_seg": 0.3333333333333333,
-        "segment_share": 0.2597402597402597,
-        "driver_key": "active_down"
-      }
-    },
-    {
+      "metric_family": "active_users",
       "segment_key": "redeemers",
-      "contribution_share": 0.14285714285714288,
-      "reason_statement": "Major contributor to active_users increase. Driver: Model-highlighted signal: active_users_wow_pct up +13.4%",
+      "direction": "up",
+      "contribution_share": 1.0,
+      "reason_statement": "Active users up driven by `redeemers` (driver: Model-highlighted signal: active_users_wow_pct up +13.4%)",
       "evidence_metrics": {
-        "active_users_delta_seg": 1.0,
-        "active_users_wow_pct_seg": 0.5,
-        "segment_share": 0.03896103896103896,
-        "driver_key": "active_down"
-      }
-    },
-    {
-      "segment_key": "recently_lapsed_8_14d",
-      "contribution_share": 0.14285714285714288,
-      "reason_statement": "Major contributor to active_users increase. Driver: Model-highlighted signal: active_users_wow_pct up +13.4%",
-      "evidence_metrics": {
-        "active_users_delta_seg": 1.0,
-        "active_users_wow_pct_seg": 0.06666666666666667,
-        "segment_share": 0.2077922077922078,
-        "driver_key": "active_down"
-      }
+        "delta_seg": 1.0,
+        "delta_total": 9.0,
+        "segment_share_now": 0.0276243094,
+        "segment_count_now": 5,
+        "wow_pct_seg": 0.25,
+        "cold_start_increase": false,
+        "note": "stable"
+      },
+      "segment_confidence": "medium"
     }
   ],
   "suggested_actions": [
-    "Trigger winback rewards for `recently_lapsed_8_14d` with short expiry and capped frequency.",
-    "Set reactivation journeys for `recently_lapsed_8_14d` using low-friction missions first.",
-    "Launch dormant-user reactivation campaigns with segmented incentives."
+    "Launch dormant-user reactivation campaigns with segmented incentives.",
+    "Reduce message fatigue via tighter frequency caps and send-time optimization.",
+    "Retarget recently lapsed cohorts with low-friction missions."
   ]
 }
 ```
@@ -377,72 +357,90 @@ Selected model based on time-split macro F1: **hgb_calibrated**
 ```json
 {
   "brand_id": "c-vit",
-  "window_end_date": "2026-02-08 00:00:00+00:00",
+  "window_end_date": "2026-02-08T00:00:00.000Z",
   "window_size": "30d",
   "predicted_health_class": "Healthy",
   "predicted_health_statement": "Healthy",
-  "predicted_health_score": 76.28785950540521,
+  "predicted_health_score": 76.2878595054,
   "confidence_band": "medium",
   "probabilities": {
-    "AtRisk": 0.06599127508928683,
-    "Healthy": 0.619918471117675,
-    "Warning": 0.3140902537930383
+    "AtRisk": 0.0659912751,
+    "Healthy": 0.6199184711,
+    "Warning": 0.3140902538
   },
   "drivers": [
     {
       "key": "active_down",
       "statement": "Active users 30d down -18.4% WoW",
-      "severity": 0.1842105263157895,
+      "severity": 0.1842105263,
+      "direction": "down",
+      "metric_family": "active_users",
       "metrics": {
-        "active_users_wow_pct": -0.1842105263157895
+        "active_users_wow_pct": -0.1842105263
       }
     },
     {
       "key": "model_active_users_wow_pct",
       "statement": "Model-highlighted signal: active_users_wow_pct down -18.4%",
-      "severity": 0.04202668107029708,
+      "severity": 0.042026681100000005,
+      "direction": "down",
+      "metric_family": "active_users",
       "metrics": {
-        "active_users_wow_pct": -0.1842105263157895,
-        "importance": 0.2281448400958984
+        "active_users_wow_pct": -0.1842105263,
+        "importance": 0.2281448401
       }
     },
     {
       "key": "model_reward_efficiency_zscore",
-      "statement": "Model-highlighted anomaly: reward_efficiency_zscore=1.04",
-      "severity": 0.0012471647485557287,
+      "statement": "Model-highlighted anomaly: reward_efficiency_zscore=1.04 (up vs baseline)",
+      "severity": 0.0012471647,
+      "direction": "up",
+      "metric_family": "reward_efficiency",
       "metrics": {
-        "reward_efficiency_zscore": 1.0415963989643628,
-        "importance": -0.0011973589288478321
+        "reward_efficiency_zscore": 1.041596399,
+        "importance": -0.0011973589
       }
     }
   ],
   "target_segments": [
     {
-      "segment_key": "new_users_0_7d",
-      "contribution_share": 0.9945175805403565,
-      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -18.4% WoW",
+      "metric_family": "active_users",
+      "segment_key": "dormant_60d_plus",
+      "direction": "down",
+      "contribution_share": 0.5,
+      "reason_statement": "Active users down driven by `dormant_60d_plus` (driver: Active users 30d down -18.4% WoW)",
       "evidence_metrics": {
-        "active_users_delta_seg": -20.0,
-        "active_users_wow_pct_seg": -1.0,
-        "segment_share": 0.0,
-        "driver_key": "active_down"
-      }
+        "delta_seg": -2.0,
+        "delta_total": -14.0,
+        "segment_share_now": 0.9613259669,
+        "segment_count_now": 174,
+        "wow_pct_seg": -0.0113636364,
+        "cold_start_increase": false,
+        "note": "stable"
+      },
+      "segment_confidence": "high"
     },
     {
-      "segment_key": "recently_lapsed_8_14d",
-      "contribution_share": 0.005482419459643421,
-      "reason_statement": "Major contributor to completion_rate drop. Driver: Model-highlighted anomaly: reward_efficiency_zscore=1.04",
+      "metric_family": "active_users",
+      "segment_key": "non_redeemers",
+      "direction": "down",
+      "contribution_share": 0.5,
+      "reason_statement": "Active users down driven by `non_redeemers` (driver: Active users 30d down -18.4% WoW)",
       "evidence_metrics": {
-        "completion_rate_delta_seg": -1.0,
-        "completion_rate_wow_pct_seg": -1.0,
-        "segment_share": 0.27941176470588236,
-        "driver_key": "efficiency_drop"
-      }
+        "delta_seg": -2.0,
+        "delta_total": -14.0,
+        "segment_share_now": 0.9613259669,
+        "segment_count_now": 174,
+        "wow_pct_seg": -0.0113636364,
+        "cold_start_increase": false,
+        "note": "stable"
+      },
+      "segment_confidence": "high"
     }
   ],
   "suggested_actions": [
-    "Trigger winback rewards for `recently_lapsed_8_14d` with short expiry and capped frequency.",
-    "Set reactivation journeys for `recently_lapsed_8_14d` using low-friction missions first.",
+    "Trigger winback rewards for `dormant_60d_plus` with short expiry and capped frequency.",
+    "Set reactivation journeys for `dormant_60d_plus` using low-friction missions first.",
     "Launch dormant-user reactivation campaigns with segmented incentives."
   ]
 }
@@ -451,82 +449,67 @@ Selected model based on time-split macro F1: **hgb_calibrated**
 ```json
 {
   "brand_id": "c-vit",
-  "window_end_date": "2026-02-15 00:00:00+00:00",
+  "window_end_date": "2026-02-15T00:00:00.000Z",
   "window_size": "30d",
   "predicted_health_class": "Warning",
   "predicted_health_statement": "Warning",
-  "predicted_health_score": 51.3953028469059,
+  "predicted_health_score": 51.3953028469,
   "confidence_band": "medium",
   "probabilities": {
-    "AtRisk": 0.2814209461760006,
-    "Healthy": 0.04150119876886372,
-    "Warning": 0.6770778550551357
+    "AtRisk": 0.2814209462,
+    "Healthy": 0.0415011988,
+    "Warning": 0.6770778551000001
   },
   "drivers": [
     {
       "key": "active_down",
       "statement": "Active users 30d down -24.2% WoW",
-      "severity": 0.24193548387096775,
+      "severity": 0.2419354839,
+      "direction": "down",
+      "metric_family": "active_users",
       "metrics": {
-        "active_users_wow_pct": -0.24193548387096775
+        "active_users_wow_pct": -0.2419354839
       }
     },
     {
       "key": "model_dormant_share_zscore",
-      "statement": "Model-highlighted anomaly: dormant_share_zscore=2.11",
-      "severity": 0.09142512930612001,
+      "statement": "Model-highlighted anomaly: dormant_share_zscore=2.11 (up vs baseline)",
+      "severity": 0.0914251293,
+      "direction": "up",
+      "metric_family": "dormant_share",
       "metrics": {
-        "dormant_share_zscore": 2.1106124423657717,
-        "importance": 0.043316872141453966
+        "dormant_share_zscore": 2.1106124424,
+        "importance": 0.0433168721
       }
     },
     {
       "key": "model_active_users_wow_pct",
       "statement": "Model-highlighted signal: active_users_wow_pct down -24.2%",
-      "severity": 0.05519633228126574,
+      "severity": 0.055196332300000005,
+      "direction": "down",
+      "metric_family": "active_users",
       "metrics": {
-        "active_users_wow_pct": -0.24193548387096775,
-        "importance": 0.2281448400958984
+        "active_users_wow_pct": -0.2419354839,
+        "importance": 0.2281448401
       }
     },
     {
       "key": "model_active_users_zscore",
-      "statement": "Model-highlighted anomaly: active_users_zscore=-2.09",
-      "severity": 0.047027131756661116,
+      "statement": "Model-highlighted anomaly: active_users_zscore=-2.09 (down vs baseline)",
+      "severity": 0.047027131800000004,
+      "direction": "down",
+      "metric_family": "active_users",
       "metrics": {
-        "active_users_zscore": -2.0949193661947816,
-        "importance": 0.02244818226206069
+        "active_users_zscore": -2.0949193662,
+        "importance": 0.0224481823
       }
     }
   ],
-  "target_segments": [
-    {
-      "segment_key": "recently_lapsed_8_14d",
-      "contribution_share": 0.7368421052631579,
-      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -24.2% WoW",
-      "evidence_metrics": {
-        "active_users_delta_seg": -14.0,
-        "active_users_wow_pct_seg": -0.7368421052631579,
-        "segment_share": 0.10204081632653061,
-        "driver_key": "active_down"
-      }
-    },
-    {
-      "segment_key": "active_0_7d",
-      "contribution_share": 0.26315789473684215,
-      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -24.2% WoW",
-      "evidence_metrics": {
-        "active_users_delta_seg": -5.0,
-        "active_users_wow_pct_seg": -1.0,
-        "segment_share": 0.0,
-        "driver_key": "active_down"
-      }
-    }
-  ],
+  "target_segments": [],
   "suggested_actions": [
-    "Trigger winback rewards for `recently_lapsed_8_14d` with short expiry and capped frequency.",
-    "Set reactivation journeys for `recently_lapsed_8_14d` using low-friction missions first.",
-    "Launch dormant-user reactivation campaigns with segmented incentives."
+    "Launch dormant-user reactivation campaigns with segmented incentives.",
+    "Reduce message fatigue via tighter frequency caps and send-time optimization.",
+    "Retarget recently lapsed cohorts with low-friction missions."
   ]
 }
 ```
@@ -536,93 +519,136 @@ Selected model based on time-split macro F1: **hgb_calibrated**
 ```json
 {
   "brand_id": "see-chan",
-  "window_end_date": "2026-01-07 00:00:00+00:00",
+  "window_end_date": "2026-01-07T00:00:00.000Z",
   "window_size": "30d",
   "predicted_health_class": "Healthy",
   "predicted_health_statement": "Healthy (borderline)",
-  "predicted_health_score": 68.30585723207474,
+  "predicted_health_score": 68.3058572321,
   "confidence_band": "low",
   "probabilities": {
-    "AtRisk": 0.23268134010634559,
-    "Healthy": 0.5483234711932284,
-    "Warning": 0.2189951887004259
+    "AtRisk": 0.2326813401,
+    "Healthy": 0.5483234712,
+    "Warning": 0.2189951887
   },
   "drivers": [
     {
       "key": "active_down",
       "statement": "Active users 30d down -12.7% WoW",
-      "severity": 0.12731099239112842,
+      "severity": 0.12731099240000002,
+      "direction": "down",
+      "metric_family": "active_users",
       "metrics": {
-        "active_users_wow_pct": -0.12731099239112842
+        "active_users_wow_pct": -0.12731099240000002
       }
     },
     {
       "key": "model_dormant_share_zscore",
-      "statement": "Model-highlighted anomaly: dormant_share_zscore=1.31",
-      "severity": 0.05687136972679211,
+      "statement": "Model-highlighted anomaly: dormant_share_zscore=1.31 (up vs baseline)",
+      "severity": 0.0568713697,
+      "direction": "up",
+      "metric_family": "dormant_share",
       "metrics": {
-        "dormant_share_zscore": 1.3129149662763064,
-        "importance": 0.043316872141453966
+        "dormant_share_zscore": 1.3129149663,
+        "importance": 0.0433168721
       }
     },
     {
       "key": "model_active_users_zscore",
-      "statement": "Model-highlighted anomaly: active_users_zscore=-1.42",
-      "severity": 0.03187068025199764,
+      "statement": "Model-highlighted anomaly: active_users_zscore=-1.42 (down vs baseline)",
+      "severity": 0.0318706803,
+      "direction": "down",
+      "metric_family": "active_users",
       "metrics": {
-        "active_users_zscore": -1.419744364151113,
-        "importance": 0.02244818226206069
+        "active_users_zscore": -1.4197443642,
+        "importance": 0.0224481823
       }
     },
     {
       "key": "model_active_users_wow_pct",
       "statement": "Model-highlighted signal: active_users_wow_pct down -12.7%",
-      "severity": 0.02904534600152413,
+      "severity": 0.029045346000000003,
+      "direction": "down",
+      "metric_family": "active_users",
       "metrics": {
-        "active_users_wow_pct": -0.12731099239112842,
-        "importance": 0.2281448400958984
+        "active_users_wow_pct": -0.12731099240000002,
+        "importance": 0.2281448401
       }
     }
   ],
   "target_segments": [
     {
-      "segment_key": "new_users_0_7d",
-      "contribution_share": 0.41445559821361627,
-      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -12.7% WoW",
+      "metric_family": "active_users",
+      "segment_key": "dormant_31_60d",
+      "direction": "down",
+      "contribution_share": 0.37184218,
+      "reason_statement": "Active users down driven by `dormant_31_60d` (driver: Active users 30d down -12.7% WoW)",
       "evidence_metrics": {
-        "active_users_delta_seg": -5001.0,
-        "active_users_wow_pct_seg": -0.9494968672868805,
-        "segment_share": 0.009806090098060901,
-        "driver_key": "active_down"
-      }
+        "delta_seg": -9170.0,
+        "delta_total": -3932.0,
+        "segment_share_now": 0.14440533090000002,
+        "segment_count_now": 24531,
+        "wow_pct_seg": -0.2720987508,
+        "cold_start_increase": false,
+        "note": "stable"
+      },
+      "segment_confidence": "high"
     },
     {
+      "metric_family": "active_users",
       "segment_key": "active_0_7d",
-      "contribution_share": 0.3233764735511959,
-      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -12.7% WoW",
+      "direction": "down",
+      "contribution_share": 0.3614614168,
+      "reason_statement": "Active users down driven by `active_0_7d` (driver: Active users 30d down -12.7% WoW)",
       "evidence_metrics": {
-        "active_users_delta_seg": -3902.0,
-        "active_users_wow_pct_seg": -0.8261698073258522,
-        "segment_share": 0.030266165302661654,
-        "driver_key": "active_down"
-      }
+        "delta_seg": -8914.0,
+        "delta_total": -3932.0,
+        "segment_share_now": 0.0062810521,
+        "segment_count_now": 1067,
+        "wow_pct_seg": -0.8930968841,
+        "cold_start_increase": false,
+        "note": "stable"
+      },
+      "segment_confidence": "medium"
     },
     {
-      "segment_key": "recently_lapsed_8_14d",
-      "contribution_share": 0.2621679282351878,
-      "reason_statement": "Major contributor to active_users increase. Driver: Model-highlighted anomaly: dormant_share_zscore=1.31",
+      "metric_family": "active_users",
+      "segment_key": "new_users_0_7d",
+      "direction": "down",
+      "contribution_share": 0.2031142289,
+      "reason_statement": "Active users down driven by `new_users_0_7d` (driver: Active users 30d down -12.7% WoW)",
       "evidence_metrics": {
-        "active_users_delta_seg": 6571.0,
-        "active_users_wow_pct_seg": 2.231997282608696,
-        "segment_share": 0.35077047850770476,
-        "driver_key": "dormant_up"
-      }
+        "delta_seg": -5009.0,
+        "delta_total": -3932.0,
+        "segment_share_now": 0.0015481881,
+        "segment_count_now": 263,
+        "wow_pct_seg": -0.9501138088000001,
+        "cold_start_increase": false,
+        "note": "stable"
+      },
+      "segment_confidence": "medium"
+    },
+    {
+      "metric_family": "dormant_share",
+      "segment_key": "non_redeemers",
+      "direction": "up",
+      "contribution_share": 1.0,
+      "reason_statement": "Dormant share up driven by `non_redeemers` (driver: Model-highlighted anomaly: dormant_share_zscore=1.31 (up vs baseline))",
+      "evidence_metrics": {
+        "delta_seg": 0.0138822951,
+        "delta_total": 0.023428904,
+        "segment_share_now": 1.0,
+        "segment_count_now": 169876,
+        "wow_pct_seg": 0.015027354500000001,
+        "cold_start_increase": false,
+        "note": "stable"
+      },
+      "segment_confidence": "high"
     }
   ],
   "suggested_actions": [
-    "Trigger winback rewards for `recently_lapsed_8_14d` with short expiry and capped frequency.",
-    "Set reactivation journeys for `recently_lapsed_8_14d` using low-friction missions first.",
-    "Launch dormant-user reactivation campaigns with segmented incentives."
+    "Trigger winback rewards for `dormant_31_60d` with short expiry and capped frequency.",
+    "Set reactivation journeys for `dormant_31_60d` using low-friction missions first.",
+    "Boost first-7-day activation missions for `new_users_0_7d` with immediate low-friction rewards."
   ]
 }
 ```
@@ -630,93 +656,121 @@ Selected model based on time-split macro F1: **hgb_calibrated**
 ```json
 {
   "brand_id": "see-chan",
-  "window_end_date": "2026-01-14 00:00:00+00:00",
+  "window_end_date": "2026-01-14T00:00:00.000Z",
   "window_size": "30d",
   "predicted_health_class": "AtRisk",
   "predicted_health_statement": "AtRisk",
-  "predicted_health_score": 29.369050379757407,
+  "predicted_health_score": 29.3690503798,
   "confidence_band": "high",
   "probabilities": {
-    "AtRisk": 0.8992620423517659,
-    "Healthy": 0.02810739540230728,
-    "Warning": 0.07263056224592673
+    "AtRisk": 0.8992620424000001,
+    "Healthy": 0.028107395400000002,
+    "Warning": 0.0726305622
   },
   "drivers": [
     {
       "key": "active_down",
       "statement": "Active users 30d down -44.6% WoW",
-      "severity": 0.44636960635179757,
+      "severity": 0.4463696064,
+      "direction": "down",
+      "metric_family": "active_users",
       "metrics": {
-        "active_users_wow_pct": -0.44636960635179757
+        "active_users_wow_pct": -0.4463696064
       }
     },
     {
       "key": "gmv_down",
       "statement": "GMV down -23.0% WoW",
-      "severity": 0.22956842737083594,
+      "severity": 0.2295684274,
+      "direction": "down",
+      "metric_family": "gmv_net",
       "metrics": {
-        "gmv_net_wow_pct": -0.22956842737083594
+        "gmv_net_wow_pct": -0.2295684274
       }
     },
     {
       "key": "transactions_down",
       "statement": "Transactions down -22.4% WoW",
-      "severity": 0.22383860787879284,
+      "severity": 0.22383860790000001,
+      "direction": "down",
+      "metric_family": "transaction_count",
       "metrics": {
-        "transaction_count_wow_pct": -0.22383860787879284
+        "transaction_count_wow_pct": -0.22383860790000001
       }
     },
     {
       "key": "model_active_users_wow_pct",
       "statement": "Model-highlighted signal: active_users_wow_pct down -44.6%",
-      "severity": 0.10183692246479996,
+      "severity": 0.10183692250000001,
+      "direction": "down",
+      "metric_family": "active_users",
       "metrics": {
-        "active_users_wow_pct": -0.44636960635179757,
-        "importance": 0.2281448400958984
+        "active_users_wow_pct": -0.4463696064,
+        "importance": 0.2281448401
       }
     },
     {
       "key": "dormant_up",
       "statement": "Dormant share up +8.5% WoW",
-      "severity": 0.0845419109115273,
+      "severity": 0.0845419109,
+      "direction": "up",
+      "metric_family": "dormant_share",
       "metrics": {
-        "dormant_share_wow_pct": 0.0845419109115273
+        "dormant_share_wow_pct": 0.0845419109
       }
     }
   ],
   "target_segments": [
     {
+      "metric_family": "active_users",
       "segment_key": "recently_lapsed_8_14d",
-      "contribution_share": 0.599962957430322,
-      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -44.6% WoW",
+      "direction": "down",
+      "contribution_share": 0.7269394217,
+      "reason_statement": "Active users down driven by `recently_lapsed_8_14d` (driver: Active users 30d down -44.6% WoW)",
       "evidence_metrics": {
-        "active_users_delta_seg": -8716.0,
-        "active_users_wow_pct_seg": -0.9160273252758802,
-        "segment_share": 0.05128369704749679,
-        "driver_key": "active_down"
-      }
+        "delta_seg": -8724.0,
+        "delta_total": -12031.0,
+        "segment_share_now": 0.004663714,
+        "segment_count_now": 795,
+        "wow_pct_seg": -0.9164828238,
+        "cold_start_increase": false,
+        "note": "stable"
+      },
+      "segment_confidence": "medium"
     },
     {
+      "metric_family": "active_users",
       "segment_key": "dormant_15_30d",
-      "contribution_share": 0.28080838933907387,
-      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -44.6% WoW",
+      "direction": "down",
+      "contribution_share": 0.2730605783,
+      "reason_statement": "Active users down driven by `dormant_15_30d` (driver: Active users 30d down -44.6% WoW)",
       "evidence_metrics": {
-        "active_users_delta_seg": -3280.0,
-        "active_users_wow_pct_seg": -0.19849915274751875,
-        "segment_share": 0.8500641848523749,
-        "driver_key": "active_down"
-      }
+        "delta_seg": -3277.0,
+        "delta_total": -12031.0,
+        "segment_share_now": 0.0777109671,
+        "segment_count_now": 13247,
+        "wow_pct_seg": -0.1983175986,
+        "cold_start_increase": false,
+        "note": "stable"
+      },
+      "segment_confidence": "high"
     },
     {
-      "segment_key": "active_0_7d",
-      "contribution_share": 0.11922865323060425,
-      "reason_statement": "Major contributor to gmv drop. Driver: GMV down -23.0% WoW",
+      "metric_family": "dormant_share",
+      "segment_key": "non_redeemers",
+      "direction": "up",
+      "contribution_share": 1.0,
+      "reason_statement": "Dormant share up driven by `non_redeemers` (driver: Dormant share up +8.5% WoW)",
       "evidence_metrics": {
-        "gmv_delta_seg": -13825.0,
-        "gmv_wow_pct_seg": -0.2757169638227434,
-        "segment_share": 0.06097560975609756,
-        "driver_key": "gmv_down"
-      }
+        "delta_seg": 0.0487003441,
+        "delta_total": 0.0711278607,
+        "segment_share_now": 1.0,
+        "segment_count_now": 170465,
+        "wow_pct_seg": 0.051936842500000004,
+        "cold_start_increase": false,
+        "note": "stable"
+      },
+      "segment_confidence": "high"
     }
   ],
   "suggested_actions": [
@@ -730,93 +784,119 @@ Selected model based on time-split macro F1: **hgb_calibrated**
 ```json
 {
   "brand_id": "see-chan",
-  "window_end_date": "2026-01-21 00:00:00+00:00",
+  "window_end_date": "2026-01-21T00:00:00.000Z",
   "window_size": "30d",
   "predicted_health_class": "Healthy",
   "predicted_health_statement": "Healthy",
-  "predicted_health_score": 83.66645809216831,
+  "predicted_health_score": 83.6664580922,
   "confidence_band": "high",
   "probabilities": {
-    "AtRisk": 0.024804862941783246,
-    "Healthy": 0.8178209431710242,
-    "Warning": 0.15737419388719256
+    "AtRisk": 0.024804862900000002,
+    "Healthy": 0.8178209432,
+    "Warning": 0.15737419390000001
   },
   "drivers": [
     {
       "key": "active_down",
       "statement": "Active users 30d down -8.9% WoW",
-      "severity": 0.08899611312156552,
+      "severity": 0.08899611310000001,
+      "direction": "down",
+      "metric_family": "active_users",
       "metrics": {
-        "active_users_wow_pct": -0.08899611312156552
+        "active_users_wow_pct": -0.08899611310000001
       }
     },
     {
       "key": "model_dormant_share_zscore",
-      "statement": "Model-highlighted anomaly: dormant_share_zscore=1.52",
-      "severity": 0.06602947590682176,
+      "statement": "Model-highlighted anomaly: dormant_share_zscore=1.52 (up vs baseline)",
+      "severity": 0.06602947590000001,
+      "direction": "up",
+      "metric_family": "dormant_share",
       "metrics": {
-        "dormant_share_zscore": 1.5243361914775002,
-        "importance": 0.043316872141453966
+        "dormant_share_zscore": 1.5243361915,
+        "importance": 0.0433168721
       }
     },
     {
       "key": "model_active_users_wow_pct",
       "statement": "Model-highlighted signal: active_users_wow_pct down -8.9%",
-      "severity": 0.02030400399727605,
+      "severity": 0.020304004,
+      "direction": "down",
+      "metric_family": "active_users",
       "metrics": {
-        "active_users_wow_pct": -0.08899611312156552,
-        "importance": 0.2281448400958984
+        "active_users_wow_pct": -0.08899611310000001,
+        "importance": 0.2281448401
       }
     },
     {
       "key": "model_transaction_count_wow_pct",
       "statement": "Model-highlighted signal: transaction_count_wow_pct down -5.7%",
-      "severity": 0.0049208120500090265,
+      "severity": 0.004920812100000001,
+      "direction": "down",
+      "metric_family": "transaction_count",
       "metrics": {
-        "transaction_count_wow_pct": -0.05694294149165291,
-        "importance": 0.08641654120959581
+        "transaction_count_wow_pct": -0.056942941500000004,
+        "importance": 0.0864165412
       }
     }
   ],
   "target_segments": [
     {
+      "metric_family": "active_users",
       "segment_key": "dormant_15_30d",
-      "contribution_share": 0.6020240171008395,
-      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -8.9% WoW",
+      "direction": "down",
+      "contribution_share": 0.7101405923,
+      "reason_statement": "Active users down driven by `dormant_15_30d` (driver: Active users 30d down -8.9% WoW)",
       "evidence_metrics": {
-        "active_users_delta_seg": -2374.0,
-        "active_users_wow_pct_seg": -0.17925098157656297,
-        "segment_share": 0.7908330301927974,
-        "driver_key": "active_down"
-      }
+        "delta_seg": -2374.0,
+        "delta_total": -1328.0,
+        "segment_share_now": 0.0636678241,
+        "segment_count_now": 10873,
+        "wow_pct_seg": -0.1792103873,
+        "cold_start_increase": false,
+        "note": "stable"
+      },
+      "segment_confidence": "high"
     },
     {
-      "segment_key": "recently_lapsed_8_14d",
-      "contribution_share": 0.2583398677337223,
-      "reason_statement": "Major contributor to active_users increase. Driver: Model-highlighted anomaly: dormant_share_zscore=1.52",
+      "metric_family": "active_users",
+      "segment_key": "dormant_31_60d",
+      "direction": "down",
+      "contribution_share": 0.20729883340000002,
+      "reason_statement": "Active users down driven by `dormant_31_60d` (driver: Active users 30d down -8.9% WoW)",
       "evidence_metrics": {
-        "active_users_delta_seg": 536.0,
-        "active_users_wow_pct_seg": 0.6708385481852316,
-        "segment_share": 0.09712622771917061,
-        "driver_key": "dormant_up"
-      }
+        "delta_seg": -693.0,
+        "delta_total": -1328.0,
+        "segment_share_now": 0.1858212757,
+        "segment_count_now": 31734,
+        "wow_pct_seg": -0.0213710797,
+        "cold_start_increase": false,
+        "note": "stable"
+      },
+      "segment_confidence": "high"
     },
     {
-      "segment_key": "active_0_7d",
-      "contribution_share": 0.13963611516543822,
-      "reason_statement": "Major contributor to active_users increase. Driver: Model-highlighted anomaly: dormant_share_zscore=1.52",
+      "metric_family": "active_users",
+      "segment_key": "new_users_0_7d",
+      "direction": "down",
+      "contribution_share": 0.08256057430000001,
+      "reason_statement": "Active users down driven by `new_users_0_7d` (driver: Active users 30d down -8.9% WoW)",
       "evidence_metrics": {
-        "active_users_delta_seg": 272.0,
-        "active_users_wow_pct_seg": 0.2863157894736842,
-        "segment_share": 0.08890505638413969,
-        "driver_key": "dormant_up"
-      }
+        "delta_seg": -276.0,
+        "delta_total": -1328.0,
+        "segment_share_now": 0.0018327995000000001,
+        "segment_count_now": 313,
+        "wow_pct_seg": -0.4685908319,
+        "cold_start_increase": false,
+        "note": "stable"
+      },
+      "segment_confidence": "medium"
     }
   ],
   "suggested_actions": [
     "Trigger winback rewards for `dormant_15_30d` with short expiry and capped frequency.",
     "Set reactivation journeys for `dormant_15_30d` using low-friction missions first.",
-    "Trigger winback rewards for `recently_lapsed_8_14d` with short expiry and capped frequency."
+    "Trigger winback rewards for `dormant_31_60d` with short expiry and capped frequency."
   ]
 }
 ```
@@ -824,82 +904,442 @@ Selected model based on time-split macro F1: **hgb_calibrated**
 ```json
 {
   "brand_id": "see-chan",
-  "window_end_date": "2026-01-28 00:00:00+00:00",
+  "window_end_date": "2026-01-28T00:00:00.000Z",
   "window_size": "30d",
   "predicted_health_class": "AtRisk",
   "predicted_health_statement": "AtRisk",
-  "predicted_health_score": 30.534624034264723,
+  "predicted_health_score": 30.5346240343,
   "confidence_band": "high",
   "probabilities": {
-    "AtRisk": 0.8672282389881542,
-    "Healthy": 0.029587079961670495,
-    "Warning": 0.10318468105017535
+    "AtRisk": 0.867228239,
+    "Healthy": 0.02958708,
+    "Warning": 0.10318468110000001
   },
   "drivers": [
     {
       "key": "active_down",
       "statement": "Active users 30d down -56.5% WoW",
-      "severity": 0.5650286891275562,
+      "severity": 0.5650286891,
+      "direction": "down",
+      "metric_family": "active_users",
       "metrics": {
-        "active_users_wow_pct": -0.5650286891275562
+        "active_users_wow_pct": -0.5650286891
       }
     },
     {
       "key": "model_active_users_wow_pct",
       "statement": "Model-highlighted signal: active_users_wow_pct down -56.5%",
-      "severity": 0.1289083799306014,
+      "severity": 0.1289083799,
+      "direction": "down",
+      "metric_family": "active_users",
       "metrics": {
-        "active_users_wow_pct": -0.5650286891275562,
-        "importance": 0.2281448400958984
+        "active_users_wow_pct": -0.5650286891,
+        "importance": 0.2281448401
       }
     },
     {
       "key": "model_gmv_net_wow_pct",
       "statement": "Model-highlighted signal: gmv_net_wow_pct up +7.5%",
-      "severity": 0.012610927453434064,
+      "severity": 0.0126109275,
+      "direction": "up",
+      "metric_family": "gmv_net",
       "metrics": {
-        "gmv_net_wow_pct": 0.07548853961496804,
-        "importance": 0.16705750989165433
+        "gmv_net_wow_pct": 0.0754885396,
+        "importance": 0.1670575099
       }
     },
     {
       "key": "model_transaction_count_wow_pct",
       "statement": "Model-highlighted signal: transaction_count_wow_pct up +12.5%",
-      "severity": 0.010805557507397288,
+      "severity": 0.0108055575,
+      "direction": "up",
+      "metric_family": "transaction_count",
       "metrics": {
-        "transaction_count_wow_pct": 0.12504038412263396,
-        "importance": 0.08641654120959581
+        "transaction_count_wow_pct": 0.1250403841,
+        "importance": 0.0864165412
       }
     }
   ],
   "target_segments": [
     {
+      "metric_family": "active_users",
       "segment_key": "dormant_15_30d",
-      "contribution_share": 0.9746090830945847,
-      "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -56.5% WoW",
+      "direction": "down",
+      "contribution_share": 0.7924546985,
+      "reason_statement": "Active users down driven by `dormant_15_30d` (driver: Active users 30d down -56.5% WoW)",
       "evidence_metrics": {
-        "active_users_delta_seg": -7997.0,
-        "active_users_wow_pct_seg": -0.7356945722171113,
-        "segment_share": 0.43411906920519794,
-        "driver_key": "active_down"
-      }
+        "delta_seg": -8003.0,
+        "delta_total": -7681.0,
+        "segment_share_now": 0.0167295238,
+        "segment_count_now": 2870,
+        "wow_pct_seg": -0.7360434103,
+        "cold_start_increase": false,
+        "note": "stable"
+      },
+      "segment_confidence": "medium"
     },
     {
-      "segment_key": "recently_lapsed_8_14d",
-      "contribution_share": 0.0253909169054152,
-      "reason_statement": "Major contributor to transactions drop. Driver: Model-highlighted signal: transaction_count_wow_pct up +12.5%",
+      "metric_family": "active_users",
+      "segment_key": "dormant_31_60d",
+      "direction": "down",
+      "contribution_share": 0.2069511833,
+      "reason_statement": "Active users down driven by `dormant_31_60d` (driver: Active users 30d down -56.5% WoW)",
       "evidence_metrics": {
-        "transactions_delta_seg": -33.0,
-        "transactions_wow_pct_seg": -0.4647887323943662,
-        "segment_share": 0.20006044122091265,
-        "driver_key": "transactions_down"
-      }
+        "delta_seg": -2090.0,
+        "delta_total": -7681.0,
+        "segment_share_now": 0.1727979108,
+        "segment_count_now": 29644,
+        "wow_pct_seg": -0.0658599609,
+        "cold_start_increase": false,
+        "note": "stable"
+      },
+      "segment_confidence": "high"
+    },
+    {
+      "metric_family": "active_users",
+      "segment_key": "recently_lapsed_8_14d",
+      "direction": "down",
+      "contribution_share": 0.0005941182,
+      "reason_statement": "Active users down driven by `recently_lapsed_8_14d` (driver: Active users 30d down -56.5% WoW)",
+      "evidence_metrics": {
+        "delta_seg": -6.0,
+        "delta_total": -7681.0,
+        "segment_share_now": 0.0077293898,
+        "segment_count_now": 1326,
+        "wow_pct_seg": -0.0045045045,
+        "cold_start_increase": false,
+        "note": "stable"
+      },
+      "segment_confidence": "medium"
     }
   ],
   "suggested_actions": [
     "Trigger winback rewards for `dormant_15_30d` with short expiry and capped frequency.",
     "Set reactivation journeys for `dormant_15_30d` using low-friction missions first.",
-    "Trigger winback rewards for `recently_lapsed_8_14d` with short expiry and capped frequency."
+    "Trigger winback rewards for `dormant_31_60d` with short expiry and capped frequency."
   ]
+}
+```
+
+## 6) Attribution QA
+
+| metric                             | value |
+| ---------------------------------- | ----- |
+| metric_family_no_eligible_segments | 235   |
+| metric_family_noisy                | 546   |
+| rows_total                         | 1632  |
+| rows_with_target_segments          | 1132  |
+| segments_dropped_commerce_mode     | 1516  |
+| segments_dropped_min_presence      | 2147  |
+| segments_dropped_sign_mismatch     | 7338  |
+| segments_dropped_total             | 13297 |
+| segments_dropped_zero_presence     | 2296  |
+| segments_output_total              | 4125  |
+
+## 7) Before/After Target Segments (2 windows per brand)
+
+```json
+{
+  "brand_id": "c-vit",
+  "window_end_date": "2026-02-08T00:00:00.000Z",
+  "window_size": "30d",
+  "before": {
+    "predicted_health_class": "Healthy",
+    "target_segments": [
+      {
+        "segment_key": "new_users_0_7d",
+        "contribution_share": 0.9945175805,
+        "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -18.4% WoW",
+        "evidence_metrics": {
+          "active_users_delta_seg": -20.0,
+          "active_users_wow_pct_seg": -1.0,
+          "segment_share": 0.0,
+          "driver_key": "active_down"
+        }
+      },
+      {
+        "segment_key": "recently_lapsed_8_14d",
+        "contribution_share": 0.0054824195,
+        "reason_statement": "Major contributor to completion_rate drop. Driver: Model-highlighted anomaly: reward_efficiency_zscore=1.04",
+        "evidence_metrics": {
+          "completion_rate_delta_seg": -1.0,
+          "completion_rate_wow_pct_seg": -1.0,
+          "segment_share": 0.2794117647,
+          "driver_key": "efficiency_drop"
+        }
+      }
+    ]
+  },
+  "after": {
+    "predicted_health_class": "Healthy",
+    "target_segments": [
+      {
+        "metric_family": "active_users",
+        "segment_key": "dormant_60d_plus",
+        "direction": "down",
+        "contribution_share": 0.5,
+        "reason_statement": "Active users down driven by `dormant_60d_plus` (driver: Active users 30d down -18.4% WoW)",
+        "evidence_metrics": {
+          "delta_seg": -2.0,
+          "delta_total": -14.0,
+          "segment_share_now": 0.9613259669,
+          "segment_count_now": 174,
+          "wow_pct_seg": -0.0113636364,
+          "cold_start_increase": false,
+          "note": "stable"
+        },
+        "segment_confidence": "high"
+      },
+      {
+        "metric_family": "active_users",
+        "segment_key": "non_redeemers",
+        "direction": "down",
+        "contribution_share": 0.5,
+        "reason_statement": "Active users down driven by `non_redeemers` (driver: Active users 30d down -18.4% WoW)",
+        "evidence_metrics": {
+          "delta_seg": -2.0,
+          "delta_total": -14.0,
+          "segment_share_now": 0.9613259669,
+          "segment_count_now": 174,
+          "wow_pct_seg": -0.0113636364,
+          "cold_start_increase": false,
+          "note": "stable"
+        },
+        "segment_confidence": "high"
+      }
+    ]
+  }
+}
+```
+
+```json
+{
+  "brand_id": "c-vit",
+  "window_end_date": "2026-02-15T00:00:00.000Z",
+  "window_size": "30d",
+  "before": {
+    "predicted_health_class": "Warning",
+    "target_segments": [
+      {
+        "segment_key": "recently_lapsed_8_14d",
+        "contribution_share": 0.7368421053,
+        "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -24.2% WoW",
+        "evidence_metrics": {
+          "active_users_delta_seg": -14.0,
+          "active_users_wow_pct_seg": -0.7368421053,
+          "segment_share": 0.1020408163,
+          "driver_key": "active_down"
+        }
+      },
+      {
+        "segment_key": "active_0_7d",
+        "contribution_share": 0.2631578947,
+        "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -24.2% WoW",
+        "evidence_metrics": {
+          "active_users_delta_seg": -5.0,
+          "active_users_wow_pct_seg": -1.0,
+          "segment_share": 0.0,
+          "driver_key": "active_down"
+        }
+      }
+    ]
+  },
+  "after": {
+    "predicted_health_class": "Warning",
+    "target_segments": []
+  }
+}
+```
+
+```json
+{
+  "brand_id": "see-chan",
+  "window_end_date": "2026-01-21T00:00:00.000Z",
+  "window_size": "30d",
+  "before": {
+    "predicted_health_class": "Healthy",
+    "target_segments": [
+      {
+        "segment_key": "dormant_15_30d",
+        "contribution_share": 0.6020240171,
+        "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -8.9% WoW",
+        "evidence_metrics": {
+          "active_users_delta_seg": -2374.0,
+          "active_users_wow_pct_seg": -0.1792509816,
+          "segment_share": 0.7908330302,
+          "driver_key": "active_down"
+        }
+      },
+      {
+        "segment_key": "recently_lapsed_8_14d",
+        "contribution_share": 0.2583398677,
+        "reason_statement": "Major contributor to active_users increase. Driver: Model-highlighted anomaly: dormant_share_zscore=1.52",
+        "evidence_metrics": {
+          "active_users_delta_seg": 536.0,
+          "active_users_wow_pct_seg": 0.6708385482,
+          "segment_share": 0.0971262277,
+          "driver_key": "dormant_up"
+        }
+      },
+      {
+        "segment_key": "active_0_7d",
+        "contribution_share": 0.1396361152,
+        "reason_statement": "Major contributor to active_users increase. Driver: Model-highlighted anomaly: dormant_share_zscore=1.52",
+        "evidence_metrics": {
+          "active_users_delta_seg": 272.0,
+          "active_users_wow_pct_seg": 0.2863157895,
+          "segment_share": 0.0889050564,
+          "driver_key": "dormant_up"
+        }
+      }
+    ]
+  },
+  "after": {
+    "predicted_health_class": "Healthy",
+    "target_segments": [
+      {
+        "metric_family": "active_users",
+        "segment_key": "dormant_15_30d",
+        "direction": "down",
+        "contribution_share": 0.7101405923,
+        "reason_statement": "Active users down driven by `dormant_15_30d` (driver: Active users 30d down -8.9% WoW)",
+        "evidence_metrics": {
+          "delta_seg": -2374.0,
+          "delta_total": -1328.0,
+          "segment_share_now": 0.0636678241,
+          "segment_count_now": 10873,
+          "wow_pct_seg": -0.1792103873,
+          "cold_start_increase": false,
+          "note": "stable"
+        },
+        "segment_confidence": "high"
+      },
+      {
+        "metric_family": "active_users",
+        "segment_key": "dormant_31_60d",
+        "direction": "down",
+        "contribution_share": 0.20729883340000002,
+        "reason_statement": "Active users down driven by `dormant_31_60d` (driver: Active users 30d down -8.9% WoW)",
+        "evidence_metrics": {
+          "delta_seg": -693.0,
+          "delta_total": -1328.0,
+          "segment_share_now": 0.1858212757,
+          "segment_count_now": 31734,
+          "wow_pct_seg": -0.0213710797,
+          "cold_start_increase": false,
+          "note": "stable"
+        },
+        "segment_confidence": "high"
+      },
+      {
+        "metric_family": "active_users",
+        "segment_key": "new_users_0_7d",
+        "direction": "down",
+        "contribution_share": 0.08256057430000001,
+        "reason_statement": "Active users down driven by `new_users_0_7d` (driver: Active users 30d down -8.9% WoW)",
+        "evidence_metrics": {
+          "delta_seg": -276.0,
+          "delta_total": -1328.0,
+          "segment_share_now": 0.0018327995000000001,
+          "segment_count_now": 313,
+          "wow_pct_seg": -0.4685908319,
+          "cold_start_increase": false,
+          "note": "stable"
+        },
+        "segment_confidence": "medium"
+      }
+    ]
+  }
+}
+```
+
+```json
+{
+  "brand_id": "see-chan",
+  "window_end_date": "2026-01-28T00:00:00.000Z",
+  "window_size": "30d",
+  "before": {
+    "predicted_health_class": "AtRisk",
+    "target_segments": [
+      {
+        "segment_key": "dormant_15_30d",
+        "contribution_share": 0.9746090831,
+        "reason_statement": "Major contributor to active_users drop. Driver: Active users 30d down -56.5% WoW",
+        "evidence_metrics": {
+          "active_users_delta_seg": -7997.0,
+          "active_users_wow_pct_seg": -0.7356945722,
+          "segment_share": 0.4341190692,
+          "driver_key": "active_down"
+        }
+      },
+      {
+        "segment_key": "recently_lapsed_8_14d",
+        "contribution_share": 0.0253909169,
+        "reason_statement": "Major contributor to transactions drop. Driver: Model-highlighted signal: transaction_count_wow_pct up +12.5%",
+        "evidence_metrics": {
+          "transactions_delta_seg": -33.0,
+          "transactions_wow_pct_seg": -0.4647887324,
+          "segment_share": 0.2000604412,
+          "driver_key": "transactions_down"
+        }
+      }
+    ]
+  },
+  "after": {
+    "predicted_health_class": "AtRisk",
+    "target_segments": [
+      {
+        "metric_family": "active_users",
+        "segment_key": "dormant_15_30d",
+        "direction": "down",
+        "contribution_share": 0.7924546985,
+        "reason_statement": "Active users down driven by `dormant_15_30d` (driver: Active users 30d down -56.5% WoW)",
+        "evidence_metrics": {
+          "delta_seg": -8003.0,
+          "delta_total": -7681.0,
+          "segment_share_now": 0.0167295238,
+          "segment_count_now": 2870,
+          "wow_pct_seg": -0.7360434103,
+          "cold_start_increase": false,
+          "note": "stable"
+        },
+        "segment_confidence": "medium"
+      },
+      {
+        "metric_family": "active_users",
+        "segment_key": "dormant_31_60d",
+        "direction": "down",
+        "contribution_share": 0.2069511833,
+        "reason_statement": "Active users down driven by `dormant_31_60d` (driver: Active users 30d down -56.5% WoW)",
+        "evidence_metrics": {
+          "delta_seg": -2090.0,
+          "delta_total": -7681.0,
+          "segment_share_now": 0.1727979108,
+          "segment_count_now": 29644,
+          "wow_pct_seg": -0.0658599609,
+          "cold_start_increase": false,
+          "note": "stable"
+        },
+        "segment_confidence": "high"
+      },
+      {
+        "metric_family": "active_users",
+        "segment_key": "recently_lapsed_8_14d",
+        "direction": "down",
+        "contribution_share": 0.0005941182,
+        "reason_statement": "Active users down driven by `recently_lapsed_8_14d` (driver: Active users 30d down -56.5% WoW)",
+        "evidence_metrics": {
+          "delta_seg": -6.0,
+          "delta_total": -7681.0,
+          "segment_share_now": 0.0077293898,
+          "segment_count_now": 1326,
+          "wow_pct_seg": -0.0045045045,
+          "cold_start_increase": false,
+          "note": "stable"
+        },
+        "segment_confidence": "medium"
+      }
+    ]
+  }
 }
 ```
