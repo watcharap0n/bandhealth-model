@@ -1,0 +1,50 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git/
+.gitignore
+
+# Documentation (except README)
+*.md
+!README.md
+
+# Test files
+tests/
+test_*.py
+*_test.py
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Large output files (these should be mounted as volumes)
+datasets/*
+outputs/*
+reports/*
+artifacts/*
+
+# Keep directory structure
+!datasets/.gitkeep
+!outputs/.gitkeep
+!reports/.gitkeep
+!artifacts/.gitkeep
+

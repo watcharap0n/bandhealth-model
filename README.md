@@ -24,6 +24,26 @@ The pipeline:
 
 ## 2) Requirements
 
+### Option A: Docker (Recommended for Production)
+
+- Docker Engine 20.10+ or Docker Desktop
+- Docker Compose 2.0+ (optional)
+- 8GB+ RAM available
+
+See [DOCKER_GUIDE.md](DOCKER_GUIDE.md) for complete Docker usage instructions.
+
+Quick start with Docker:
+```bash
+# Build and run with Docker Compose
+docker-compose up
+
+# Or use Makefile shortcuts
+make build
+make run
+```
+
+### Option B: Local Python Environment
+
 - Python 3.10+ (recommended 3.11)
 - Linux/macOS cloud VM (recommended for large parquet scans)
 
@@ -33,7 +53,7 @@ Install dependencies:
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-pip install pandas numpy pyarrow scikit-learn joblib
+pip install -r requirements.txt
 ```
 
 ## 3) Dataset layout
