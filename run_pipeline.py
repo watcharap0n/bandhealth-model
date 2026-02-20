@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
-from typing import Dict, List, Mapping, Optional
+from typing import Dict, List, Mapping, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -20,6 +21,7 @@ from src.data_load import (
 from src.features import build_feature_table, feature_definitions
 from src.infer import load_model_artifacts, predict_with_drivers, save_predictions
 from src.labeling import generate_weak_labels, labeling_thresholds
+from src.sampling import TrainSampleConfig, build_train_eval_samples, save_sample_outputs
 from src.segments import compute_segment_kpis
 from src.train import train_models
 
@@ -31,6 +33,29 @@ BRAND_APP_ID_FILTERS = {
 
 def _format_pct(v: float) -> str:
     return f"{v * 100:.2f}%"
+
+
+def _parse_bool_flag(v) -> bool:
+    if isinstance(v, bool):
+        return v
+    s = str(v).strip().lower()
+    return s in {"1", "true", "yes", "y", "on"}
+
+
+def _parse_csv_cols(v: str) -> List[str]:
+    return [x.strip() for x in str(v).split(",") if x.strip()]
+
+
+def _set_thread_limits(n_jobs: int) -> None:
+    n = max(1, int(n_jobs))
+    for key in [
+        "OMP_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+        "VECLIB_MAXIMUM_THREADS",
+    ]:
+        os.environ[key] = str(n)
 
 
 def _markdown_table(df: pd.DataFrame) -> str:
@@ -373,6 +398,16 @@ def main() -> None:
     parser.add_argument("--snapshot-freq", type=str, default="7D")
     parser.add_argument("--report-name", type=str, default="brand_health_report.md")
     parser.add_argument("--skip-train", action="store_true", help="Skip training and reuse model artifacts.")
+    parser.add_argument("--train_sample_mode", type=str, default="off", choices=["off", "quick", "smart"])
+    parser.add_argument("--train_sample_seed", type=int, default=42)
+    parser.add_argument("--train_sample_frac", type=float, default=0.02)
+    parser.add_argument("--train_max_train_rows", type=int, default=200000)
+    parser.add_argument("--train_max_eval_rows", type=int, default=60000)
+    parser.add_argument("--train_recent_days", type=int, default=180)
+    parser.add_argument("--train_stratify_cols", type=str, default="brand_id,predicted_health_class")
+    parser.add_argument("--train_group_col", type=str, default="brand_id")
+    parser.add_argument("--train_weight_classes", type=str, default="true")
+    parser.add_argument("--n_jobs", type=int, default=4)
     args = parser.parse_args()
 
     dataset_root = Path(args.dataset_root)
@@ -383,6 +418,7 @@ def main() -> None:
     reports_dir.mkdir(parents=True, exist_ok=True)
     outputs_dir.mkdir(parents=True, exist_ok=True)
     artifacts_dir.mkdir(parents=True, exist_ok=True)
+    _set_thread_limits(args.n_jobs)
 
     before_examples_path = outputs_dir / "examples_last4_with_segments.json"
     before_examples = pd.DataFrame()
@@ -503,9 +539,49 @@ def main() -> None:
 
     print("[5/7] Generating weak labels...")
     labeled_df = generate_weak_labels(feature_df)
+    labeled_df = labeled_df.reset_index(drop=True)
+    labeled_df["__row_id"] = np.arange(len(labeled_df), dtype=int)
     labeled_df.to_parquet(outputs_dir / "labeled_feature_table.parquet", index=False)
 
+    sample_mode = str(args.train_sample_mode).strip().lower()
+    sample_result = None
+    train_input_df = labeled_df
+    infer_input_df = labeled_df
+    train_row_ids: Optional[Sequence[int]] = None
+    eval_row_ids: Optional[Sequence[int]] = None
+
+    if sample_mode != "off":
+        print("[5.5/7] Building sampled train/eval subsets...")
+        sample_cfg = TrainSampleConfig(
+            mode=sample_mode,
+            seed=int(args.train_sample_seed),
+            frac=float(args.train_sample_frac),
+            max_train_rows=int(args.train_max_train_rows),
+            max_eval_rows=int(args.train_max_eval_rows),
+            recent_days=int(args.train_recent_days),
+            stratify_cols=tuple(_parse_csv_cols(args.train_stratify_cols)),
+            group_col=str(args.train_group_col),
+        )
+        sample_result = build_train_eval_samples(labeled_df, config=sample_cfg)
+        save_sample_outputs(sample_result, output_dir=outputs_dir)
+
+        train_input_df = sample_result.sampled_df.copy()
+        infer_input_df = sample_result.sampled_df.copy()
+        train_row_ids = sample_result.train_row_ids
+        eval_row_ids = sample_result.eval_row_ids
+        print(
+            "Sample mode={} train_rows={} eval_rows={} total_sampled={} fallback_applied={}".format(
+                sample_mode,
+                len(sample_result.sampled_train_df),
+                len(sample_result.sampled_eval_df),
+                len(sample_result.sampled_df),
+                sample_result.fallback_applied,
+            )
+        )
+        print("Sample QA representative_pass={}".format(sample_result.qa_report.get("representative_pass")))
+
     print("[6/7] Training and evaluating models...")
+    train_weight_classes = _parse_bool_flag(args.train_weight_classes)
     if args.skip_train:
         loaded = load_model_artifacts(artifact_dir=artifacts_dir)
         model = loaded["model"]
@@ -524,7 +600,17 @@ def main() -> None:
         metrics = existing_summary.get("metrics", {})
         selected_model = existing_summary.get("selected_model", "hist_gradient_boosting_calibrated")
     else:
-        artifacts = train_models(labeled_df, artifact_dir=artifacts_dir)
+        artifacts = train_models(
+            train_input_df,
+            artifact_dir=artifacts_dir,
+            train_row_ids=train_row_ids,
+            eval_row_ids=eval_row_ids,
+            sample_mode=sample_mode,
+            n_jobs=int(args.n_jobs),
+            weight_classes=train_weight_classes,
+            group_col=str(args.train_group_col),
+            quick_top_k_features=80 if sample_mode == "quick" else None,
+        )
         model = artifacts.final_model
         feature_importance = artifacts.feature_importance
         feature_columns = artifacts.feature_columns
@@ -534,7 +620,7 @@ def main() -> None:
 
     print("[7/7] Running inference + drivers + actions...")
     pred_df = predict_with_drivers(
-        feature_df=labeled_df,
+        feature_df=infer_input_df,
         model=model,
         feature_columns=feature_columns,
         class_labels=class_labels,
@@ -548,6 +634,31 @@ def main() -> None:
     attribution_qa = dict(pred_df.attrs.get("attribution_qa", {}))
     (outputs_dir / "attribution_qa.json").write_text(json.dumps(attribution_qa, indent=2), encoding="utf-8")
 
+    if sample_mode != "off":
+        sample_metrics_payload = {
+            "train_sample_mode": sample_mode,
+            "config": {
+                "train_sample_seed": int(args.train_sample_seed),
+                "train_sample_frac": float(args.train_sample_frac),
+                "train_max_train_rows": int(args.train_max_train_rows),
+                "train_max_eval_rows": int(args.train_max_eval_rows),
+                "train_recent_days": int(args.train_recent_days),
+                "train_stratify_cols": _parse_csv_cols(args.train_stratify_cols),
+                "train_group_col": str(args.train_group_col),
+                "train_weight_classes": bool(train_weight_classes),
+                "n_jobs": int(args.n_jobs),
+            },
+            "sample_qa": sample_result.qa_report if sample_result is not None else {},
+            "metrics": metrics,
+            "selected_model": selected_model,
+            "feature_count": len(feature_columns),
+            "rows_scored": int(len(pred_df)),
+        }
+        (outputs_dir / "model_metrics_sample.json").write_text(
+            json.dumps(sample_metrics_payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
     # Last 4 windows per brand (prefer 30d windows for concise dashboard snapshots).
     ex = pred_df[pred_df["window_size"].astype(str) == "30d"].copy()
     if ex.empty:
@@ -555,6 +666,8 @@ def main() -> None:
     examples = ex.sort_values("window_end_date").groupby("brand_id", as_index=False).tail(4)
     examples.to_json(outputs_dir / "examples_last4_windows.json", orient="records", indent=2, date_format="iso")
     examples.to_json(outputs_dir / "examples_last4_with_segments.json", orient="records", indent=2, date_format="iso")
+    if sample_mode != "off":
+        examples.to_json(outputs_dir / "predictions_last_windows_sample.json", orient="records", indent=2, date_format="iso")
     before_after_examples = _build_before_after_examples(before_examples=before_examples, after_examples=examples, n_per_brand=2)
     (outputs_dir / "examples_before_after_2windows.json").write_text(
         json.dumps(before_after_examples, ensure_ascii=False, indent=2),
@@ -581,6 +694,7 @@ def main() -> None:
         "commerce_joinable": join_diag.commerce_joinable,
         "activity_enrichment_joinable": activity_enrichment_joinable,
         "selected_model": selected_model,
+        "train_sample_mode": sample_mode,
         "metrics": metrics,
         "feature_count": len(feature_columns),
         "example_count": len(examples),

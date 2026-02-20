@@ -92,7 +92,7 @@ If you add new brand/app_ids, update `BRAND_APP_ID_FILTERS` in:
 
 ## 4) Run pipeline
 
-### 4.1 Full run (with training)
+### 4.1 Quick sampling mode (fastest, Mac-safe)
 
 ```bash
 python3 run_pipeline.py \
@@ -101,14 +101,56 @@ python3 run_pipeline.py \
   --outputs-dir outputs \
   --artifacts-dir artifacts \
   --snapshot-freq 7D \
-  --report-name band_health_report_V2.md
+  --report-name band_health_report_V2.md \
+  --train_sample_mode quick \
+  --train_sample_frac 0.02 \
+  --train_max_train_rows 200000 \
+  --train_max_eval_rows 60000 \
+  --train_stratify_cols "brand_id,predicted_health_class" \
+  --train_group_col "brand_id" \
+  --train_weight_classes true \
+  --n_jobs 4
 ```
 
 Notes:
 - If `--report-name` is omitted, default report file is `reports/brand_health_report.md`.
 - Use `--report-name band_health_report_V2.md` when you want the V2 report filename.
 
-### 4.2 Reuse existing model artifacts (skip training)
+### 4.2 Smart sampling mode (time-aware + cluster-aware)
+
+```bash
+python3 run_pipeline.py \
+  --dataset-root datasets \
+  --reports-dir reports \
+  --outputs-dir outputs \
+  --artifacts-dir artifacts \
+  --snapshot-freq 7D \
+  --report-name band_health_report_V2.md \
+  --train_sample_mode smart \
+  --train_recent_days 180 \
+  --train_max_train_rows 200000 \
+  --train_max_eval_rows 60000 \
+  --train_stratify_cols "brand_id,predicted_health_class" \
+  --train_group_col "brand_id" \
+  --train_weight_classes true \
+  --n_jobs 4
+```
+
+### 4.3 Real production run (full data, no sampling)
+
+```bash
+python3 run_pipeline.py \
+  --dataset-root datasets \
+  --reports-dir reports \
+  --outputs-dir outputs \
+  --artifacts-dir artifacts \
+  --snapshot-freq 7D \
+  --report-name band_health_report_V2.md \
+  --train_sample_mode off \
+  --n_jobs 4
+```
+
+### 4.4 Reuse existing model artifacts (skip training)
 
 Use when you already have:
 - `artifacts/brand_health_model.joblib`
@@ -163,6 +205,13 @@ python3 run_pipeline.py \
 - `outputs/examples_last4_with_segments.json`
 - `outputs/examples_before_after_2windows.json`
 - `outputs/attribution_qa.json`
+- `outputs/model_metrics_sample.json` (written when `--train_sample_mode != off`)
+- `outputs/predictions_last_windows_sample.json` (written when `--train_sample_mode != off`)
+
+### Sampling artifacts (quick/smart)
+- `outputs/sample_train_indices.csv`
+- `outputs/sample_eval_indices.csv`
+- `outputs/sample_qa_report.json`
 
 Important i18n fields in prediction payload:
 - `predicted_health_class_i18n`: `{ \"en\": \"...\", \"th\": \"...\" }`
@@ -178,8 +227,10 @@ Important i18n fields in prediction payload:
 2. Create virtualenv and install packages.
 3. Ensure enough memory/CPU for large parquet scans.
 4. Choose mode:
-- full train: run command in 4.1
-- skip-train: run command in 4.2
+- quick sampling: run command in 4.1
+- smart sampling: run command in 4.2
+- full production (no sampling): run command in 4.3
+- skip-train: run command in 4.4
 5. Download outputs from `reports/` and `outputs/`.
 
 ## 8) Troubleshooting
