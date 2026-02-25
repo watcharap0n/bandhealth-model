@@ -68,6 +68,42 @@ SEGMENT_LABEL_TH = {
 }
 
 
+def _extract_model_feature_columns(model) -> Optional[List[str]]:
+    """Return the column names the fitted ColumnTransformer inside *model* was trained on.
+
+    Walks through CalibratedClassifierCV wrappers and Pipeline steps to find
+    the first ColumnTransformer, then reads its ``transformers_`` attribute.
+    Returns ``None`` when the structure is not recognised.
+    """
+    candidate = model
+
+    # Unwrap fitted CalibratedClassifierCV
+    if hasattr(candidate, "calibrated_classifiers_"):
+        try:
+            candidate = candidate.calibrated_classifiers_[0].estimator
+        except (IndexError, AttributeError):
+            pass
+    elif hasattr(candidate, "estimator"):
+        candidate = candidate.estimator
+
+    # Walk a Pipeline
+    if hasattr(candidate, "steps"):
+        for _, step in candidate.steps:
+            cols = _extract_model_feature_columns(step)
+            if cols is not None:
+                return cols
+
+    # ColumnTransformer — authoritative source of fitted column names
+    if hasattr(candidate, "transformers_"):
+        cols: List[str] = []
+        for _, _, feature_names in candidate.transformers_:
+            if isinstance(feature_names, (list, tuple)):
+                cols.extend(feature_names)
+        return cols if cols else None
+
+    return None
+
+
 def load_model_artifacts(artifact_dir: str | Path):
     artifact_path = Path(artifact_dir)
     model = joblib.load(artifact_path / "brand_health_model.joblib")
@@ -77,6 +113,12 @@ def load_model_artifacts(artifact_dir: str | Path):
 
     metadata = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.exists() else {}
     importance = json.loads(importance_path.read_text(encoding="utf-8")) if importance_path.exists() else {}
+
+    # Reconcile feature_columns: prefer columns baked into the fitted
+    # ColumnTransformer so that stale metadata cannot cause a column mismatch.
+    model_cols = _extract_model_feature_columns(model)
+    if model_cols:
+        metadata["feature_columns"] = model_cols
 
     return {
         "model": model,
@@ -95,7 +137,12 @@ def _prepare_inference_frame(feature_df: pd.DataFrame, feature_columns) -> pd.Da
 
     for col in feature_columns:
         if col not in df.columns:
-            df[col] = 0.0
+            # __row_id is an internal index – fill with a sequential integer so
+            # that stale models trained with it still receive a valid numeric column.
+            if col == "__row_id":
+                df[col] = np.arange(len(df), dtype=float)
+            else:
+                df[col] = 0.0
 
     X = df[feature_columns].copy()
     return X

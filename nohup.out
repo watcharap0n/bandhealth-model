@@ -1,0 +1,9 @@
+Extracted markdown_table: 155970 chars
+Total pipe-rows: 571
+Headers (6): ['Key', 'Category', 'Type (observed)', 'คำอธิบายสำหรับ End User', 'ความหมาย (TH)', 'หลักฐานใน repo']
+Data rows: 569
+Saved 569 rows x 6 cols -> /Users/kmac15/PycharmProjects/banding-health/outputs/features_dictionary.csv
+                         Key     Category Type (observed)                คำอธิบายสำหรับ End User                                                                                               ความหมาย (TH)                                                                      หลักฐานใน repo
+0               active_users   Engagement          number                     ผู้ใช้งานที่แอคทีฟ  จำนวนผู้ใช้ที่ active ใน window (นิยามในโค้ด: ผู้ใช้ที่ recency_days < window_size_days ณ window_end_date)                                       src/features.py::_compute_engagement_features
+1  active_users_delta_window  Total Delta          number  ผู้ใช้งานที่แอคทีฟ เปลี่ยนจากช่วงก่อน                                ค่าเปลี่ยนแปลงของ active_users เทียบ window ก่อนหน้า (current - prev_window)  src/infer.py::_add_total_metric_deltas src/driver_mapping.py::METRIC_FAMILY_CONFIG
+2       active_users_mom_pct       Trends          number        ผู้ใช้งานที่แอคทีฟ เทียบ 4 ช่วง           เปอร์เซ็นต์เปลี่ยนเทียบ 4 windows ก่อนหน้า (period=4) ของ active_users ภายใน brand_id+window_size                                   src/features.py::_add_relative_and_trend_features
