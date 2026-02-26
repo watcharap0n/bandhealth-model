@@ -234,6 +234,15 @@ def _build_app_to_brand_map(brand_app_ids: Mapping[str, Sequence[str]]) -> Dict[
     return out
 
 
+def _brand_primary_app_id_map(brand_app_ids: Mapping[str, Sequence[str]]) -> Dict[str, str]:
+    out: Dict[str, str] = {}
+    for brand_id, app_ids in brand_app_ids.items():
+        if not app_ids:
+            continue
+        out[str(brand_id)] = str(app_ids[0])
+    return out
+
+
 def _apply_aliases(df: pd.DataFrame, aliases: Mapping[str, str]) -> pd.DataFrame:
     if df.empty:
         return df
@@ -752,6 +761,7 @@ pred_df = predict_with_drivers(
     class_labels=class_labels,
     feature_importance=feature_importance,
     segment_kpis_df=segment_kpi_df if not segment_kpi_df.empty else None,
+    brand_primary_app_id_map=_brand_primary_app_id_map(BRAND_APP_ID_FILTERS),
     top_n_drivers=5,
     top_n_actions=3,
     top_n_target_segments=3,

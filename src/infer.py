@@ -622,6 +622,7 @@ def predict_with_drivers(
     class_labels,
     feature_importance: Optional[Mapping[str, float]] = None,
     segment_kpis_df: Optional[pd.DataFrame] = None,
+    brand_primary_app_id_map: Optional[Mapping[str, object]] = None,
     top_n_drivers: int = 5,
     top_n_actions: int = 3,
     top_n_target_segments: int = 3,
@@ -639,6 +640,8 @@ def predict_with_drivers(
         score_arr += prob_df[f"prob_{c}"].to_numpy() * score_map[c]
 
     out = pd.concat([df, prob_df], axis=1)
+    if brand_primary_app_id_map:
+        out["app_id"] = out["brand_id"].astype(str).map(lambda b: brand_primary_app_id_map.get(str(b)))
     out["predicted_health_class"] = pred
     out["predicted_health_score"] = score_arr
 
@@ -721,6 +724,7 @@ def predict_with_drivers(
         probs = {c: float(row[f"prob_{c}"]) for c in class_labels}
         return {
             "brand_id": str(row.get("brand_id")),
+            "app_id": None if pd.isna(row.get("app_id")) else str(row.get("app_id")),
             "window_end_date": str(row.get("window_end_date")),
             "window_size": str(row.get("window_size")),
             "predicted_health_class": str(row.get("predicted_health_class")),
@@ -749,6 +753,7 @@ def save_predictions(pred_df: pd.DataFrame, output_dir: str | Path) -> None:
 
     save_cols = [
         "brand_id",
+        "app_id",
         "window_end_date",
         "window_size",
         "predicted_health_class",
@@ -764,6 +769,7 @@ def save_predictions(pred_df: pd.DataFrame, output_dir: str | Path) -> None:
         "suggested_actions_i18n",
         "attribution_warnings",
     ] + [c for c in pred_df.columns if c.startswith("prob_")]
+    save_cols = [c for c in save_cols if c in pred_df.columns]
 
     pred_df[save_cols].to_csv(out_dir / "predictions_with_drivers.csv", index=False)
     parquet_df = pred_df[save_cols].copy()

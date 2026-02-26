@@ -37,6 +37,15 @@ BRAND_APP_ID_FILTERS = {
 }
 
 
+def _brand_primary_app_id_map(brand_app_id_filters: Mapping[str, Sequence[int | str]]) -> Dict[str, str]:
+    out: Dict[str, str] = {}
+    for brand_id, app_ids in brand_app_id_filters.items():
+        if not app_ids:
+            continue
+        out[str(brand_id)] = str(app_ids[0])
+    return out
+
+
 def _format_pct(v: float) -> str:
     return f"{v * 100:.2f}%"
 
@@ -676,6 +685,7 @@ def main() -> None:
     log_memory_rss("after_train_stage", sink=memory_events)
 
     print("[7/7] Running inference + drivers + actions...")
+    primary_app_id_map = _brand_primary_app_id_map(BRAND_APP_ID_FILTERS)
     pred_df = predict_with_drivers(
         feature_df=infer_input_df,
         model=model,
@@ -683,6 +693,7 @@ def main() -> None:
         class_labels=class_labels,
         feature_importance=feature_importance,
         segment_kpis_df=segment_kpi_df if not segment_kpi_df.empty else None,
+        brand_primary_app_id_map=primary_app_id_map,
         top_n_drivers=5,
         top_n_actions=3,
         top_n_target_segments=3,
