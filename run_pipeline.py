@@ -30,7 +30,7 @@ from src.databricks_sql import (
     load_tables_from_databricks_sql,
 )
 from src.features import build_feature_table, feature_definitions
-from src.infer import load_model_artifacts, predict_with_drivers, save_predictions
+from src.infer import load_model_artifacts, load_model_from_mlflow, predict_with_drivers, save_predictions
 from src.labeling import generate_weak_labels, labeling_thresholds
 from src.sampling import TrainSampleConfig, build_train_eval_samples, save_sample_outputs
 from src.segments import compute_segment_kpis
@@ -253,6 +253,28 @@ def _resolve_mlflow_runtime(args: argparse.Namespace) -> Dict[str, object]:
     }
 
 
+def _resolve_model_runtime(args: argparse.Namespace) -> Dict[str, str]:
+    model_source = str(getattr(args, "model_source", "artifacts")).strip().lower()
+    if model_source not in {"artifacts", "mlflow"}:
+        raise ValueError("model_source must be one of: artifacts, mlflow")
+
+    mlflow_model_uri = _env_or_value(getattr(args, "mlflow_model_uri", None), "MLFLOW_MODEL_URI")
+    mlflow_registry_uri = _env_or_value(
+        getattr(args, "mlflow_registry_uri", None),
+        "MLFLOW_REGISTRY_URI",
+        default="databricks",
+    )
+
+    if bool(getattr(args, "skip_train", False)) and model_source == "mlflow" and not mlflow_model_uri:
+        raise ValueError("mlflow_model_uri is required when --skip-train is used with --model-source mlflow")
+
+    return {
+        "source": model_source,
+        "mlflow_model_uri": str(mlflow_model_uri) if mlflow_model_uri else "",
+        "mlflow_registry_uri": str(mlflow_registry_uri or "databricks"),
+    }
+
+
 def _log_pipeline_to_mlflow(
     mlflow_cfg: Mapping[str, object],
     args: argparse.Namespace,
@@ -295,6 +317,7 @@ def _log_pipeline_to_mlflow(
         mlflow.log_params(
             {
                 "source_mode": str(source_mode),
+                "model_source": str(getattr(args, "model_source", "artifacts")),
                 "snapshot_freq": str(args.snapshot_freq),
                 "skip_train": bool(args.skip_train),
                 "train_sample_mode": str(args.train_sample_mode),
@@ -357,6 +380,12 @@ def _log_pipeline_to_mlflow(
                 artifact_path="model",
                 signature=signature,
             )
+            model_metadata_path = Path(args.artifacts_dir) / "model_metadata.json"
+            feature_importance_path = Path(args.artifacts_dir) / "feature_importance.json"
+            if model_metadata_path.exists():
+                mlflow.log_artifact(str(model_metadata_path), artifact_path="model")
+            if feature_importance_path.exists():
+                mlflow.log_artifact(str(feature_importance_path), artifact_path="model")
 
         if log_outputs:
             artifact_targets = [
@@ -741,6 +770,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--mlflow-experiment", type=str, default=None)
     parser.add_argument("--mlflow-run-name", type=str, default=None)
     parser.add_argument("--mlflow-log-outputs", type=str, default="true")
+    parser.add_argument("--model-source", type=str, default="artifacts", choices=["artifacts", "mlflow"])
+    parser.add_argument("--mlflow-model-uri", type=str, default=None)
+    parser.add_argument("--mlflow-registry-uri", type=str, default="databricks")
     parser.add_argument("--snapshot-freq", type=str, default="7D")
     parser.add_argument("--report-name", type=str, default="brand_health_report.md")
     parser.add_argument("--skip-train", action="store_true", help="Skip training and reuse model artifacts.")
@@ -772,6 +804,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     source_mode = str(args.source_mode).strip().lower()
     runtime_brand_app_filters, databricks_cfg, query_selection = _resolve_source_runtime(args)
     mlflow_cfg = _resolve_mlflow_runtime(args)
+    model_cfg = _resolve_model_runtime(args)
 
     reports_dir.mkdir(parents=True, exist_ok=True)
     outputs_dir.mkdir(parents=True, exist_ok=True)
@@ -950,12 +983,23 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     log_memory_rss("before_train_stage", sink=memory_events)
     train_weight_classes = _parse_bool_flag(args.train_weight_classes)
     if args.skip_train:
-        loaded = load_model_artifacts(artifact_dir=artifacts_dir)
+        if model_cfg["source"] == "mlflow":
+            loaded = load_model_from_mlflow(
+                model_uri=model_cfg["mlflow_model_uri"],
+                registry_uri=model_cfg["mlflow_registry_uri"],
+            )
+        else:
+            loaded = load_model_artifacts(artifact_dir=artifacts_dir)
         model = loaded["model"]
         metadata = loaded.get("metadata", {})
         feature_importance = loaded.get("feature_importance", {})
-        feature_columns = metadata.get("feature_columns", [])
-        class_labels = metadata.get("class_labels", ["AtRisk", "Healthy", "Warning"])
+        feature_columns = metadata.get("feature_columns") or loaded.get("feature_columns", [])
+        class_labels = metadata.get("class_labels") or loaded.get("class_labels", ["AtRisk", "Healthy", "Warning"])
+        if not feature_columns:
+            raise ValueError(
+                "Loaded model is missing feature_columns metadata. "
+                "Use local artifacts or a newer MLflow model that includes model metadata."
+            )
 
         existing_summary = {}
         summary_path = reports_dir / "pipeline_summary.json"
@@ -964,8 +1008,13 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
                 existing_summary = json.loads(summary_path.read_text(encoding="utf-8"))
             except json.JSONDecodeError:
                 existing_summary = {}
-        metrics = existing_summary.get("metrics", {})
-        selected_model = existing_summary.get("selected_model", "hist_gradient_boosting_calibrated")
+        metrics = metadata.get("metrics") or existing_summary.get("metrics", {})
+        default_selected = "mlflow_sklearn_model" if model_cfg["source"] == "mlflow" else "hist_gradient_boosting_calibrated"
+        selected_model = (
+            (metrics.get("selected_model") if isinstance(metrics, Mapping) else None)
+            or existing_summary.get("selected_model")
+            or default_selected
+        )
     else:
         artifacts = train_models(
             train_input_df,

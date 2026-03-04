@@ -49,6 +49,48 @@ class RunPipelineMLflowTests(unittest.TestCase):
         self.assertTrue(str(cfg["run_name"]).startswith("brand-health-"))
         self.assertTrue(cfg["log_outputs"])
 
+    def test_model_runtime_defaults_to_artifacts_and_databricks_registry(self) -> None:
+        parser = run_pipeline.build_arg_parser()
+        args = parser.parse_args([])
+
+        cfg = run_pipeline._resolve_model_runtime(args)
+
+        self.assertEqual(
+            cfg,
+            {
+                "source": "artifacts",
+                "mlflow_model_uri": "",
+                "mlflow_registry_uri": "databricks",
+            },
+        )
+
+    def test_skip_train_mlflow_requires_model_uri(self) -> None:
+        parser = run_pipeline.build_arg_parser()
+        args = parser.parse_args(["--skip-train", "--model-source", "mlflow"])
+
+        with self.assertRaises(ValueError) as ctx:
+            run_pipeline._resolve_model_runtime(args)
+
+        self.assertIn("mlflow_model_uri", str(ctx.exception))
+
+    def test_skip_train_mlflow_accepts_model_uri(self) -> None:
+        parser = run_pipeline.build_arg_parser()
+        args = parser.parse_args(
+            [
+                "--skip-train",
+                "--model-source",
+                "mlflow",
+                "--mlflow-model-uri",
+                "runs:/abc123/model",
+            ]
+        )
+
+        cfg = run_pipeline._resolve_model_runtime(args)
+
+        self.assertEqual(cfg["source"], "mlflow")
+        self.assertEqual(cfg["mlflow_model_uri"], "runs:/abc123/model")
+        self.assertEqual(cfg["mlflow_registry_uri"], "databricks")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from collections import Counter
 from pathlib import Path
-from typing import Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import joblib
 import numpy as np
@@ -83,6 +83,58 @@ def load_model_artifacts(artifact_dir: str | Path):
         "metadata": metadata,
         "feature_importance": importance,
     }
+
+
+def load_model_from_mlflow(
+    model_uri: str,
+    registry_uri: str = "databricks",
+) -> Dict[str, Any]:
+    try:
+        import mlflow
+        import mlflow.sklearn
+    except ImportError as exc:
+        raise RuntimeError("MLflow model loading requires mlflow to be installed in this environment") from exc
+
+    uri = str(model_uri).strip()
+    if not uri:
+        raise ValueError("model_uri is required for MLflow model loading")
+
+    mlflow.set_registry_uri(str(registry_uri or "databricks"))
+    model = mlflow.sklearn.load_model(uri)
+
+    metadata = _load_mlflow_json_artifact(mlflow, f"{uri.rstrip('/')}/model_metadata.json")
+    importance = _load_mlflow_json_artifact(mlflow, f"{uri.rstrip('/')}/feature_importance.json")
+
+    feature_columns = metadata.get("feature_columns")
+    if not feature_columns:
+        feature_columns = list(getattr(model, "feature_names_in_", []) or [])
+
+    class_labels = metadata.get("class_labels")
+    if not class_labels:
+        class_labels = list(getattr(model, "classes_", []) or [])
+
+    return {
+        "model": model,
+        "metadata": metadata,
+        "feature_importance": importance if isinstance(importance, dict) else {},
+        "feature_columns": [str(x) for x in feature_columns] if feature_columns else [],
+        "class_labels": [str(x) for x in class_labels] if class_labels else [],
+    }
+
+
+def _load_mlflow_json_artifact(mlflow_module, artifact_uri: str) -> Dict[str, Any]:
+    try:
+        local_path = mlflow_module.artifacts.download_artifacts(artifact_uri=str(artifact_uri))
+    except Exception:
+        return {}
+
+    path = Path(local_path)
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
 
 
 def _prepare_inference_frame(feature_df: pd.DataFrame, feature_columns) -> pd.DataFrame:

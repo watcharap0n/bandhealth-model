@@ -53,6 +53,11 @@ Generated at: `2026-02-20 09:50:27`
 - When enabled, you must set an experiment with `--mlflow-experiment` or `MLFLOW_EXPERIMENT`.
 - `--mlflow-run-name` is optional; if omitted, the CLI generates a timestamped run name.
 - `--mlflow-log-outputs` controls whether selected outputs/reports are uploaded as MLflow artifacts.
+- `--model-source` controls how `--skip-train` loads an existing model:
+  - `artifacts` (default): load from local `artifacts/`
+  - `mlflow`: load from MLflow model URI
+- `--mlflow-model-uri` is required when using `--skip-train` with `--model-source mlflow`
+- `--mlflow-registry-uri` defaults to `databricks`
 
 Example:
 
@@ -66,5 +71,19 @@ run_pipeline.main([
     "--mlflow-enable", "true",
     "--mlflow-experiment", "/Shared/brand-health",
     "--mlflow-log-outputs", "true",
+])
+```
+
+MLflow-backed skip-train example:
+
+```python
+run_pipeline.main([
+    "--source-mode", "databricks_sql",
+    "--query-app-ids", "1993744540760190,838315041537793",
+    "--brand-aliases", "1993744540760190=c-vit,838315041537793=see-chan",
+    "--skip-train",
+    "--model-source", "mlflow",
+    "--mlflow-model-uri", "runs:/<run_id>/model",
+    "--mlflow-registry-uri", "databricks",
 ])
 ```
