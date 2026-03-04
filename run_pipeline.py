@@ -5,7 +5,7 @@ import json
 import os
 from datetime import date, datetime
 from pathlib import Path
-from typing import Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -230,6 +230,152 @@ def _resolve_source_runtime(
         end_date=end_date,
     )
     return runtime_filters, config, selection
+
+
+def _resolve_mlflow_runtime(args: argparse.Namespace) -> Dict[str, object]:
+    enabled_raw = _env_or_value(getattr(args, "mlflow_enable", None), "MLFLOW_ENABLE", default="false")
+    enabled = _parse_bool_flag(enabled_raw)
+    experiment = _env_or_value(getattr(args, "mlflow_experiment", None), "MLFLOW_EXPERIMENT")
+    run_name = _env_or_value(getattr(args, "mlflow_run_name", None), "MLFLOW_RUN_NAME")
+    log_outputs_raw = _env_or_value(getattr(args, "mlflow_log_outputs", None), "MLFLOW_LOG_OUTPUTS", default="true")
+    log_outputs = _parse_bool_flag(log_outputs_raw)
+
+    if enabled and not experiment:
+        raise ValueError("mlflow_experiment is required when MLflow logging is enabled")
+    if enabled and not run_name:
+        run_name = f"brand-health-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}"
+
+    return {
+        "enabled": bool(enabled),
+        "experiment": str(experiment) if experiment else None,
+        "run_name": str(run_name) if run_name else None,
+        "log_outputs": bool(log_outputs),
+    }
+
+
+def _log_pipeline_to_mlflow(
+    mlflow_cfg: Mapping[str, object],
+    args: argparse.Namespace,
+    source_mode: str,
+    runtime_brand_app_filters: Mapping[str, Sequence[str]],
+    selected_model: Optional[str],
+    pred_df: pd.DataFrame,
+    metrics: Mapping[str, object],
+    summary: Mapping[str, object],
+    memory_payload: Mapping[str, object],
+    attribution_qa: Mapping[str, float],
+    outputs_dir: Path,
+    reports_dir: Path,
+    report_path: Path,
+    model,
+    feature_columns: Sequence[str],
+    model_input_sample: Optional[pd.DataFrame],
+) -> None:
+    if not bool(mlflow_cfg.get("enabled", False)):
+        return
+
+    try:
+        import mlflow
+        import mlflow.sklearn
+        from mlflow.models.signature import infer_signature
+    except ImportError as exc:
+        raise RuntimeError("MLflow logging is enabled but mlflow is not installed in this environment") from exc
+
+    experiment = str(mlflow_cfg.get("experiment") or "").strip()
+    run_name = str(mlflow_cfg.get("run_name") or "").strip() or None
+    log_outputs = bool(mlflow_cfg.get("log_outputs", True))
+
+    mlflow.end_run()
+    if experiment.isdigit():
+        mlflow.set_experiment(experiment_id=experiment)
+    else:
+        mlflow.set_experiment(experiment_name=experiment)
+
+    with mlflow.start_run(run_name=run_name) as run:
+        mlflow.log_params(
+            {
+                "source_mode": str(source_mode),
+                "snapshot_freq": str(args.snapshot_freq),
+                "skip_train": bool(args.skip_train),
+                "train_sample_mode": str(args.train_sample_mode),
+                "n_jobs": int(args.n_jobs),
+                "train_weight_classes": bool(_parse_bool_flag(args.train_weight_classes)),
+                "selected_model": str(selected_model or ""),
+                "rows_scored": int(len(pred_df)),
+                "feature_count": int(len(feature_columns)),
+                "memory_optimize": bool(_parse_bool_flag(args.memory_optimize)),
+                "brand_count": int(len(runtime_brand_app_filters)),
+                "query_start_date": str(getattr(args, "query_start_date", "") or ""),
+                "query_end_date": str(getattr(args, "query_end_date", "") or ""),
+            }
+        )
+
+        brand_keys = ",".join(sorted(str(k) for k in runtime_brand_app_filters.keys()))
+        app_values = sorted(
+            {
+                str(app_id)
+                for app_ids in runtime_brand_app_filters.values()
+                for app_id in app_ids
+            }
+        )
+        mlflow.set_tags(
+            {
+                "pipeline": "brand-health",
+                "brands": brand_keys,
+                "app_ids": ",".join(app_values),
+            }
+        )
+
+        time_split = metrics.get("time_split", {}) if isinstance(metrics, Mapping) else {}
+        if isinstance(time_split, Mapping):
+            for model_name, model_metrics in time_split.items():
+                if not isinstance(model_metrics, Mapping):
+                    continue
+                for metric_key in ("macro_f1", "balanced_accuracy", "weighted_f1"):
+                    val = model_metrics.get(metric_key)
+                    if val is None:
+                        continue
+                    try:
+                        mlflow.log_metric(f"{model_name}_{metric_key}", float(val))
+                    except (TypeError, ValueError):
+                        continue
+
+        mlflow.log_dict(dict(summary), "pipeline_summary.json")
+        mlflow.log_dict(dict(attribution_qa), "attribution_qa.json")
+        mlflow.log_dict(dict(memory_payload), "memory_optimization_report.json")
+
+        if not args.skip_train and model is not None and feature_columns:
+            signature = None
+            if model_input_sample is not None and not model_input_sample.empty:
+                try:
+                    y_sample = model.predict(model_input_sample)
+                    signature = infer_signature(model_input_sample, y_sample)
+                except Exception:
+                    signature = None
+            mlflow.sklearn.log_model(
+                model,
+                artifact_path="model",
+                signature=signature,
+            )
+
+        if log_outputs:
+            artifact_targets = [
+                (outputs_dir / "feature_definitions.csv", "outputs"),
+                (outputs_dir / "join_diagnostics.md", "outputs"),
+                (outputs_dir / "coverage_notes.md", "outputs"),
+                (outputs_dir / "attribution_qa.json", "outputs"),
+                (outputs_dir / "memory_optimization_report.json", "outputs"),
+                (outputs_dir / "examples_last4_with_segments.json", "outputs"),
+                (outputs_dir / "predictions_with_drivers.csv", "outputs"),
+                (outputs_dir / "predictions_with_drivers.jsonl", "outputs"),
+                (reports_dir / "pipeline_summary.json", "reports"),
+                (report_path, "reports"),
+            ]
+            for artifact_path, artifact_subdir in artifact_targets:
+                if artifact_path.exists():
+                    mlflow.log_artifact(str(artifact_path), artifact_path=artifact_subdir)
+
+        print(f"MLflow run logged: {run.info.run_id}")
 
 
 def _set_thread_limits(n_jobs: int) -> None:
@@ -591,6 +737,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--databricks-database", type=str, default="datacleansing")
     parser.add_argument("--databricks-wait-timeout", type=str, default="30s")
     parser.add_argument("--databricks-poll-interval-seconds", type=int, default=2)
+    parser.add_argument("--mlflow-enable", type=str, default="false")
+    parser.add_argument("--mlflow-experiment", type=str, default=None)
+    parser.add_argument("--mlflow-run-name", type=str, default=None)
+    parser.add_argument("--mlflow-log-outputs", type=str, default="true")
     parser.add_argument("--snapshot-freq", type=str, default="7D")
     parser.add_argument("--report-name", type=str, default="brand_health_report.md")
     parser.add_argument("--skip-train", action="store_true", help="Skip training and reuse model artifacts.")
@@ -621,6 +771,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     artifacts_dir = Path(args.artifacts_dir)
     source_mode = str(args.source_mode).strip().lower()
     runtime_brand_app_filters, databricks_cfg, query_selection = _resolve_source_runtime(args)
+    mlflow_cfg = _resolve_mlflow_runtime(args)
 
     reports_dir.mkdir(parents=True, exist_ok=True)
     outputs_dir.mkdir(parents=True, exist_ok=True)
@@ -852,6 +1003,12 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     attribution_qa = dict(pred_df.attrs.get("attribution_qa", {}))
     (outputs_dir / "attribution_qa.json").write_text(json.dumps(attribution_qa, indent=2), encoding="utf-8")
 
+    mlflow_model_input_sample: Optional[pd.DataFrame] = None
+    if not args.skip_train and feature_columns:
+        available_cols = [c for c in feature_columns if c in infer_input_df.columns]
+        if available_cols:
+            mlflow_model_input_sample = infer_input_df[available_cols].head(5).copy()
+
     # Train/infer inputs can be released after predictions are materialized.
     if train_input_df is infer_input_df:
         del train_input_df, infer_input_df
@@ -953,6 +1110,25 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         },
     }
     (reports_dir / "pipeline_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+
+    _log_pipeline_to_mlflow(
+        mlflow_cfg=mlflow_cfg,
+        args=args,
+        source_mode=source_mode,
+        runtime_brand_app_filters=runtime_brand_app_filters,
+        selected_model=selected_model,
+        pred_df=pred_df,
+        metrics=metrics if isinstance(metrics, Mapping) else {},
+        summary=summary,
+        memory_payload=memory_payload,
+        attribution_qa=attribution_qa,
+        outputs_dir=outputs_dir,
+        reports_dir=reports_dir,
+        report_path=report_path,
+        model=model,
+        feature_columns=feature_columns,
+        model_input_sample=mlflow_model_input_sample,
+    )
 
     print("Done.")
     print(f"Report: {report_path}")

@@ -45,3 +45,26 @@ Generated at: `2026-02-20 09:50:27`
 
 - `other_or_null_rows = 0` means every row is mapped to one of the two known app_ids.
 - Large c-vit volume inside `datasets/see-chan` is expected and is now handled by app_id-based splitting.
+
+## CLI MLflow Logging
+
+- `run_pipeline.py` now supports optional MLflow logging in the main CLI path.
+- Logging is disabled by default and must be enabled explicitly with `--mlflow-enable true` or `MLFLOW_ENABLE=true`.
+- When enabled, you must set an experiment with `--mlflow-experiment` or `MLFLOW_EXPERIMENT`.
+- `--mlflow-run-name` is optional; if omitted, the CLI generates a timestamped run name.
+- `--mlflow-log-outputs` controls whether selected outputs/reports are uploaded as MLflow artifacts.
+
+Example:
+
+```python
+run_pipeline.main([
+    "--source-mode", "databricks_sql",
+    "--query-app-ids", "1993744540760190,838315041537793",
+    "--brand-aliases", "1993744540760190=c-vit,838315041537793=see-chan",
+    "--query-start-date", "2026-01-01",
+    "--query-end-date", "2026-03-04",
+    "--mlflow-enable", "true",
+    "--mlflow-experiment", "/Shared/brand-health",
+    "--mlflow-log-outputs", "true",
+])
+```

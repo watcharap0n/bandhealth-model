@@ -259,6 +259,17 @@ def _time_split_mask(df: pd.DataFrame, time_col: str = "window_end_date", train_
     return train_mask, cutoff
 
 
+def _safe_calibration_cv(y: pd.Series, preferred_cv: int) -> int:
+    labels = y.astype(str)
+    if labels.nunique() < 2:
+        return 0
+    counts = labels.value_counts()
+    if counts.empty:
+        return 0
+    safe_cv = min(int(preferred_cv), int(counts.min()))
+    return int(safe_cv) if safe_cv >= 2 else 0
+
+
 
 def train_models(
     feature_df: pd.DataFrame,
@@ -332,15 +343,20 @@ def train_models(
         model.fit(X_train, y_train)
         time_results[name] = _evaluate_model(model, X_test, y_test, class_labels)
 
-    # Calibrated strong model on time split.
-    cal_cv = 2 if sample_mode == "quick" else 3
-    calibrated = CalibratedClassifierCV(
-        estimator=_model_pipelines(cat_cols, num_cols, weight_classes=weight_classes, sample_mode=sample_mode)["hgb"],
-        method="sigmoid",
-        cv=cal_cv,
-    )
-    calibrated.fit(X_train, y_train)
-    time_results["hgb_calibrated"] = _evaluate_model(calibrated, X_test, y_test, class_labels)
+    # Calibrated strong model on time split when each class has enough rows.
+    preferred_cal_cv = 2 if sample_mode == "quick" else 3
+    cal_cv = _safe_calibration_cv(y_train, preferred_cv=preferred_cal_cv)
+    calibrated = None
+    calibration_status = "skipped"
+    if cal_cv >= 2:
+        calibrated = CalibratedClassifierCV(
+            estimator=_model_pipelines(cat_cols, num_cols, weight_classes=weight_classes, sample_mode=sample_mode)["hgb"],
+            method="sigmoid",
+            cv=cal_cv,
+        )
+        calibrated.fit(X_train, y_train)
+        time_results["hgb_calibrated"] = _evaluate_model(calibrated, X_test, y_test, class_labels)
+        calibration_status = "fitted"
 
     # Cross-brand holdout.
     cross_brand_results = {}
@@ -379,13 +395,17 @@ def train_models(
     best_is_calibrated = best_name == "hgb_calibrated"
 
     # Fit final selected model on full data.
-    if best_is_calibrated:
+    final_cal_cv = _safe_calibration_cv(y, preferred_cv=preferred_cal_cv) if best_is_calibrated else 0
+    if best_is_calibrated and final_cal_cv >= 2:
         final_model = CalibratedClassifierCV(
             estimator=_model_pipelines(cat_cols, num_cols, weight_classes=weight_classes, sample_mode=sample_mode)["hgb"],
             method="sigmoid",
-            cv=cal_cv,
+            cv=final_cal_cv,
         )
     else:
+        if best_is_calibrated and final_cal_cv < 2:
+            best_is_calibrated = False
+            best_name = "hgb"
         final_model = _model_pipelines(cat_cols, num_cols, weight_classes=weight_classes, sample_mode=sample_mode)[best_name]
     final_model.fit(X, y)
 
@@ -414,6 +434,12 @@ def train_models(
         "cross_brand": cross_brand_results,
         "group_kfold_brand": group_results,
         "selected_model": best_name,
+        "calibration": {
+            "preferred_cv": int(preferred_cal_cv),
+            "time_split_cv": int(cal_cv),
+            "time_split_status": calibration_status,
+            "final_fit_cv": int(final_cal_cv),
+        },
         "train_mode": sample_mode,
         "n_jobs": int(n_jobs),
         "weight_classes": bool(weight_classes),

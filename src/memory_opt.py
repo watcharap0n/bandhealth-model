@@ -82,6 +82,13 @@ def _object_equal_with_na(left: pd.Series, right: pd.Series) -> bool:
     return bool((l[~l_na] == r[~r_na]).all())
 
 
+def _looks_like_datetime_column(col_name: str) -> bool:
+    name = str(col_name).strip().lower()
+    if not name:
+        return False
+    return any(tok in name for tok in ("date", "time", "datetime", "access"))
+
+
 def optimize_dataframe_dtypes(
     df: pd.DataFrame,
     table_name: str = "",
@@ -162,6 +169,8 @@ def optimize_dataframe_dtypes(
         elif pd.api.types.is_object_dtype(s):
             n = len(s)
             if n > 0:
+                if _looks_like_datetime_column(col):
+                    continue
                 nunique = int(s.nunique(dropna=True))
                 ratio = float(nunique / max(1, n))
                 if ratio < float(cat_ratio_threshold):

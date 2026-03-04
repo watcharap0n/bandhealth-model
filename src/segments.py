@@ -41,6 +41,8 @@ NEG_DAY = -1_000_000
 
 
 def _to_datetime(s: pd.Series) -> pd.Series:
+    if isinstance(s, pd.Series) and isinstance(s.dtype, pd.CategoricalDtype):
+        s = s.astype("string")
     return pd.to_datetime(s, errors="coerce", utc=True)
 
 
