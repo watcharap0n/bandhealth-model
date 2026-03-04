@@ -236,6 +236,7 @@ def _prepare_training_frame(
         "label_health_score",
         "label_health_class_int",
         "window_end_date",
+        "__row_id",  # internal row identifier – must not be used as a feature
     }
     feature_cols = [c for c in df.columns if c not in exclude]
 
