@@ -3,8 +3,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from datetime import date, datetime
 from pathlib import Path
-from typing import Dict, List, Mapping, Optional, Sequence
+from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -12,11 +13,21 @@ import pandas as pd
 from src.data_load import (
     TABLE_FILES,
     build_purchase_item_join_diagnostics,
+    build_purchase_item_join_diagnostics_from_tables,
+    profile_loaded_tables,
     profile_dataset,
     save_profile,
     load_tables,
     write_coverage_notes_markdown,
     write_join_diagnostics_markdown,
+)
+from src.databricks_sql import (
+    CATALOG_TABLE_MAP,
+    COLUMN_ALIASES,
+    DatabricksSQLConfig,
+    QuerySelection,
+    group_app_ids_by_brand,
+    load_tables_from_databricks_sql,
 )
 from src.features import build_feature_table, feature_definitions
 from src.infer import load_model_artifacts, predict_with_drivers, save_predictions
@@ -36,6 +47,66 @@ BRAND_APP_ID_FILTERS = {
     "see-chan": [838315041537793],
 }
 
+COLUMNS_MAP = {
+    "activity_transaction": [
+        "app_id",
+        "user_id",
+        "transaction_id",
+        "activity_datetime",
+        "activity_type",
+        "activity_name",
+        "reward_type",
+        "is_completed",
+        "reward",
+        "points",
+    ],
+    "purchase": [
+        "app_id",
+        "transaction_id",
+        "user_id",
+        "create_datetime",
+        "paid_datetime",
+        "transaction_status",
+        "itemsold",
+        "subtotal_amount",
+        "discount_amount",
+        "shipping_fee",
+        "net_amount",
+    ],
+    "purchase_items": [
+        "app_id",
+        "transaction_id",
+        "user_id",
+        "create_datetime",
+        "paid_datetime",
+        "transaction_status",
+        "sku_id",
+        "quantity",
+        "price_sell",
+        "price_discount",
+        "price_net",
+        "delivered",
+        "is_shiped",
+    ],
+    "user_view": ["app_id", "user_id", "join_datetime", "inactive_datetime", "user_type"],
+    "user_visitor": [
+        "app_id",
+        "tbl_type",
+        "idsite",
+        "user_id",
+        "user_type",
+        "visit_datetime",
+        "visit_end_datetime",
+        "actions",
+        "interactions",
+        "searches",
+        "events",
+    ],
+    "user_device": ["app_id", "user_id", "lastaccess", "device_type", "os_name"],
+    "user_identity": ["app_id", "user_id", "line_id", "external_id"],
+    "user_info": ["app_id", "user_id", "dateofbirth", "gender"],
+}
+
 
 def _format_pct(v: float) -> str:
     return f"{v * 100:.2f}%"
@@ -50,6 +121,115 @@ def _parse_bool_flag(v) -> bool:
 
 def _parse_csv_cols(v: str) -> List[str]:
     return [x.strip() for x in str(v).split(",") if x.strip()]
+
+
+def _parse_query_app_ids(v: Optional[str]) -> List[str]:
+    if v is None:
+        return []
+    return [x.strip() for x in str(v).split(",") if x.strip()]
+
+
+def _parse_brand_aliases(v: Optional[str]) -> Dict[str, str]:
+    out: Dict[str, str] = {}
+    if v is None:
+        return out
+    for item in str(v).split(","):
+        item = item.strip()
+        if not item:
+            continue
+        if "=" not in item:
+            raise ValueError(f"Invalid brand alias '{item}'. Expected format app_id=brand_id")
+        app_id, brand_id = item.split("=", 1)
+        app_key = app_id.strip()
+        brand_key = brand_id.strip()
+        if not app_key or not brand_key:
+            raise ValueError(f"Invalid brand alias '{item}'. Expected format app_id=brand_id")
+        out[app_key] = brand_key
+    return out
+
+
+def _parse_optional_date(v: Optional[str], field_name: str) -> Optional[date]:
+    if v is None:
+        return None
+    raw = str(v).strip()
+    if not raw:
+        return None
+    try:
+        return datetime.strptime(raw, "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise ValueError(f"{field_name} must be in YYYY-MM-DD format") from exc
+
+
+def _runtime_brand_app_id_filters(
+    query_app_ids: Sequence[str],
+    brand_aliases: Mapping[str, str],
+) -> Dict[str, List[str]]:
+    return group_app_ids_by_brand(app_ids=query_app_ids, brand_aliases=brand_aliases)
+
+
+def _default_brand_app_id_filters() -> Dict[str, List[str]]:
+    return {str(brand_id): [str(app_id) for app_id in app_ids] for brand_id, app_ids in BRAND_APP_ID_FILTERS.items()}
+
+
+def _env_or_value(explicit_value: Optional[str], env_name: str, default: Optional[str] = None) -> Optional[str]:
+    if explicit_value is not None and str(explicit_value).strip():
+        return str(explicit_value).strip()
+    env_value = os.getenv(env_name)
+    if env_value is not None and str(env_value).strip():
+        return str(env_value).strip()
+    return default
+
+
+def _resolve_source_runtime(
+    args: argparse.Namespace,
+) -> Tuple[Dict[str, List[str]], Optional[DatabricksSQLConfig], Optional[QuerySelection]]:
+    query_app_ids = _parse_query_app_ids(getattr(args, "query_app_ids", None))
+    brand_aliases = _parse_brand_aliases(getattr(args, "brand_aliases", None))
+    source_mode = str(getattr(args, "source_mode", "parquet")).strip().lower()
+
+    runtime_filters = _runtime_brand_app_id_filters(query_app_ids, brand_aliases) if query_app_ids else _default_brand_app_id_filters()
+    if source_mode != "databricks_sql":
+        return runtime_filters, None, None
+
+    missing: List[str] = []
+    host = _env_or_value(getattr(args, "databricks_host", None), "DATABRICKS_HOST")
+    token = _env_or_value(getattr(args, "databricks_token", None), "DATABRICKS_TOKEN")
+    warehouse_id = _env_or_value(getattr(args, "databricks_warehouse_id", None), "DATABRICKS_WAREHOUSE_ID")
+    catalog = _env_or_value(getattr(args, "databricks_catalog", None), "DATABRICKS_CATALOG", default="projects_prd")
+    database = _env_or_value(getattr(args, "databricks_database", None), "DATABRICKS_DATABASE", default="datacleansing")
+
+    if not query_app_ids:
+        missing.append("query_app_ids")
+    if not host:
+        missing.append("databricks_host")
+    if not token:
+        missing.append("databricks_token")
+    if not warehouse_id:
+        missing.append("databricks_warehouse_id")
+    if missing:
+        raise ValueError(f"Missing required arguments for databricks_sql mode: {', '.join(missing)}")
+
+    start_date = _parse_optional_date(getattr(args, "query_start_date", None), "query_start_date")
+    end_date = _parse_optional_date(getattr(args, "query_end_date", None), "query_end_date")
+    if start_date is not None and end_date is not None and start_date > end_date:
+        raise ValueError("query_start_date cannot be later than query_end_date")
+
+    config = DatabricksSQLConfig(
+        host=str(host),
+        token=str(token),
+        warehouse_id=str(warehouse_id),
+        catalog=str(catalog),
+        database=str(database),
+        wait_timeout=str(getattr(args, "databricks_wait_timeout", "30s")),
+        poll_interval_seconds=int(getattr(args, "databricks_poll_interval_seconds", 2)),
+    )
+    selection = QuerySelection(
+        app_ids=tuple(query_app_ids),
+        brand_aliases=dict(brand_aliases),
+        start_date=start_date,
+        end_date=end_date,
+    )
+    return runtime_filters, config, selection
 
 
 def _set_thread_limits(n_jobs: int) -> None:
@@ -393,14 +573,24 @@ def _write_profiling_report(
     lines.append("")
     output_path.write_text("\n".join(lines), encoding="utf-8")
 
-
-
-def main() -> None:
+def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Brand Health Pipeline")
     parser.add_argument("--dataset-root", type=str, default="datasets")
     parser.add_argument("--reports-dir", type=str, default="reports")
     parser.add_argument("--outputs-dir", type=str, default="outputs")
     parser.add_argument("--artifacts-dir", type=str, default="artifacts")
+    parser.add_argument("--source-mode", type=str, default="parquet", choices=["parquet", "databricks_sql"])
+    parser.add_argument("--query-app-ids", type=str, default=None)
+    parser.add_argument("--brand-aliases", type=str, default=None)
+    parser.add_argument("--query-start-date", type=str, default=None)
+    parser.add_argument("--query-end-date", type=str, default=None)
+    parser.add_argument("--databricks-host", type=str, default=None)
+    parser.add_argument("--databricks-token", type=str, default=None)
+    parser.add_argument("--databricks-warehouse-id", type=str, default=None)
+    parser.add_argument("--databricks-catalog", type=str, default="projects_prd")
+    parser.add_argument("--databricks-database", type=str, default="datacleansing")
+    parser.add_argument("--databricks-wait-timeout", type=str, default="30s")
+    parser.add_argument("--databricks-poll-interval-seconds", type=int, default=2)
     parser.add_argument("--snapshot-freq", type=str, default="7D")
     parser.add_argument("--report-name", type=str, default="brand_health_report.md")
     parser.add_argument("--skip-train", action="store_true", help="Skip training and reuse model artifacts.")
@@ -418,12 +608,19 @@ def main() -> None:
     parser.add_argument("--memory_float_downcast", type=str, default="false")
     parser.add_argument("--memory_cat_ratio_threshold", type=float, default=0.5)
     parser.add_argument("--memory_validate_downcast", type=str, default="true")
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: Optional[Sequence[str]] = None) -> None:
+    parser = build_arg_parser()
+    args = parser.parse_args(argv)
 
     dataset_root = Path(args.dataset_root)
     reports_dir = Path(args.reports_dir)
     outputs_dir = Path(args.outputs_dir)
     artifacts_dir = Path(args.artifacts_dir)
+    source_mode = str(args.source_mode).strip().lower()
+    runtime_brand_app_filters, databricks_cfg, query_selection = _resolve_source_runtime(args)
 
     reports_dir.mkdir(parents=True, exist_ok=True)
     outputs_dir.mkdir(parents=True, exist_ok=True)
@@ -444,13 +641,43 @@ def main() -> None:
         except ValueError:
             before_examples = pd.DataFrame()
 
-    print(f"Using app_id filters: {BRAND_APP_ID_FILTERS}")
-    print("[0/7] Building join diagnostics...")
-    join_diag = build_purchase_item_join_diagnostics(dataset_root, brand_app_ids=BRAND_APP_ID_FILTERS)
-    write_join_diagnostics_markdown(join_diag, outputs_dir / "join_diagnostics.md")
+    print(f"Using app_id filters: {runtime_brand_app_filters}")
+    if source_mode == "databricks_sql":
+        if databricks_cfg is None or query_selection is None:
+            raise ValueError("Databricks SQL configuration is not available")
+        print("[0/7] Loading tables from Databricks SQL...")
+        tables = load_tables_from_databricks_sql(
+            config=databricks_cfg,
+            selection=query_selection,
+            columns_map=COLUMNS_MAP,
+            table_map=CATALOG_TABLE_MAP,
+            column_aliases=COLUMN_ALIASES,
+        )
+        log_memory_rss("after_load_tables", sink=memory_events)
 
-    print("[1/7] Profiling parquet datasets...")
-    profile = profile_dataset(dataset_root, brand_app_ids=BRAND_APP_ID_FILTERS)
+        print("[1/7] Building join diagnostics...")
+        join_diag = build_purchase_item_join_diagnostics_from_tables(tables)
+        write_join_diagnostics_markdown(join_diag, outputs_dir / "join_diagnostics.md")
+
+        print("[2/7] Profiling loaded datasets...")
+        profile = profile_loaded_tables(tables=tables, table_files=TABLE_FILES)
+    else:
+        print("[0/7] Building join diagnostics...")
+        join_diag = build_purchase_item_join_diagnostics(dataset_root, brand_app_ids=runtime_brand_app_filters)
+        write_join_diagnostics_markdown(join_diag, outputs_dir / "join_diagnostics.md")
+
+        print("[1/7] Profiling parquet datasets...")
+        profile = profile_dataset(dataset_root, brand_app_ids=runtime_brand_app_filters)
+
+        print("[2/7] Loading tables for feature engineering...")
+        tables = load_tables(
+            dataset_root,
+            table_files=TABLE_FILES,
+            columns_map=COLUMNS_MAP,
+            brand_app_ids=runtime_brand_app_filters,
+        )
+        log_memory_rss("after_load_tables", sink=memory_events)
+
     save_profile(profile, reports_dir / "data_profile")
     write_coverage_notes_markdown(profile.join_coverage, join_diag, outputs_dir / "coverage_notes.md")
     activity_enrichment_joinable = _compute_activity_enrichment_joinable(profile.join_coverage, threshold=0.80)
@@ -461,74 +688,7 @@ def main() -> None:
         commerce_joinable=join_diag.commerce_joinable,
     )
 
-    print("[2/7] Loading tables for feature engineering...")
-    columns_map = {
-        "activity_transaction": [
-            "app_id",
-            "user_id",
-            "transaction_id",
-            "activity_datetime",
-            "activity_type",
-            "activity_name",
-            "reward_type",
-            "is_completed",
-            "reward",
-            "points",
-        ],
-        "purchase": [
-            "app_id",
-            "transaction_id",
-            "user_id",
-            "create_datetime",
-            "paid_datetime",
-            "transaction_status",
-            "itemsold",
-            "subtotal_amount",
-            "discount_amount",
-            "shipping_fee",
-            "net_amount",
-        ],
-        "purchase_items": [
-            "app_id",
-            "transaction_id",
-            "user_id",
-            "create_datetime",
-            "paid_datetime",
-            "transaction_status",
-            "sku_id",
-            "quantity",
-            "price_sell",
-            "price_discount",
-            "price_net",
-            "delivered",
-            "is_shiped",
-        ],
-        "user_view": ["app_id", "user_id", "join_datetime", "inactive_datetime", "user_type"],
-        "user_visitor": [
-            "app_id",
-            "tbl_type",
-            "idsite",
-            "user_id",
-            "user_type",
-            "visit_datetime",
-            "visit_end_datetime",
-            "actions",
-            "interactions",
-            "searches",
-            "events",
-        ],
-        "user_device": ["app_id", "user_id", "lastaccess", "device_type", "os_name"],
-        "user_identity": ["app_id", "user_id", "line_id", "external_id"],
-        "user_info": ["app_id", "user_id", "dateofbirth", "gender"],
-    }
-    tables = load_tables(
-        dataset_root,
-        table_files=TABLE_FILES,
-        columns_map=columns_map,
-        brand_app_ids=BRAND_APP_ID_FILTERS,
-    )
     table_rows_before_opt = {k: int(len(v)) for k, v in tables.items() if isinstance(v, pd.DataFrame)}
-    log_memory_rss("after_load_tables", sink=memory_events)
 
     dtype_opt_summary = pd.DataFrame()
     if memory_optimize:

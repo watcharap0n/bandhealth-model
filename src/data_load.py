@@ -272,27 +272,70 @@ def _detect_datetime_columns(df: pd.DataFrame) -> List[str]:
     return dt_cols
 
 
-def profile_dataset(
-    dataset_root: str | Path,
+def _brands_from_loaded_tables(tables: Mapping[str, pd.DataFrame]) -> List[str]:
+    brands: set[str] = set()
+    for df in tables.values():
+        if not isinstance(df, pd.DataFrame) or df.empty or "brand_id" not in df.columns:
+            continue
+        brands.update(df["brand_id"].dropna().astype(str).tolist())
+    return sorted(brands)
+
+
+def _empty_table_profile_frame() -> pd.DataFrame:
+    return pd.DataFrame(columns=["brand_id", "table", "rows", "columns"])
+
+
+def _empty_schema_profile_frame() -> pd.DataFrame:
+    return pd.DataFrame(
+        columns=[
+            "brand_id",
+            "table",
+            "column",
+            "dtype",
+            "missing_count",
+            "missing_pct",
+            "time_min",
+            "time_max",
+        ]
+    )
+
+
+def _empty_join_coverage_frame() -> pd.DataFrame:
+    return pd.DataFrame(
+        columns=[
+            "brand_id",
+            "left_table",
+            "right_table",
+            "key",
+            "left_rows",
+            "right_rows",
+            "left_unique",
+            "right_unique",
+            "overlap_unique",
+            "row_coverage",
+            "left_unique_norm",
+            "right_unique_norm",
+            "overlap_unique_norm",
+            "row_coverage_norm",
+        ]
+    )
+
+
+def profile_loaded_tables(
+    tables: Mapping[str, pd.DataFrame],
     table_files: Sequence[str] = TABLE_FILES,
     key_relations: Sequence[Tuple[str, str, str]] = DEFAULT_KEY_RELATIONS,
-    brand_app_ids: Optional[Mapping[str, Sequence[int | str]]] = None,
+    brands: Optional[Sequence[str]] = None,
 ) -> DataProfile:
     table_rows: List[dict] = []
     schema_rows: List[dict] = []
-    brands = list_brands(dataset_root, brand_app_ids=brand_app_ids)
-    tables = load_tables(
-        dataset_root=dataset_root,
-        table_files=table_files,
-        columns_map=None,
-        brand_app_ids=brand_app_ids,
-    )
+    brand_list = list(brands) if brands is not None else _brands_from_loaded_tables(tables)
 
     for file_name in table_files:
         table_name = Path(file_name).stem
         df_all = tables.get(table_name, pd.DataFrame())
 
-        for brand_id in brands:
+        for brand_id in brand_list:
             if not df_all.empty and "brand_id" in df_all.columns:
                 df = df_all.loc[df_all["brand_id"] == brand_id].copy()
             else:
@@ -331,49 +374,63 @@ def profile_dataset(
 
                 schema_rows.append(row)
 
-    table_profile = pd.DataFrame(table_rows).sort_values(["brand_id", "table"]).reset_index(drop=True)
-    schema_profile = pd.DataFrame(schema_rows).sort_values(["brand_id", "table", "column"]).reset_index(drop=True)
-    join_coverage = validate_join_coverage(
-        dataset_root,
+    table_profile = (
+        pd.DataFrame(table_rows).sort_values(["brand_id", "table"]).reset_index(drop=True)
+        if table_rows
+        else _empty_table_profile_frame()
+    )
+    schema_profile = (
+        pd.DataFrame(schema_rows).sort_values(["brand_id", "table", "column"]).reset_index(drop=True)
+        if schema_rows
+        else _empty_schema_profile_frame()
+    )
+    join_coverage = validate_join_coverage_from_tables(
+        tables=tables,
         table_files=table_files,
         key_relations=key_relations,
-        brand_app_ids=brand_app_ids,
+        brands=brand_list,
     )
-
     return DataProfile(table_profile=table_profile, schema_profile=schema_profile, join_coverage=join_coverage)
 
 
-def validate_join_coverage(
+def profile_dataset(
     dataset_root: str | Path,
     table_files: Sequence[str] = TABLE_FILES,
     key_relations: Sequence[Tuple[str, str, str]] = DEFAULT_KEY_RELATIONS,
     brand_app_ids: Optional[Mapping[str, Sequence[int | str]]] = None,
-) -> pd.DataFrame:
+) -> DataProfile:
     brands = list_brands(dataset_root, brand_app_ids=brand_app_ids)
-    table_name_to_file = {Path(x).stem: x for x in table_files}
-    rows: List[dict] = []
-
-    needed: Dict[str, set] = {}
-    for left, right, key in key_relations:
-        needed.setdefault(left, set()).add(key)
-        needed.setdefault(right, set()).add(key)
-
-    columns_map: Dict[str, List[str]] = {}
-    for table_name, cols in needed.items():
-        if table_name in table_name_to_file:
-            columns_map[table_name] = sorted(set(cols).union({"app_id"}))
-
-    key_frames = load_tables(
+    tables = load_tables(
         dataset_root=dataset_root,
-        table_files=[table_name_to_file[t] for t in columns_map.keys()],
-        columns_map=columns_map,
+        table_files=table_files,
+        columns_map=None,
         brand_app_ids=brand_app_ids,
     )
+    return profile_loaded_tables(
+        tables=tables,
+        table_files=table_files,
+        key_relations=key_relations,
+        brands=brands,
+    )
 
-    for brand_id in brands:
+
+def validate_join_coverage_from_tables(
+    tables: Mapping[str, pd.DataFrame],
+    table_files: Sequence[str] = TABLE_FILES,
+    key_relations: Sequence[Tuple[str, str, str]] = DEFAULT_KEY_RELATIONS,
+    brands: Optional[Sequence[str]] = None,
+) -> pd.DataFrame:
+    brand_list = list(brands) if brands is not None else _brands_from_loaded_tables(tables)
+    table_names = {Path(x).stem for x in table_files}
+    rows: List[dict] = []
+
+    for brand_id in brand_list:
         for left_table, right_table, key in key_relations:
-            left_all = key_frames.get(left_table, pd.DataFrame())
-            right_all = key_frames.get(right_table, pd.DataFrame())
+            if left_table not in table_names or right_table not in table_names:
+                continue
+
+            left_all = tables.get(left_table, pd.DataFrame())
+            right_all = tables.get(right_table, pd.DataFrame())
 
             if not left_all.empty and "brand_id" in left_all.columns:
                 left_df = left_all.loc[left_all["brand_id"] == brand_id].copy()
@@ -441,26 +498,42 @@ def validate_join_coverage(
             )
 
     if not rows:
-        return pd.DataFrame(
-            columns=[
-                "brand_id",
-                "left_table",
-                "right_table",
-                "key",
-                "left_rows",
-                "right_rows",
-                "left_unique",
-                "right_unique",
-                "overlap_unique",
-                "row_coverage",
-                "left_unique_norm",
-                "right_unique_norm",
-                "overlap_unique_norm",
-                "row_coverage_norm",
-            ]
-        )
+        return _empty_join_coverage_frame()
 
     return pd.DataFrame(rows).sort_values(["brand_id", "left_table", "right_table", "key"]).reset_index(drop=True)
+
+
+def validate_join_coverage(
+    dataset_root: str | Path,
+    table_files: Sequence[str] = TABLE_FILES,
+    key_relations: Sequence[Tuple[str, str, str]] = DEFAULT_KEY_RELATIONS,
+    brand_app_ids: Optional[Mapping[str, Sequence[int | str]]] = None,
+) -> pd.DataFrame:
+    brands = list_brands(dataset_root, brand_app_ids=brand_app_ids)
+    table_name_to_file = {Path(x).stem: x for x in table_files}
+
+    needed: Dict[str, set] = {}
+    for left, right, key in key_relations:
+        needed.setdefault(left, set()).add(key)
+        needed.setdefault(right, set()).add(key)
+
+    columns_map: Dict[str, List[str]] = {}
+    for table_name, cols in needed.items():
+        if table_name in table_name_to_file:
+            columns_map[table_name] = sorted(set(cols).union({"app_id"}))
+
+    key_frames = load_tables(
+        dataset_root=dataset_root,
+        table_files=[table_name_to_file[t] for t in columns_map.keys()],
+        columns_map=columns_map,
+        brand_app_ids=brand_app_ids,
+    )
+    return validate_join_coverage_from_tables(
+        tables=key_frames,
+        table_files=table_files,
+        key_relations=key_relations,
+        brands=brands,
+    )
 
 
 def _coverage_metrics(left: pd.Series, right: pd.Series) -> Tuple[int, int, int, float]:
@@ -564,7 +637,6 @@ def build_purchase_item_join_diagnostics(
     random_n: int = 20,
 ) -> JoinDiagnostics:
     brands = list_brands(dataset_root, brand_app_ids=brand_app_ids)
-
     tables = load_tables(
         dataset_root=dataset_root,
         table_files=["purchase.parquet", "purchase_items.parquet"],
@@ -574,6 +646,21 @@ def build_purchase_item_join_diagnostics(
         },
         brand_app_ids=brand_app_ids,
     )
+    return build_purchase_item_join_diagnostics_from_tables(
+        tables=tables,
+        sample_n=sample_n,
+        random_n=random_n,
+        brands=brands,
+    )
+
+
+def build_purchase_item_join_diagnostics_from_tables(
+    tables: Mapping[str, pd.DataFrame],
+    sample_n: int = 5000,
+    random_n: int = 20,
+    brands: Optional[Sequence[str]] = None,
+) -> JoinDiagnostics:
+    brand_list = list(brands) if brands is not None else _brands_from_loaded_tables(tables)
     purchase_all = tables.get("purchase", pd.DataFrame())
     purchase_items_all = tables.get("purchase_items", pd.DataFrame())
 
@@ -584,7 +671,7 @@ def build_purchase_item_join_diagnostics(
     random_samples: Dict[str, Dict[str, List[str]]] = {}
     joinable_map: Dict[str, bool] = {}
 
-    for brand_id in brands:
+    for brand_id in brand_list:
         if not purchase_all.empty and "brand_id" in purchase_all.columns:
             purchase = purchase_all.loc[purchase_all["brand_id"] == brand_id].copy()
         else:
