@@ -27,7 +27,9 @@ def _slug(text: str) -> str:
     return s.strip("_") or "unknown"
 
 
-def _to_datetime(s: pd.Series) -> pd.Series:
+def _to_datetime(s):
+    if isinstance(s, pd.Series) and isinstance(s.dtype, pd.CategoricalDtype):
+        s = s.astype("string")
     return pd.to_datetime(s, errors="coerce", utc=True)
 
 
