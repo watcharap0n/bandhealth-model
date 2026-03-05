@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import time
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
@@ -119,6 +120,40 @@ def _brand_primary_app_id_map(brand_app_id_filters: Mapping[str, Sequence[int | 
 
 def _format_pct(v: float) -> str:
     return f"{v * 100:.2f}%"
+
+
+def _log(msg: str) -> None:
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{ts}] {msg}")
+
+
+def _stage_done(step_label: str, started_at: float, extra: Optional[str] = None) -> None:
+    elapsed = time.perf_counter() - started_at
+    if extra:
+        _log(f"{step_label} done in {elapsed:.2f}s | {extra}")
+    else:
+        _log(f"{step_label} done in {elapsed:.2f}s")
+
+
+def _table_rows_summary(tables: Mapping[str, pd.DataFrame]) -> str:
+    parts: List[str] = []
+    for table_name in sorted(tables.keys()):
+        value = tables.get(table_name)
+        if isinstance(value, pd.DataFrame):
+            parts.append(f"{table_name}={len(value)}")
+    return ", ".join(parts)
+
+
+def _zero_row_tables_summary(table_profile: pd.DataFrame) -> str:
+    if table_profile.empty:
+        return ""
+    if "rows" not in table_profile.columns or "brand_id" not in table_profile.columns or "table" not in table_profile.columns:
+        return ""
+    zero_df = table_profile[pd.to_numeric(table_profile["rows"], errors="coerce").fillna(0).eq(0)]
+    if zero_df.empty:
+        return ""
+    parts = [f"{row.brand_id}:{row.table}" for row in zero_df.itertuples()]
+    return ", ".join(parts)
 
 
 def _parse_bool_flag(v) -> bool:
@@ -805,6 +840,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[Sequence[str]] = None) -> None:
     parser = build_arg_parser()
     args = parser.parse_args(argv)
+    pipeline_started_at = time.perf_counter()
+    pipeline_started_dt = datetime.now()
 
     dataset_root = Path(args.dataset_root)
     reports_dir = Path(args.reports_dir)
@@ -834,10 +871,25 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         except ValueError:
             before_examples = pd.DataFrame()
 
-    print(f"Using app_id filters: {runtime_brand_app_filters}")
+    _log(
+        "Pipeline start | "
+        f"started_at={pipeline_started_dt.strftime('%Y-%m-%d %H:%M:%S')} "
+        f"source_mode={source_mode} skip_train={bool(args.skip_train)} "
+        f"sample_mode={str(args.train_sample_mode).strip().lower()} n_jobs={int(args.n_jobs)}"
+    )
+    _log(
+        f"Paths | dataset_root={dataset_root} reports_dir={reports_dir} outputs_dir={outputs_dir} artifacts_dir={artifacts_dir}"
+    )
+    _log(f"Using app_id filters: {runtime_brand_app_filters}")
     if source_mode == "databricks_sql":
         if databricks_cfg is None or query_selection is None:
             raise ValueError("Databricks SQL configuration is not available")
+        db_query_range = f"{query_selection.start_date or '-inf'} -> {query_selection.end_date or '+inf'}"
+        _log(
+            f"Databricks source | host={databricks_cfg.base_url} catalog={databricks_cfg.catalog} "
+            f"database={databricks_cfg.database} app_ids={list(query_selection.app_ids)} date_range={db_query_range}"
+        )
+        step_started_at = time.perf_counter()
         print("[0/7] Loading tables from Databricks SQL...")
         tables = load_tables_from_databricks_sql(
             config=databricks_cfg,
@@ -846,22 +898,48 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             table_map=CATALOG_TABLE_MAP,
             column_aliases=COLUMN_ALIASES,
         )
+        _stage_done("[0/7] Loading tables from Databricks SQL", step_started_at, _table_rows_summary(tables))
         log_memory_rss("after_load_tables", sink=memory_events)
 
+        step_started_at = time.perf_counter()
         print("[1/7] Building join diagnostics...")
         join_diag = build_purchase_item_join_diagnostics_from_tables(tables)
         write_join_diagnostics_markdown(join_diag, outputs_dir / "join_diagnostics.md")
+        _stage_done(
+            "[1/7] Building join diagnostics",
+            step_started_at,
+            f"relations={len(join_diag.coverage_summary)}",
+        )
 
+        step_started_at = time.perf_counter()
         print("[2/7] Profiling loaded datasets...")
         profile = profile_loaded_tables(tables=tables, table_files=TABLE_FILES)
+        _stage_done(
+            "[2/7] Profiling loaded datasets",
+            step_started_at,
+            f"table_profile_rows={len(profile.table_profile)} join_coverage_rows={len(profile.join_coverage)}",
+        )
     else:
+        step_started_at = time.perf_counter()
         print("[0/7] Building join diagnostics...")
         join_diag = build_purchase_item_join_diagnostics(dataset_root, brand_app_ids=runtime_brand_app_filters)
         write_join_diagnostics_markdown(join_diag, outputs_dir / "join_diagnostics.md")
+        _stage_done(
+            "[0/7] Building join diagnostics",
+            step_started_at,
+            f"relations={len(join_diag.coverage_summary)}",
+        )
 
+        step_started_at = time.perf_counter()
         print("[1/7] Profiling parquet datasets...")
         profile = profile_dataset(dataset_root, brand_app_ids=runtime_brand_app_filters)
+        _stage_done(
+            "[1/7] Profiling parquet datasets",
+            step_started_at,
+            f"table_profile_rows={len(profile.table_profile)} join_coverage_rows={len(profile.join_coverage)}",
+        )
 
+        step_started_at = time.perf_counter()
         print("[2/7] Loading tables for feature engineering...")
         tables = load_tables(
             dataset_root,
@@ -869,6 +947,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             columns_map=COLUMNS_MAP,
             brand_app_ids=runtime_brand_app_filters,
         )
+        _stage_done("[2/7] Loading tables for feature engineering", step_started_at, _table_rows_summary(tables))
         log_memory_rss("after_load_tables", sink=memory_events)
 
     save_profile(profile, reports_dir / "data_profile")
@@ -880,11 +959,15 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         time_diag_df=join_diag.time_range_summary,
         commerce_joinable=join_diag.commerce_joinable,
     )
+    zero_row_summary = _zero_row_tables_summary(profile.table_profile)
+    if zero_row_summary:
+        _log(f"Data warning | zero-row tables detected: {zero_row_summary}")
 
     table_rows_before_opt = {k: int(len(v)) for k, v in tables.items() if isinstance(v, pd.DataFrame)}
 
     dtype_opt_summary = pd.DataFrame()
     if memory_optimize:
+        step_started_at = time.perf_counter()
         tables, dtype_opt_summary = optimize_table_dict(
             tables,
             allow_float_downcast=memory_float_downcast,
@@ -903,8 +986,14 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
                     )
         if not dtype_opt_summary.empty:
             dtype_opt_summary.to_csv(outputs_dir / "memory_dtype_optimization.csv", index=False)
+        _stage_done(
+            "Memory optimization",
+            step_started_at,
+            f"tables_optimized={dtype_opt_summary['table'].nunique() if 'table' in dtype_opt_summary.columns else 0}",
+        )
     log_memory_rss("after_optimize_tables", sink=memory_events)
 
+    step_started_at = time.perf_counter()
     print("[3/7] Building features...")
     feature_df = build_feature_table(
         tables=tables,
@@ -915,8 +1004,14 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         raise RuntimeError("Feature table is empty; check source timestamps and schema.")
     write_parquet_chunked(feature_df, outputs_dir / "feature_table.parquet", chunk_rows=100_000)
     feature_df.to_csv(outputs_dir / "feature_table_sample.csv", index=False)
+    _stage_done(
+        "[3/7] Building features",
+        step_started_at,
+        f"rows={len(feature_df)} cols={len(feature_df.columns)}",
+    )
     log_memory_rss("after_build_feature_table", sink=memory_events)
 
+    step_started_at = time.perf_counter()
     print("[4/7] Building segment KPIs for Marketing Automation...")
     segment_kpi_df = compute_segment_kpis(
         tables=tables,
@@ -927,6 +1022,11 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     if not segment_kpi_df.empty:
         write_parquet_chunked(segment_kpi_df, outputs_dir / "segment_kpis.parquet", chunk_rows=100_000)
         segment_kpi_df.to_csv(outputs_dir / "segment_kpis.csv", index=False)
+    _stage_done(
+        "[4/7] Building segment KPIs for Marketing Automation",
+        step_started_at,
+        f"rows={len(segment_kpi_df)} cols={len(segment_kpi_df.columns) if not segment_kpi_df.empty else 0}",
+    )
     log_memory_rss("after_build_segment_kpis", sink=memory_events)
 
     # Release raw event tables as soon as all derived frames are built.
@@ -936,11 +1036,17 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     feature_defs = feature_definitions(feature_df)
     feature_defs.to_csv(outputs_dir / "feature_definitions.csv", index=False)
 
+    step_started_at = time.perf_counter()
     print("[5/7] Generating weak labels...")
     labeled_df = generate_weak_labels(feature_df)
     labeled_df = labeled_df.reset_index(drop=True)
     labeled_df["__row_id"] = np.arange(len(labeled_df), dtype=int)
     write_parquet_chunked(labeled_df, outputs_dir / "labeled_feature_table.parquet", chunk_rows=100_000)
+    _stage_done(
+        "[5/7] Generating weak labels",
+        step_started_at,
+        f"rows={len(labeled_df)} cols={len(labeled_df.columns)}",
+    )
     log_memory_rss("after_generate_labels", sink=memory_events)
 
     # No longer needed after labels/definitions are generated.
@@ -955,6 +1061,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     eval_row_ids: Optional[Sequence[int]] = None
 
     if sample_mode != "off":
+        step_started_at = time.perf_counter()
         print("[5.5/7] Building sampled train/eval subsets...")
         sample_cfg = TrainSampleConfig(
             mode=sample_mode,
@@ -983,11 +1090,17 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             )
         )
         print("Sample QA representative_pass={}".format(sample_result.qa_report.get("representative_pass")))
+        _stage_done(
+            "[5.5/7] Building sampled train/eval subsets",
+            step_started_at,
+            f"train_rows={len(sample_result.sampled_train_df)} eval_rows={len(sample_result.sampled_eval_df)} sampled_total={len(sample_result.sampled_df)}",
+        )
 
         # In sampled mode, full labeled_df can be released.
         del labeled_df
         collect_garbage("release_labeled_full_after_sampling", sink=memory_events)
 
+    step_started_at = time.perf_counter()
     print("[6/7] Training and evaluating models...")
     log_memory_rss("before_train_stage", sink=memory_events)
     train_weight_classes = _parse_bool_flag(args.train_weight_classes)
@@ -1042,8 +1155,14 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         class_labels = artifacts.class_labels
         metrics = artifacts.metrics
         selected_model = artifacts.metrics.get("selected_model")
+    _stage_done(
+        "[6/7] Training and evaluating models",
+        step_started_at,
+        f"selected_model={selected_model} feature_count={len(feature_columns)}",
+    )
     log_memory_rss("after_train_stage", sink=memory_events)
 
+    step_started_at = time.perf_counter()
     print("[7/7] Running inference + drivers + actions...")
     primary_app_id_map = _brand_primary_app_id_map(BRAND_APP_ID_FILTERS)
     pred_df = predict_with_drivers(
@@ -1057,6 +1176,11 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         top_n_drivers=5,
         top_n_actions=3,
         top_n_target_segments=3,
+    )
+    _stage_done(
+        "[7/7] Running inference + drivers + actions",
+        step_started_at,
+        f"rows_scored={len(pred_df)} columns={len(pred_df.columns)}",
     )
     log_memory_rss("after_inference_stage", sink=memory_events)
     save_predictions(pred_df, output_dir=outputs_dir)
@@ -1190,6 +1314,12 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         model_input_sample=mlflow_model_input_sample,
     )
 
+    total_elapsed = time.perf_counter() - pipeline_started_at
+    _log(
+        "Pipeline finished | "
+        f"elapsed={total_elapsed:.2f}s selected_model={selected_model} "
+        f"rows_scored={len(pred_df)} report={report_path} predictions={outputs_dir / 'predictions_with_drivers.jsonl'}"
+    )
     print("Done.")
     print(f"Report: {report_path}")
     print(f"Predictions: {outputs_dir / 'predictions_with_drivers.jsonl'}")

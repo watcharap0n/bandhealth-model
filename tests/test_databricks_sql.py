@@ -273,6 +273,61 @@ class ExecuteStatementTests(unittest.TestCase):
         self.assertIn("stmt-fail", str(ctx.exception))
         self.assertIn("FAILED", str(ctx.exception))
 
+    def test_execute_statement_collects_all_rows_with_chunk_index_pagination(self) -> None:
+        session = FakeSession(
+            post_responses=[
+                FakeResponse(
+                    {
+                        "statement_id": "stmt-idx",
+                        "status": {"state": "SUCCEEDED"},
+                        "manifest": {
+                            "schema": {
+                                "columns": [
+                                    {"name": "app_id"},
+                                    {"name": "user_id"},
+                                ]
+                            }
+                        },
+                        "result": {
+                            "data_array": [["123", "u1"]],
+                            "next_chunk_index": 1,
+                        },
+                    }
+                )
+            ],
+            get_responses=[
+                FakeResponse(
+                    {
+                        "statement_id": "stmt-idx",
+                        "result": {
+                            "data_array": [["124", "u2"]],
+                            "next_chunk_index": 2,
+                        },
+                    }
+                ),
+                FakeResponse(
+                    {
+                        "statement_id": "stmt-idx",
+                        "result": {
+                            "data_array": [["125", "u3"]],
+                        },
+                    }
+                ),
+            ],
+        )
+
+        result = execute_statement(
+            config=self.config,
+            statement="SELECT 1",
+            http_session=session,
+        )
+
+        self.assertEqual(result.columns, ["app_id", "user_id"])
+        self.assertEqual(result.rows, [["123", "u1"], ["124", "u2"], ["125", "u3"]])
+        self.assertEqual(len(session.get_calls), 2)
+        self.assertTrue(session.get_calls[0]["url"].endswith("/api/2.0/sql/statements/stmt-idx/result/chunks/1"))
+        self.assertTrue(session.get_calls[1]["url"].endswith("/api/2.0/sql/statements/stmt-idx/result/chunks/2"))
+
 
 class LoadTablesFromDatabricksSQLTests(unittest.TestCase):
     def test_loader_fetches_schema_then_data_and_applies_brand_alias(self) -> None:

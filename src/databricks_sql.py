@@ -248,6 +248,7 @@ def execute_statement(
         headers=headers,
         http_session=session,
         columns=columns,
+        statement_id=statement_id,
     )
     return StatementResult(rows=rows, columns=columns, statement_id=statement_id)
 
@@ -345,23 +346,58 @@ def _collect_all_rows(
     headers: Mapping[str, str],
     http_session: Optional[Any],
     columns: Sequence[str],
+    statement_id: str,
 ) -> List[List[Any]]:
     session = http_session or requests.Session()
     rows: List[List[Any]] = []
     payload = _result_payload(doc)
     rows.extend(_rows_from_payload(payload, columns=columns, http_session=session))
-    next_link = str(payload.get("next_chunk_internal_link") or "").strip()
+    next_link, next_index = _next_chunk_pointer(payload)
+    visited_chunk_urls: set[str] = set()
 
-    while next_link:
-        chunk_url = _absolute_url(config.base_url, next_link)
+    while next_link or next_index is not None:
+        if next_link:
+            chunk_url = _absolute_url(config.base_url, next_link)
+        else:
+            if not statement_id:
+                raise DatabricksStatementError(
+                    statement_id="",
+                    state="UNKNOWN",
+                    message="Missing statement_id while paginating SQL statement result chunks",
+                )
+            chunk_url = f"{config.base_url}/api/2.0/sql/statements/{statement_id}/result/chunks/{next_index}"
+
+        if chunk_url in visited_chunk_urls:
+            raise DatabricksStatementError(
+                statement_id=statement_id,
+                state="FAILED",
+                message=f"Detected repeated chunk URL while paginating results: {chunk_url}",
+            )
+        visited_chunk_urls.add(chunk_url)
+
         response = session.get(chunk_url, headers=headers, timeout=60)
         response.raise_for_status()
         chunk_doc = response.json()
         chunk_payload = _result_payload(chunk_doc)
         rows.extend(_rows_from_payload(chunk_payload, columns=columns, http_session=session))
-        next_link = str(chunk_payload.get("next_chunk_internal_link") or "").strip()
+        next_link, next_index = _next_chunk_pointer(chunk_payload)
 
     return rows
+
+
+def _next_chunk_pointer(payload: Mapping[str, Any]) -> Tuple[str, Optional[int]]:
+    next_link = str(payload.get("next_chunk_internal_link") or "").strip()
+
+    raw_index = payload.get("next_chunk_index")
+    next_index: Optional[int]
+    if raw_index in (None, ""):
+        next_index = None
+    else:
+        try:
+            next_index = int(raw_index)
+        except (TypeError, ValueError):
+            next_index = None
+    return next_link, next_index
 
 
 def _result_payload(doc: Mapping[str, Any]) -> Dict[str, Any]:
