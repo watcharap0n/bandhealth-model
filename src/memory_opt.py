@@ -253,13 +253,18 @@ def write_parquet_chunked(
         pq.write_table(empty, path, compression=compression)
         return
 
+    # Avoid mixed inferred schemas across chunks (e.g., all-null chunk -> null type).
+    # We infer once from the full DataFrame and force every chunk to this schema.
+    schema = pa.Schema.from_pandas(df, preserve_index=False)
+    if path.exists() and path.is_file():
+        path.unlink()
+
     writer: Optional[pq.ParquetWriter] = None
     try:
+        writer = pq.ParquetWriter(path, schema, compression=compression)
         for start in range(0, len(df), max(1, int(chunk_rows))):
             chunk = df.iloc[start : start + int(chunk_rows)]
-            table = pa.Table.from_pandas(chunk, preserve_index=False)
-            if writer is None:
-                writer = pq.ParquetWriter(path, table.schema, compression=compression)
+            table = pa.Table.from_pandas(chunk, schema=schema, preserve_index=False, safe=False)
             writer.write_table(table)
     finally:
         if writer is not None:
