@@ -453,6 +453,65 @@ class RuntimeValidationTests(unittest.TestCase):
             },
         )
 
+    def test_databricks_pyspark_mode_uses_default_brand_mapping(self) -> None:
+        parser = run_pipeline.build_arg_parser()
+        args = parser.parse_args(["--source-mode", "databricks_pyspark"])
+
+        runtime_filters, config, selection = run_pipeline._resolve_source_runtime(args)
+
+        self.assertIsNone(config)
+        self.assertIsNotNone(selection)
+        assert selection is not None
+        self.assertEqual(
+            runtime_filters,
+            {
+                "c-vit": ["1993744540760190"],
+                "see-chan": ["838315041537793"],
+            },
+        )
+        self.assertEqual(set(selection.app_ids), {"1993744540760190", "838315041537793"})
+        self.assertEqual(
+            selection.brand_aliases,
+            {
+                "1993744540760190": "c-vit",
+                "838315041537793": "see-chan",
+            },
+        )
+
+    def test_databricks_pyspark_mode_respects_query_ids_and_aliases(self) -> None:
+        parser = run_pipeline.build_arg_parser()
+        args = parser.parse_args(
+            [
+                "--source-mode",
+                "databricks_pyspark",
+                "--query-app-ids",
+                "101,102",
+                "--brand-aliases",
+                "101=brand-a",
+            ]
+        )
+
+        runtime_filters, config, selection = run_pipeline._resolve_source_runtime(args)
+
+        self.assertIsNone(config)
+        self.assertIsNotNone(selection)
+        assert selection is not None
+        self.assertEqual(
+            runtime_filters,
+            {
+                "brand-a": ["101"],
+                "102": ["102"],
+            },
+        )
+        self.assertEqual(selection.app_ids, ("101", "102"))
+        self.assertEqual(
+            selection.brand_aliases,
+            {
+                "101": "brand-a",
+                "102": "102",
+            },
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

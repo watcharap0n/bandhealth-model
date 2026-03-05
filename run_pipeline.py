@@ -30,6 +30,7 @@ from src.databricks_sql import (
     group_app_ids_by_brand,
     load_tables_from_databricks_sql,
 )
+from src.databricks_pyspark import load_tables_from_databricks_pyspark
 from src.features import build_feature_table, feature_definitions
 from src.infer import load_model_artifacts, load_model_from_mlflow, predict_with_drivers, save_predictions
 from src.labeling import generate_weak_labels, labeling_thresholds
@@ -215,6 +216,30 @@ def _default_brand_app_id_filters() -> Dict[str, List[str]]:
     return {str(brand_id): [str(app_id) for app_id in app_ids] for brand_id, app_ids in BRAND_APP_ID_FILTERS.items()}
 
 
+def _flatten_runtime_app_ids(runtime_filters: Mapping[str, Sequence[str]]) -> List[str]:
+    out: List[str] = []
+    seen: set[str] = set()
+    for brand_id in sorted(runtime_filters.keys()):
+        for app_id in runtime_filters.get(brand_id, []):
+            key = str(app_id).strip()
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            out.append(key)
+    return out
+
+
+def _build_brand_aliases_from_runtime_filters(runtime_filters: Mapping[str, Sequence[str]]) -> Dict[str, str]:
+    out: Dict[str, str] = {}
+    for brand_id, app_ids in runtime_filters.items():
+        for app_id in app_ids:
+            key = str(app_id).strip()
+            if not key:
+                continue
+            out[key] = str(brand_id)
+    return out
+
+
 def _env_or_value(explicit_value: Optional[str], env_name: str, default: Optional[str] = None) -> Optional[str]:
     if explicit_value is not None and str(explicit_value).strip():
         return str(explicit_value).strip()
@@ -232,8 +257,25 @@ def _resolve_source_runtime(
     source_mode = str(getattr(args, "source_mode", "parquet")).strip().lower()
 
     runtime_filters = _runtime_brand_app_id_filters(query_app_ids, brand_aliases) if query_app_ids else _default_brand_app_id_filters()
-    if source_mode != "databricks_sql":
+    if source_mode == "parquet":
         return runtime_filters, None, None
+
+    start_date = _parse_optional_date(getattr(args, "query_start_date", None), "query_start_date")
+    end_date = _parse_optional_date(getattr(args, "query_end_date", None), "query_end_date")
+    if start_date is not None and end_date is not None and start_date > end_date:
+        raise ValueError("query_start_date cannot be later than query_end_date")
+
+    if source_mode == "databricks_pyspark":
+        selection_app_ids = list(query_app_ids) if query_app_ids else _flatten_runtime_app_ids(runtime_filters)
+        if not selection_app_ids:
+            raise ValueError("Missing required app_id filters for databricks_pyspark mode")
+        selection = QuerySelection(
+            app_ids=tuple(selection_app_ids),
+            brand_aliases=_build_brand_aliases_from_runtime_filters(runtime_filters),
+            start_date=start_date,
+            end_date=end_date,
+        )
+        return runtime_filters, None, selection
 
     missing: List[str] = []
     host = _env_or_value(getattr(args, "databricks_host", None), "DATABRICKS_HOST")
@@ -252,11 +294,6 @@ def _resolve_source_runtime(
         missing.append("databricks_warehouse_id")
     if missing:
         raise ValueError(f"Missing required arguments for databricks_sql mode: {', '.join(missing)}")
-
-    start_date = _parse_optional_date(getattr(args, "query_start_date", None), "query_start_date")
-    end_date = _parse_optional_date(getattr(args, "query_end_date", None), "query_end_date")
-    if start_date is not None and end_date is not None and start_date > end_date:
-        raise ValueError("query_start_date cannot be later than query_end_date")
 
     config = DatabricksSQLConfig(
         host=str(host),
@@ -798,7 +835,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--reports-dir", type=str, default="reports")
     parser.add_argument("--outputs-dir", type=str, default="outputs")
     parser.add_argument("--artifacts-dir", type=str, default="artifacts")
-    parser.add_argument("--source-mode", type=str, default="parquet", choices=["parquet", "databricks_sql"])
+    parser.add_argument(
+        "--source-mode",
+        type=str,
+        default="parquet",
+        choices=["parquet", "databricks_sql", "databricks_pyspark"],
+    )
     parser.add_argument("--query-app-ids", type=str, default=None)
     parser.add_argument("--brand-aliases", type=str, default=None)
     parser.add_argument("--query-start-date", type=str, default=None)
@@ -810,6 +852,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--databricks-database", type=str, default="datacleansing")
     parser.add_argument("--databricks-wait-timeout", type=str, default="30s")
     parser.add_argument("--databricks-poll-interval-seconds", type=int, default=2)
+    parser.add_argument("--databricks-spark-recent-days", type=int, default=0)
+    parser.add_argument("--databricks-spark-max-rows-per-table", type=int, default=0)
+    parser.add_argument("--databricks-spark-explain-pushdown", type=str, default="false")
     parser.add_argument("--mlflow-enable", type=str, default="false")
     parser.add_argument("--mlflow-experiment", type=str, default=None)
     parser.add_argument("--mlflow-run-name", type=str, default=None)
@@ -881,24 +926,50 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         f"Paths | dataset_root={dataset_root} reports_dir={reports_dir} outputs_dir={outputs_dir} artifacts_dir={artifacts_dir}"
     )
     _log(f"Using app_id filters: {runtime_brand_app_filters}")
-    if source_mode == "databricks_sql":
-        if databricks_cfg is None or query_selection is None:
-            raise ValueError("Databricks SQL configuration is not available")
+    if source_mode in {"databricks_sql", "databricks_pyspark"}:
+        if query_selection is None:
+            raise ValueError(f"{source_mode} configuration is not available")
         db_query_range = f"{query_selection.start_date or '-inf'} -> {query_selection.end_date or '+inf'}"
-        _log(
-            f"Databricks source | host={databricks_cfg.base_url} catalog={databricks_cfg.catalog} "
-            f"database={databricks_cfg.database} app_ids={list(query_selection.app_ids)} date_range={db_query_range}"
-        )
-        step_started_at = time.perf_counter()
-        print("[0/7] Loading tables from Databricks SQL...")
-        tables = load_tables_from_databricks_sql(
-            config=databricks_cfg,
-            selection=query_selection,
-            columns_map=COLUMNS_MAP,
-            table_map=CATALOG_TABLE_MAP,
-            column_aliases=COLUMN_ALIASES,
-        )
-        _stage_done("[0/7] Loading tables from Databricks SQL", step_started_at, _table_rows_summary(tables))
+        if source_mode == "databricks_sql":
+            if databricks_cfg is None:
+                raise ValueError("Databricks SQL configuration is not available")
+            _log(
+                f"Databricks source | host={databricks_cfg.base_url} catalog={databricks_cfg.catalog} "
+                f"database={databricks_cfg.database} app_ids={list(query_selection.app_ids)} date_range={db_query_range}"
+            )
+            step_started_at = time.perf_counter()
+            print("[0/7] Loading tables from Databricks SQL...")
+            tables = load_tables_from_databricks_sql(
+                config=databricks_cfg,
+                selection=query_selection,
+                columns_map=COLUMNS_MAP,
+                table_map=CATALOG_TABLE_MAP,
+                column_aliases=COLUMN_ALIASES,
+            )
+            _stage_done("[0/7] Loading tables from Databricks SQL", step_started_at, _table_rows_summary(tables))
+        else:
+            spark_recent_days = max(0, int(getattr(args, "databricks_spark_recent_days", 0)))
+            spark_max_rows = max(0, int(getattr(args, "databricks_spark_max_rows_per_table", 0)))
+            spark_explain = _parse_bool_flag(getattr(args, "databricks_spark_explain_pushdown", "false"))
+            _log(
+                f"Databricks PySpark source | catalog={args.databricks_catalog} database={args.databricks_database} "
+                f"app_ids={list(query_selection.app_ids)} date_range={db_query_range} "
+                f"recent_days={spark_recent_days} max_rows_per_table={spark_max_rows}"
+            )
+            step_started_at = time.perf_counter()
+            print("[0/7] Loading tables from Databricks PySpark...")
+            tables = load_tables_from_databricks_pyspark(
+                selection=query_selection,
+                columns_map=COLUMNS_MAP,
+                catalog=str(args.databricks_catalog),
+                database=str(args.databricks_database),
+                table_map=CATALOG_TABLE_MAP,
+                column_aliases=COLUMN_ALIASES,
+                recent_days=spark_recent_days,
+                max_rows_per_table=spark_max_rows,
+                explain_pushdown=spark_explain,
+            )
+            _stage_done("[0/7] Loading tables from Databricks PySpark", step_started_at, _table_rows_summary(tables))
         log_memory_rss("after_load_tables", sink=memory_events)
 
         step_started_at = time.perf_counter()
