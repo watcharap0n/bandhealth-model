@@ -104,6 +104,19 @@ def _extract_model_feature_columns(model) -> Optional[List[str]]:
     return None
 
 
+def _coerce_attr_values(values) -> List[str]:
+    if values is None:
+        return []
+    if isinstance(values, np.ndarray):
+        return [str(x) for x in values.tolist()]
+    if isinstance(values, (pd.Index, list, tuple)):
+        return [str(x) for x in list(values)]
+    try:
+        return [str(x) for x in list(values)]
+    except TypeError:
+        return [str(values)]
+
+
 def load_model_artifacts(artifact_dir: str | Path):
     artifact_path = Path(artifact_dir)
     model = joblib.load(artifact_path / "brand_health_model.joblib")
@@ -149,11 +162,13 @@ def load_model_from_mlflow(
 
     feature_columns = metadata.get("feature_columns")
     if not feature_columns:
-        feature_columns = list(getattr(model, "feature_names_in_", []) or [])
+        feature_columns = _extract_model_feature_columns(model)
+    if not feature_columns:
+        feature_columns = _coerce_attr_values(getattr(model, "feature_names_in_", None))
 
     class_labels = metadata.get("class_labels")
     if not class_labels:
-        class_labels = list(getattr(model, "classes_", []) or [])
+        class_labels = _coerce_attr_values(getattr(model, "classes_", None))
 
     return {
         "model": model,
