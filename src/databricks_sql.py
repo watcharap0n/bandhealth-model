@@ -47,6 +47,14 @@ PRIMARY_TIME_EXPRESSIONS: Dict[str, str] = {
     "user_device": "to_timestamp(lastaccess)",
 }
 
+APP_ID_NORMALIZED_SQL = (
+    "coalesce("
+    "cast(try_cast(app_id AS BIGINT) AS STRING), "
+    "regexp_replace(trim(cast(app_id AS STRING)), '\\\\.0+$', ''), "
+    "trim(cast(app_id AS STRING))"
+    ")"
+)
+
 
 @dataclass(frozen=True)
 class DatabricksSQLConfig:
@@ -122,7 +130,7 @@ def build_table_statement(
 
     quoted_cols = ", ".join(cols)
     table_ref = f"{catalog}.{database}.{source_table}"
-    where_parts = [f"CAST(app_id AS STRING) IN ({', '.join(placeholders)})"]
+    where_parts = [f"{APP_ID_NORMALIZED_SQL} IN ({', '.join(placeholders)})"]
     params = list(app_params)
 
     time_expr = PRIMARY_TIME_EXPRESSIONS.get(canonical_table)
@@ -271,7 +279,13 @@ def canonicalize_table_frame(
         if col not in out.columns:
             out[col] = pd.NA
 
-    app_values = out["app_id"].astype("string").fillna(pd.NA)
+    app_values = out["app_id"].astype("string").str.strip().fillna(pd.NA)
+    app_as_num = pd.to_numeric(app_values, errors="coerce")
+    numeric_mask = app_as_num.notna()
+    if bool(numeric_mask.any()):
+        app_values = app_values.copy()
+        app_values.loc[numeric_mask] = app_as_num.loc[numeric_mask].astype("Int64").astype("string")
+    out["app_id"] = app_values
     alias_lookup = {str(k): str(v) for k, v in (brand_aliases or {}).items()}
     out["brand_id"] = app_values.map(lambda x: alias_lookup.get(str(x), str(x)) if pd.notna(x) else pd.NA)
 

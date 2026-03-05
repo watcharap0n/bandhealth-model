@@ -78,7 +78,8 @@ class BuildTableStatementTests(unittest.TestCase):
             selection=selection,
         )
 
-        self.assertIn("CAST(app_id AS STRING) IN (:app_id_0, :app_id_1)", sql)
+        self.assertIn("coalesce(cast(try_cast(app_id AS BIGINT) AS STRING)", sql)
+        self.assertIn("IN (:app_id_0, :app_id_1)", sql)
         self.assertNotIn("start_ts", sql)
         self.assertNotIn("end_ts_exclusive", sql)
         self.assertEqual(
@@ -127,7 +128,8 @@ class BuildTableStatementTests(unittest.TestCase):
             selection=selection,
         )
 
-        self.assertIn("CAST(app_id AS STRING) IN (:app_id_0)", sql)
+        self.assertIn("coalesce(cast(try_cast(app_id AS BIGINT) AS STRING)", sql)
+        self.assertIn("IN (:app_id_0)", sql)
         self.assertNotIn("start_ts", sql)
         self.assertNotIn("end_ts_exclusive", sql)
         self.assertEqual(len(params), 1)
@@ -192,6 +194,18 @@ class CanonicalizationTests(unittest.TestCase):
         )
         self.assertEqual(out.loc[0, "brand_id"], "c-vit")
         self.assertEqual(out.loc[1, "brand_id"], "999")
+
+    def test_brand_alias_handles_numeric_like_string_app_id(self) -> None:
+        df = pd.DataFrame([{"app_id": "123.0", "user_id": "u1"}])
+        out = canonicalize_table_frame(
+            canonical_table="user_identity",
+            df=df,
+            requested_columns=run_pipeline.COLUMNS_MAP["user_identity"],
+            brand_aliases={"123": "c-vit"},
+            alias_map={},
+        )
+        self.assertEqual(out.loc[0, "app_id"], "123")
+        self.assertEqual(out.loc[0, "brand_id"], "c-vit")
 
 
 class ExecuteStatementTests(unittest.TestCase):
