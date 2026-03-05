@@ -31,6 +31,7 @@ from src.databricks_sql import (
     load_tables_from_databricks_sql,
 )
 from src.databricks_pyspark import load_tables_from_databricks_pyspark
+from src.databricks_catalog_publish import publish_kpis_predicted_to_catalog
 from src.features import build_feature_table, feature_definitions
 from src.infer import load_model_artifacts, load_model_from_mlflow, predict_with_drivers, save_predictions
 from src.labeling import generate_weak_labels, labeling_thresholds
@@ -353,6 +354,27 @@ def _resolve_model_runtime(args: argparse.Namespace) -> Dict[str, str]:
         "source": model_source,
         "mlflow_model_uri": str(mlflow_model_uri) if mlflow_model_uri else "",
         "mlflow_registry_uri": str(mlflow_registry_uri or "databricks"),
+    }
+
+
+def _resolve_publish_runtime(args: argparse.Namespace, source_mode: str) -> Dict[str, object]:
+    enabled = _parse_bool_flag(getattr(args, "publish_kpis_predicted", "false"))
+    table_name = str(getattr(args, "publish_kpis_table", "projects_prd.marketingautomation.kpis_predicted")).strip()
+    write_mode = str(getattr(args, "publish_kpis_write_mode", "overwrite")).strip().lower() or "overwrite"
+    fail_on_cast_error = _parse_bool_flag(getattr(args, "publish_kpis_fail_on_cast_error", "true"))
+
+    if enabled and source_mode != "databricks_pyspark":
+        raise ValueError("--publish-kpis-predicted requires --source-mode databricks_pyspark")
+    if write_mode not in {"overwrite"}:
+        raise ValueError("publish_kpis_write_mode must be: overwrite")
+    if enabled and not table_name:
+        raise ValueError("publish_kpis_table is required when publish_kpis_predicted is enabled")
+
+    return {
+        "enabled": bool(enabled),
+        "table_name": table_name,
+        "write_mode": write_mode,
+        "fail_on_cast_error": bool(fail_on_cast_error),
     }
 
 
@@ -855,6 +877,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--databricks-spark-recent-days", type=int, default=0)
     parser.add_argument("--databricks-spark-max-rows-per-table", type=int, default=0)
     parser.add_argument("--databricks-spark-explain-pushdown", type=str, default="false")
+    parser.add_argument("--publish-kpis-predicted", type=str, default="false")
+    parser.add_argument("--publish-kpis-table", type=str, default="projects_prd.marketingautomation.kpis_predicted")
+    parser.add_argument("--publish-kpis-write-mode", type=str, choices=["overwrite"], default="overwrite")
+    parser.add_argument("--publish-kpis-fail-on-cast-error", type=str, default="true")
     parser.add_argument("--mlflow-enable", type=str, default="false")
     parser.add_argument("--mlflow-experiment", type=str, default=None)
     parser.add_argument("--mlflow-run-name", type=str, default=None)
@@ -893,6 +919,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     outputs_dir = Path(args.outputs_dir)
     artifacts_dir = Path(args.artifacts_dir)
     source_mode = str(args.source_mode).strip().lower()
+    publish_cfg = _resolve_publish_runtime(args, source_mode=source_mode)
     runtime_brand_app_filters, databricks_cfg, query_selection = _resolve_source_runtime(args)
     mlflow_cfg = _resolve_mlflow_runtime(args)
     model_cfg = _resolve_model_runtime(args)
@@ -926,6 +953,10 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         f"Paths | dataset_root={dataset_root} reports_dir={reports_dir} outputs_dir={outputs_dir} artifacts_dir={artifacts_dir}"
     )
     _log(f"Using app_id filters: {runtime_brand_app_filters}")
+    _log(
+        "Catalog publish config | "
+        f"enabled={publish_cfg['enabled']} table={publish_cfg['table_name']} mode={publish_cfg['write_mode']}"
+    )
     if source_mode in {"databricks_sql", "databricks_pyspark"}:
         if query_selection is None:
             raise ValueError(f"{source_mode} configuration is not available")
@@ -1255,6 +1286,41 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     )
     log_memory_rss("after_inference_stage", sink=memory_events)
     save_predictions(pred_df, output_dir=outputs_dir)
+    catalog_publish_summary: Dict[str, object] = {
+        "enabled": bool(publish_cfg.get("enabled", False)),
+        "table": str(publish_cfg.get("table_name", "")),
+        "write_mode": str(publish_cfg.get("write_mode", "overwrite")),
+        "rows_written": 0,
+        "status": "disabled",
+        "error": "",
+    }
+    if bool(publish_cfg.get("enabled", False)):
+        step_started_at = time.perf_counter()
+        print("[7.1/7] Publishing predictions to Unity Catalog...")
+        try:
+            publish_result = publish_kpis_predicted_to_catalog(
+                pred_df=pred_df,
+                table_name=str(publish_cfg.get("table_name", "")),
+                write_mode=str(publish_cfg.get("write_mode", "overwrite")),
+                fail_on_cast_error=bool(publish_cfg.get("fail_on_cast_error", True)),
+            )
+        except Exception as exc:
+            catalog_publish_summary["status"] = "failed"
+            catalog_publish_summary["error"] = str(exc)
+            _stage_done(
+                "[7.1/7] Publishing predictions to Unity Catalog",
+                step_started_at,
+                "failed",
+            )
+            raise
+        catalog_publish_summary["rows_written"] = int(publish_result.get("rows_written", 0))
+        catalog_publish_summary["status"] = "success"
+        _stage_done(
+            "[7.1/7] Publishing predictions to Unity Catalog",
+            step_started_at,
+            f"rows_written={catalog_publish_summary['rows_written']} table={catalog_publish_summary['table']}",
+        )
+
     attribution_qa = dict(pred_df.attrs.get("attribution_qa", {}))
     (outputs_dir / "attribution_qa.json").write_text(json.dumps(attribution_qa, indent=2), encoding="utf-8")
 
@@ -1358,6 +1424,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         "feature_count": len(feature_columns),
         "example_count": len(examples),
         "attribution_qa": attribution_qa,
+        "catalog_publish": catalog_publish_summary,
         "memory_optimization": {
             "enabled": bool(memory_optimize),
             "dtype_tables_optimized": int(len(dtype_opt_records)),

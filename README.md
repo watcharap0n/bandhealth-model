@@ -219,6 +219,11 @@ python3 run_pipeline.py \
 - `outputs/model_metrics_sample.json` (written when `--train_sample_mode != off`)
 - `outputs/predictions_last_windows_sample.json` (written when `--train_sample_mode != off`)
 
+Optional Unity Catalog publish (Databricks Spark mode):
+- enable `--publish-kpis-predicted true` with `--source-mode databricks_pyspark`
+- default target table: `projects_prd.marketingautomation.kpis_predicted`
+- current write mode: `overwrite`
+
 ### Sampling artifacts (quick/smart)
 - `outputs/sample_train_indices.csv`
 - `outputs/sample_eval_indices.csv`

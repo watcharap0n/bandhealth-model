@@ -60,6 +60,10 @@ python3 run_pipeline.py \
 | `--memory_float_downcast` | `bool-like str` | `false` | Allows float64→float32 downcast when `allclose(rtol=1e-6)` validation passes. Keep `false` for strict parity. | Large-memory datasets after parity check | `--memory_float_downcast true` |
 | `--memory_cat_ratio_threshold` | `float` | `0.5` | Converts object columns to category when `nunique/nrows < threshold`. | Memory-heavy string columns | `--memory_cat_ratio_threshold 0.4` |
 | `--memory_validate_downcast` | `bool-like str` | `true` | Validates value parity after downcast/categorical conversion. | Keep enabled for safety | `--memory_validate_downcast true` |
+| `--publish-kpis-predicted` | `bool-like str` | `false` | Publish full `pred_df` to Unity Catalog table (only with `--source-mode databricks_pyspark`). | Databricks production scoring | `--publish-kpis-predicted true` |
+| `--publish-kpis-table` | `str` | `projects_prd.marketingautomation.kpis_predicted` | Target Unity Catalog table for prediction publish. | When enabling publish | `--publish-kpis-table projects_prd.marketingautomation.kpis_predicted` |
+| `--publish-kpis-write-mode` | `overwrite` | `overwrite` | Write behavior for publish target table. Current supported mode is overwrite. | When enabling publish | `--publish-kpis-write-mode overwrite` |
+| `--publish-kpis-fail-on-cast-error` | `bool-like str` | `true` | Fail pipeline when schema-alignment cast fails before writing to catalog. | Keep enabled for data safety | `--publish-kpis-fail-on-cast-error true` |
 
 Important notes:
 - `--train_sample_frac` is used only in `quick` mode.
@@ -67,6 +71,7 @@ Important notes:
 - With `--train_sample_mode off`, sampling parameters are ignored for row reduction.
 - `predicted_health_class` in `--train_stratify_cols` is internally mapped to `label_health_class`.
 - Memory diagnostics are written to `outputs/memory_optimization_report.json`.
+- Catalog publish requires Spark runtime and `--source-mode databricks_pyspark`.
 
 ## 3) Recommended presets
 
@@ -142,6 +147,21 @@ python3 run_pipeline.py \
   --report-name buzz_infer_report.md \
   --snapshot-freq 7D \
   --skip-train
+```
+
+### 4.5 Publish predicted KPIs to Unity Catalog table
+
+```bash
+python3 run_pipeline.py \
+  --source-mode databricks_pyspark \
+  --query-app-ids 1993744540760190,838315041537793 \
+  --brand-aliases 1993744540760190=c-vit,838315041537793=see-chan \
+  --databricks-catalog projects_prd \
+  --databricks-database datacleansing \
+  --publish-kpis-predicted true \
+  --publish-kpis-table projects_prd.marketingautomation.kpis_predicted \
+  --publish-kpis-write-mode overwrite \
+  --publish-kpis-fail-on-cast-error true
 ```
 
 ## 5) Key output files to verify

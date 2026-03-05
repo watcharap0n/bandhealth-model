@@ -512,6 +512,31 @@ class RuntimeValidationTests(unittest.TestCase):
             },
         )
 
+    def test_publish_defaults_are_set(self) -> None:
+        parser = run_pipeline.build_arg_parser()
+        args = parser.parse_args([])
+
+        cfg = run_pipeline._resolve_publish_runtime(args, source_mode="parquet")
+
+        self.assertEqual(
+            cfg,
+            {
+                "enabled": False,
+                "table_name": "projects_prd.marketingautomation.kpis_predicted",
+                "write_mode": "overwrite",
+                "fail_on_cast_error": True,
+            },
+        )
+
+    def test_publish_requires_databricks_pyspark_source_mode(self) -> None:
+        parser = run_pipeline.build_arg_parser()
+        args = parser.parse_args(["--publish-kpis-predicted", "true"])
+
+        with self.assertRaises(ValueError) as ctx:
+            run_pipeline._resolve_publish_runtime(args, source_mode="parquet")
+
+        self.assertIn("--source-mode databricks_pyspark", str(ctx.exception))
+
 
 if __name__ == "__main__":
     unittest.main()
