@@ -1,4 +1,7 @@
-.PHONY: help build up run run-skip-train shell clean logs
+.PHONY: help build up run run-skip-train run-hop run-hop-auto run-hop-chain shell clean logs
+
+RUN_ID ?= local-run
+HOP ?= load_tables
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -42,6 +45,40 @@ run-v2: ## Run pipeline and generate V2 report
 		--snapshot-freq 7D \
 		--report-name band_health_report_V2.md
 
+run-hop: ## Run one hop manually (set HOP=<hop>, RUN_ID=<run-id>)
+	docker-compose run --rm brand-health-pipeline \
+		python run_pipeline_hops.py $(HOP) \
+		--run-id $(RUN_ID) \
+		--dataset-root datasets \
+		--reports-dir reports \
+		--outputs-dir outputs \
+		--artifacts-dir artifacts \
+		--snapshot-freq 7D
+
+run-hop-auto: ## Run one hop with --auto-upstream (set HOP=<hop>, RUN_ID=<run-id>)
+	docker-compose run --rm brand-health-pipeline \
+		python run_pipeline_hops.py $(HOP) \
+		--run-id $(RUN_ID) \
+		--auto-upstream \
+		--dataset-root datasets \
+		--reports-dir reports \
+		--outputs-dir outputs \
+		--artifacts-dir artifacts \
+		--snapshot-freq 7D
+
+run-hop-chain: ## Run full 9-hop chain in one container (set RUN_ID=<run-id>)
+	docker-compose run --rm brand-health-pipeline sh -lc "\
+		python run_pipeline_hops.py load_tables --run-id $(RUN_ID) --dataset-root datasets --reports-dir reports --outputs-dir outputs --artifacts-dir artifacts --snapshot-freq 7D && \
+		python run_pipeline_hops.py join_diagnostics --run-id $(RUN_ID) --dataset-root datasets --reports-dir reports --outputs-dir outputs --artifacts-dir artifacts --snapshot-freq 7D && \
+		python run_pipeline_hops.py profile --run-id $(RUN_ID) --dataset-root datasets --reports-dir reports --outputs-dir outputs --artifacts-dir artifacts --snapshot-freq 7D && \
+		python run_pipeline_hops.py features --run-id $(RUN_ID) --dataset-root datasets --reports-dir reports --outputs-dir outputs --artifacts-dir artifacts --snapshot-freq 7D && \
+		python run_pipeline_hops.py segments --run-id $(RUN_ID) --dataset-root datasets --reports-dir reports --outputs-dir outputs --artifacts-dir artifacts --snapshot-freq 7D && \
+		python run_pipeline_hops.py labels --run-id $(RUN_ID) --dataset-root datasets --reports-dir reports --outputs-dir outputs --artifacts-dir artifacts --snapshot-freq 7D && \
+		python run_pipeline_hops.py train --run-id $(RUN_ID) --dataset-root datasets --reports-dir reports --outputs-dir outputs --artifacts-dir artifacts --snapshot-freq 7D && \
+		python run_pipeline_hops.py infer --run-id $(RUN_ID) --dataset-root datasets --reports-dir reports --outputs-dir outputs --artifacts-dir artifacts --snapshot-freq 7D && \
+		python run_pipeline_hops.py publish --run-id $(RUN_ID) --dataset-root datasets --reports-dir reports --outputs-dir outputs --artifacts-dir artifacts --snapshot-freq 7D \
+	"
+
 shell: ## Open interactive shell in container
 	docker-compose run --rm brand-health-pipeline /bin/bash
 
@@ -55,4 +92,3 @@ clean: ## Remove stopped containers and dangling images
 clean-all: ## Remove all containers, images, and volumes
 	docker-compose down -v
 	docker system prune -af
-

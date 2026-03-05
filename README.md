@@ -13,6 +13,7 @@ The pipeline:
 ## 1) Project structure
 
 - `run_pipeline.py`: end-to-end pipeline entrypoint
+- `run_pipeline_hops.py`: hop-based pipeline entrypoint for stage-by-stage execution
 - `notebooks/databricks/`: Azure Databricks + MLflow notebook pack
 - `src/data_load.py`: loading, validation, join diagnostics
 - `src/features.py`: feature engineering
@@ -21,6 +22,7 @@ The pipeline:
 - `src/train.py`: sklearn training/evaluation
 - `src/infer.py`: inference + attribution + QA guardrails
 - `src/memory_opt.py`: memory optimization helpers (dtype downcast, chunked parquet, RSS logging)
+- `src/pipeline_checkpoints.py`: run-id checkpoint manager for hop pipeline state
 - `src/drivers.py`: driver extraction
 - `src/playbook.py`: action mapping
 
@@ -175,6 +177,69 @@ python3 run_pipeline.py \
   --report-name band_health_report_V2.md \
   --skip-train
 ```
+
+### 4.5 Hop-based execution (manual / Databricks Jobs)
+
+Use this mode when you want to run or rerun only specific stages without rerunning the whole flow.
+
+Command format:
+
+```bash
+python3 run_pipeline_hops.py <hop> \
+  --run-id <RUN_ID> \
+  [--auto-upstream] \
+  [--force] \
+  --dataset-root datasets \
+  --reports-dir reports \
+  --outputs-dir outputs \
+  --artifacts-dir artifacts \
+  --snapshot-freq 7D
+```
+
+Available hops:
+- `load_tables`
+- `join_diagnostics`
+- `profile`
+- `features`
+- `segments`
+- `labels`
+- `train`
+- `infer`
+- `publish`
+
+Examples:
+
+```bash
+# Run one hop (strict mode: dependencies must already be completed)
+python3 run_pipeline_hops.py features --run-id bh-20260305 \
+  --dataset-root datasets --reports-dir reports --outputs-dir outputs --artifacts-dir artifacts
+
+# Auto-run missing upstream hops before target hop
+python3 run_pipeline_hops.py infer --run-id bh-20260305 --auto-upstream \
+  --dataset-root datasets --reports-dir reports --outputs-dir outputs --artifacts-dir artifacts
+
+# Force rerun target hop only (upstream hops stay skipped if already completed)
+python3 run_pipeline_hops.py train --run-id bh-20260305 --force \
+  --dataset-root datasets --reports-dir reports --outputs-dir outputs --artifacts-dir artifacts
+```
+
+Checkpoint layout:
+- `outputs/checkpoints/<RUN_ID>/status/<hop>.json`
+- `outputs/checkpoints/<RUN_ID>/load_tables/tables/*.parquet`
+- `outputs/checkpoints/<RUN_ID>/...` (join/profile/train/infer/publish stage data)
+
+Databricks Jobs pattern:
+- Use the same `--run-id` across all tasks in one job run.
+- Chain tasks in this order:
+  1. `load_tables`
+  2. `join_diagnostics`
+  3. `profile`
+  4. `features`
+  5. `segments`
+  6. `labels`
+  7. `train`
+  8. `infer`
+  9. `publish`
 
 ## 5) What happens during run (0/7 ... 7/7)
 

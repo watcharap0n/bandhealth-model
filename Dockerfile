@@ -30,6 +30,7 @@ RUN pip install --upgrade pip && \
 # Copy source code
 COPY src/ ./src/
 COPY run_pipeline.py .
+COPY run_pipeline_hops.py .
 COPY README.md .
 
 # Create necessary directories for pipeline outputs
@@ -37,4 +38,3 @@ RUN mkdir -p datasets reports outputs artifacts
 
 # Set default command to show help
 CMD ["python", "run_pipeline.py", "--help"]
-

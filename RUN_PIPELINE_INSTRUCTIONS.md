@@ -164,6 +164,84 @@ python3 run_pipeline.py \
   --publish-kpis-fail-on-cast-error true
 ```
 
+### 4.6 Hop-based execution (stage-by-stage with run-id checkpoints)
+
+Use this when you want to rerun only failed stages and continue from previous completed stages.
+
+Command format:
+
+```bash
+python3 run_pipeline_hops.py <hop> \
+  --run-id <RUN_ID> \
+  [--auto-upstream] \
+  [--force] \
+  --dataset-root datasets \
+  --reports-dir reports \
+  --outputs-dir outputs \
+  --artifacts-dir artifacts
+```
+
+Available hops:
+- `load_tables`
+- `join_diagnostics`
+- `profile`
+- `features`
+- `segments`
+- `labels`
+- `train`
+- `infer`
+- `publish`
+
+Examples:
+
+```bash
+# Run one hop only (strict mode: upstream hops must already be completed)
+python3 run_pipeline_hops.py features \
+  --run-id bh-20260305 \
+  --dataset-root datasets \
+  --reports-dir reports \
+  --outputs-dir outputs \
+  --artifacts-dir artifacts
+
+# Auto-run missing upstream hops before infer
+python3 run_pipeline_hops.py infer \
+  --run-id bh-20260305 \
+  --auto-upstream \
+  --dataset-root datasets \
+  --reports-dir reports \
+  --outputs-dir outputs \
+  --artifacts-dir artifacts
+
+# Force rerun target hop only
+python3 run_pipeline_hops.py train \
+  --run-id bh-20260305 \
+  --force \
+  --dataset-root datasets \
+  --reports-dir reports \
+  --outputs-dir outputs \
+  --artifacts-dir artifacts
+```
+
+Checkpoint paths:
+- `outputs/checkpoints/<RUN_ID>/status/<hop>.json`
+- `outputs/checkpoints/<RUN_ID>/load_tables/tables/*.parquet`
+- `outputs/checkpoints/<RUN_ID>/join_diagnostics/*`
+- `outputs/checkpoints/<RUN_ID>/profile/*`
+- `outputs/checkpoints/<RUN_ID>/train/*`
+- `outputs/checkpoints/<RUN_ID>/infer/*`
+- `outputs/checkpoints/<RUN_ID>/publish/*`
+
+Databricks task chain (same `--run-id` for all tasks):
+1. `load_tables`
+2. `join_diagnostics`
+3. `profile`
+4. `features`
+5. `segments`
+6. `labels`
+7. `train`
+8. `infer`
+9. `publish`
+
 ## 5) Key output files to verify
 
 | Category | Files |
@@ -174,3 +252,4 @@ python3 run_pipeline.py \
 | Sampling QA | `outputs/sample_qa_report.json` |
 | Memory QA | `outputs/memory_optimization_report.json`, `outputs/memory_dtype_optimization.csv` |
 | Metrics summary | `reports/pipeline_summary.json`, `outputs/model_metrics_sample.json` |
+| Hop checkpoints | `outputs/checkpoints/<RUN_ID>/status/*.json` and stage checkpoint files |
