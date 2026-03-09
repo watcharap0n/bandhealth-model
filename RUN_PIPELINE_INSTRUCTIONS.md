@@ -62,7 +62,7 @@ python3 run_pipeline.py \
 | `--memory_validate_downcast` | `bool-like str` | `true` | Validates value parity after downcast/categorical conversion. | Keep enabled for safety | `--memory_validate_downcast true` |
 | `--publish-kpis-predicted` | `bool-like str` | `false` | Publish full `pred_df` to Unity Catalog table (only with `--source-mode databricks_pyspark`). | Databricks production scoring | `--publish-kpis-predicted true` |
 | `--publish-kpis-table` | `str` | `projects_prd.marketingautomation.kpis_predicted` | Target Unity Catalog table for prediction publish. | When enabling publish | `--publish-kpis-table projects_prd.marketingautomation.kpis_predicted` |
-| `--publish-kpis-write-mode` | `overwrite` | `overwrite` | Write behavior for publish target table. Current supported mode is overwrite. | When enabling publish | `--publish-kpis-write-mode overwrite` |
+| `--publish-kpis-write-mode` | `overwrite` or `merge` | `overwrite` | Write behavior for publish target table. Use `overwrite` for full table replacement or `merge` to upsert by `(brand_id, window_end_date, window_size)` and keep older windows. | When enabling publish | `--publish-kpis-write-mode merge` |
 | `--publish-kpis-fail-on-cast-error` | `bool-like str` | `true` | Fail pipeline when schema-alignment cast fails before writing to catalog. | Keep enabled for data safety | `--publish-kpis-fail-on-cast-error true` |
 
 Important notes:
@@ -160,7 +160,7 @@ python3 run_pipeline.py \
   --databricks-database datacleansing \
   --publish-kpis-predicted true \
   --publish-kpis-table projects_prd.marketingautomation.kpis_predicted \
-  --publish-kpis-write-mode overwrite \
+  --publish-kpis-write-mode merge \
   --publish-kpis-fail-on-cast-error true
 ```
 

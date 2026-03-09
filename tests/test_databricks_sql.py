@@ -537,6 +537,14 @@ class RuntimeValidationTests(unittest.TestCase):
 
         self.assertIn("--source-mode databricks_pyspark", str(ctx.exception))
 
+    def test_publish_accepts_merge_write_mode(self) -> None:
+        parser = run_pipeline.build_arg_parser()
+        args = parser.parse_args(["--publish-kpis-write-mode", "merge"])
+
+        cfg = run_pipeline._resolve_publish_runtime(args, source_mode="databricks_pyspark")
+
+        self.assertEqual(cfg["write_mode"], "merge")
+
 
 if __name__ == "__main__":
     unittest.main()

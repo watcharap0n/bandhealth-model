@@ -365,8 +365,8 @@ def _resolve_publish_runtime(args: argparse.Namespace, source_mode: str) -> Dict
 
     if enabled and source_mode != "databricks_pyspark":
         raise ValueError("--publish-kpis-predicted requires --source-mode databricks_pyspark")
-    if write_mode not in {"overwrite"}:
-        raise ValueError("publish_kpis_write_mode must be: overwrite")
+    if write_mode not in {"overwrite", "merge"}:
+        raise ValueError("publish_kpis_write_mode must be one of: overwrite, merge")
     if enabled and not table_name:
         raise ValueError("publish_kpis_table is required when publish_kpis_predicted is enabled")
 
@@ -879,7 +879,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--databricks-spark-explain-pushdown", type=str, default="false")
     parser.add_argument("--publish-kpis-predicted", type=str, default="false")
     parser.add_argument("--publish-kpis-table", type=str, default="projects_prd.marketingautomation.kpis_predicted")
-    parser.add_argument("--publish-kpis-write-mode", type=str, choices=["overwrite"], default="overwrite")
+    parser.add_argument("--publish-kpis-write-mode", type=str, choices=["overwrite", "merge"], default="overwrite")
     parser.add_argument("--publish-kpis-fail-on-cast-error", type=str, default="true")
     parser.add_argument("--mlflow-enable", type=str, default="false")
     parser.add_argument("--mlflow-experiment", type=str, default=None)

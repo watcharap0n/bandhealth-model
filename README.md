@@ -287,7 +287,9 @@ Databricks Jobs pattern:
 Optional Unity Catalog publish (Databricks Spark mode):
 - enable `--publish-kpis-predicted true` with `--source-mode databricks_pyspark`
 - default target table: `projects_prd.marketingautomation.kpis_predicted`
-- current write mode: `overwrite`
+- write modes:
+- `overwrite`: replace the full target table
+- `merge`: upsert by `(brand_id, window_end_date, window_size)` and keep older windows that were not rescored
 
 ### Sampling artifacts (quick/smart)
 - `outputs/sample_train_indices.csv`

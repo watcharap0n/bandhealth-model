@@ -47,7 +47,11 @@ class _FakeWriter:
 
 class _FakeSparkDataFrame:
     def __init__(self, spark) -> None:
+        self.spark = spark
         self.write = _FakeWriter(spark)
+
+    def createOrReplaceTempView(self, view_name: str) -> None:
+        self.spark.temp_view_name = str(view_name)
 
 
 class _FakeSparkSession:
@@ -58,6 +62,9 @@ class _FakeSparkSession:
         self.created_schema = None
         self.write_mode = None
         self.saved_table = None
+        self.temp_view_name = None
+        self.executed_sql = None
+        self.catalog = self
 
     def table(self, table_name: str):
         self.last_table = str(table_name)
@@ -67,6 +74,13 @@ class _FakeSparkSession:
         self.created_pdf = pdf.copy()
         self.created_schema = schema
         return _FakeSparkDataFrame(self)
+
+    def sql(self, sql_text: str):
+        self.executed_sql = str(sql_text)
+        return None
+
+    def dropTempView(self, view_name: str) -> None:
+        self.dropped_temp_view = str(view_name)
 
 
 class AlignPredDfTests(unittest.TestCase):
@@ -190,6 +204,80 @@ class PublishToCatalogTests(unittest.TestCase):
         self.assertEqual(spark.write_mode, "overwrite")
         self.assertEqual(spark.saved_table, "projects_prd.marketingautomation.kpis_predicted")
         self.assertEqual(list(spark.created_pdf.columns), ["brand_id", "predicted_health_score", "drivers"])
+
+    def test_publish_merge_uses_row_level_upsert_sql(self) -> None:
+        schema = [
+            _FakeField("brand_id", "string"),
+            _FakeField("window_end_date", "timestamp"),
+            _FakeField("window_size", "string"),
+            _FakeField("predicted_health_score", "double"),
+        ]
+        spark = _FakeSparkSession(schema=schema, table_rows_after_write=25)
+        pred_df = pd.DataFrame(
+            [
+                {
+                    "brand_id": "c-vit",
+                    "window_end_date": "2026-03-07T00:00:00Z",
+                    "window_size": "30d",
+                    "predicted_health_score": "77.5",
+                }
+            ]
+        )
+
+        summary = publish_kpis_predicted_to_catalog(
+            pred_df=pred_df,
+            table_name="projects_prd.marketingautomation.kpis_predicted",
+            write_mode="merge",
+            fail_on_cast_error=True,
+            spark_session=spark,
+        )
+
+        self.assertEqual(summary["rows_written"], 1)
+        self.assertEqual(summary["table_rows_after_write"], 25)
+        self.assertIsNone(spark.write_mode)
+        self.assertIsNotNone(spark.temp_view_name)
+        self.assertEqual(spark.temp_view_name, spark.dropped_temp_view)
+        self.assertIn("MERGE INTO projects_prd.marketingautomation.kpis_predicted AS target", str(spark.executed_sql))
+        self.assertIn("WHEN MATCHED THEN UPDATE SET", str(spark.executed_sql))
+        self.assertIn("target.`brand_id` <=> source.`brand_id`", str(spark.executed_sql))
+        self.assertIn("target.`window_end_date` <=> source.`window_end_date`", str(spark.executed_sql))
+        self.assertIn("target.`window_size` <=> source.`window_size`", str(spark.executed_sql))
+
+    def test_publish_merge_rejects_duplicate_source_keys(self) -> None:
+        schema = [
+            _FakeField("brand_id", "string"),
+            _FakeField("window_end_date", "timestamp"),
+            _FakeField("window_size", "string"),
+            _FakeField("predicted_health_score", "double"),
+        ]
+        spark = _FakeSparkSession(schema=schema, table_rows_after_write=0)
+        pred_df = pd.DataFrame(
+            [
+                {
+                    "brand_id": "c-vit",
+                    "window_end_date": "2026-03-07T00:00:00Z",
+                    "window_size": "30d",
+                    "predicted_health_score": "77.5",
+                },
+                {
+                    "brand_id": "c-vit",
+                    "window_end_date": "2026-03-07T00:00:00Z",
+                    "window_size": "30d",
+                    "predicted_health_score": "80.0",
+                },
+            ]
+        )
+
+        with self.assertRaises(ValueError) as ctx:
+            publish_kpis_predicted_to_catalog(
+                pred_df=pred_df,
+                table_name="projects_prd.marketingautomation.kpis_predicted",
+                write_mode="merge",
+                fail_on_cast_error=True,
+                spark_session=spark,
+            )
+
+        self.assertIn("unique source rows per merge key", str(ctx.exception))
 
 
 if __name__ == "__main__":

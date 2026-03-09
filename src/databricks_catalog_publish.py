@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+import uuid
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
+
+MERGE_KEY_COLUMNS: Tuple[str, ...] = ("brand_id", "window_end_date", "window_size")
 
 
 def publish_kpis_predicted_to_catalog(
@@ -23,7 +26,7 @@ def publish_kpis_predicted_to_catalog(
         table_schema=table_schema,
         fail_on_cast_error=bool(fail_on_cast_error),
     )
-    table_rows_after = _write_overwrite_to_table(
+    table_rows_after = _write_to_table(
         aligned_pdf=aligned_pdf,
         table_name=str(table_name),
         spark=spark,
@@ -72,7 +75,7 @@ def _align_pred_df_to_table_schema(
     return out
 
 
-def _write_overwrite_to_table(
+def _write_to_table(
     aligned_pdf: pd.DataFrame,
     table_name: str,
     spark: Any,
@@ -80,12 +83,122 @@ def _write_overwrite_to_table(
     write_mode: str = "overwrite",
 ) -> int:
     mode = str(write_mode).strip().lower()
-    if mode != "overwrite":
-        raise ValueError("publish-kpis-write-mode currently supports only: overwrite")
+    if mode == "overwrite":
+        return _write_overwrite_to_table(
+            aligned_pdf=aligned_pdf,
+            table_name=table_name,
+            spark=spark,
+            table_schema=table_schema,
+        )
+    if mode == "merge":
+        return _write_merge_to_table(
+            aligned_pdf=aligned_pdf,
+            table_name=table_name,
+            spark=spark,
+            table_schema=table_schema,
+        )
+    raise ValueError("publish-kpis-write-mode must be one of: overwrite, merge")
 
+
+def _write_overwrite_to_table(
+    aligned_pdf: pd.DataFrame,
+    table_name: str,
+    spark: Any,
+    table_schema: Any,
+) -> int:
     sdf = spark.createDataFrame(aligned_pdf, schema=table_schema)
     sdf.write.mode("overwrite").saveAsTable(str(table_name))
     return int(spark.table(str(table_name)).count())
+
+
+def _write_merge_to_table(
+    aligned_pdf: pd.DataFrame,
+    table_name: str,
+    spark: Any,
+    table_schema: Any,
+) -> int:
+    key_columns = _resolve_merge_key_columns(aligned_pdf=aligned_pdf, table_schema=table_schema)
+    _validate_merge_keys_unique(aligned_pdf=aligned_pdf, key_columns=key_columns)
+
+    sdf = spark.createDataFrame(aligned_pdf, schema=table_schema)
+    temp_view_name = _temp_view_name(table_name)
+    target_columns = [name for name, _ in _schema_fields(table_schema)]
+    merge_sql = _build_merge_sql(
+        table_name=table_name,
+        temp_view_name=temp_view_name,
+        target_columns=target_columns,
+        key_columns=key_columns,
+    )
+
+    try:
+        sdf.createOrReplaceTempView(temp_view_name)
+        spark.sql(merge_sql)
+    finally:
+        catalog = getattr(spark, "catalog", None)
+        if catalog is not None and hasattr(catalog, "dropTempView"):
+            try:
+                catalog.dropTempView(temp_view_name)
+            except Exception:
+                pass
+    return int(spark.table(str(table_name)).count())
+
+
+def _resolve_merge_key_columns(
+    aligned_pdf: pd.DataFrame,
+    table_schema: Any,
+) -> List[str]:
+    schema_cols = {name for name, _ in _schema_fields(table_schema)}
+    missing = [col for col in MERGE_KEY_COLUMNS if col not in aligned_pdf.columns or col not in schema_cols]
+    if missing:
+        raise ValueError(
+            "publish-kpis-write-mode=merge requires key columns in both source and target schema: "
+            + ", ".join(missing)
+        )
+    return list(MERGE_KEY_COLUMNS)
+
+
+def _validate_merge_keys_unique(
+    aligned_pdf: pd.DataFrame,
+    key_columns: Sequence[str],
+) -> None:
+    dup_mask = aligned_pdf.duplicated(list(key_columns), keep=False)
+    if not bool(dup_mask.any()):
+        return
+
+    sample_rows = (
+        aligned_pdf.loc[dup_mask, list(key_columns)]
+        .drop_duplicates()
+        .head(5)
+        .to_dict(orient="records")
+    )
+    raise ValueError(
+        "publish-kpis-write-mode=merge requires unique source rows per merge key. "
+        f"Duplicate keys found for columns {list(key_columns)}; sample={sample_rows}"
+    )
+
+
+def _build_merge_sql(
+    table_name: str,
+    temp_view_name: str,
+    target_columns: Sequence[str],
+    key_columns: Sequence[str],
+) -> str:
+    match_clause = " AND ".join(f"target.`{col}` <=> source.`{col}`" for col in key_columns)
+    update_clause = ", ".join(f"target.`{col}` = source.`{col}`" for col in target_columns)
+    insert_columns = ", ".join(f"`{col}`" for col in target_columns)
+    insert_values = ", ".join(f"source.`{col}`" for col in target_columns)
+    return (
+        f"MERGE INTO {table_name} AS target "
+        f"USING {temp_view_name} AS source "
+        f"ON {match_clause} "
+        f"WHEN MATCHED THEN UPDATE SET {update_clause} "
+        f"WHEN NOT MATCHED THEN INSERT ({insert_columns}) VALUES ({insert_values})"
+    )
+
+
+def _temp_view_name(table_name: str) -> str:
+    table_slug = "".join(ch if ch.isalnum() else "_" for ch in str(table_name)).strip("_").lower()
+    return f"tmp_publish_{table_slug}_{uuid.uuid4().hex[:12]}"
 
 
 def _resolve_active_spark_session(spark_session: Optional[Any]) -> Any:
