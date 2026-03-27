@@ -11,7 +11,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--workspace-name", type=str, required=True)
     parser.add_argument("--compute", type=str, required=True, help="Azure ML compute cluster name.")
     parser.add_argument("--environment", type=str, required=True, help="Registered Azure ML environment name:version.")
-    parser.add_argument("--training-snapshot-manifest", type=str, required=True)
+    parser.add_argument("--training-set-root", type=str, required=True, help="Azure ML uri_folder data asset or folder path for training-set/")
     parser.add_argument("--model-bundle-root", type=str, required=True)
     parser.add_argument("--production-manifest-out", type=str, required=True)
     parser.add_argument("--experiment-name", type=str, default="brand-health-weekly-retrain")
@@ -45,11 +45,11 @@ def main() -> None:
         code=str(repo_root),
         command=(
             "python azureml/components/validate_snapshot.py "
-            "--snapshot-manifest ${{inputs.snapshot_manifest}} "
+            "--snapshot-root ${{inputs.snapshot_root}} "
             "--output-json ${{outputs.validation_json}}"
         ),
         inputs={
-            "snapshot_manifest": Input(type="uri_file"),
+            "snapshot_root": Input(type="uri_folder"),
         },
         outputs={"validation_json": {"type": "uri_file"}},
         environment=args.environment,
@@ -62,14 +62,14 @@ def main() -> None:
         code=str(repo_root),
         command=(
             "python azureml/components/train_from_snapshot.py "
-            "--snapshot-manifest ${{inputs.snapshot_manifest}} "
+            "--snapshot-root ${{inputs.snapshot_root}} "
             "--artifact-dir ${{outputs.artifact_dir}} "
             "--model-bundle-root ${{inputs.model_bundle_root}} "
             "--candidate-manifest-out ${{outputs.candidate_manifest}} "
             "--output-json ${{outputs.train_json}}"
         ),
         inputs={
-            "snapshot_manifest": Input(type="uri_file"),
+            "snapshot_root": Input(type="uri_folder"),
             "model_bundle_root": Input(type="uri_folder"),
         },
         outputs={
@@ -110,10 +110,10 @@ def main() -> None:
         compute=args.compute,
         description="Weekly retrain, evaluate, and promote pipeline for Brand Health.",
     )
-    def weekly_retrain_pipeline(snapshot_manifest: str, model_bundle_root: str):
-        validate_job = validate_component(snapshot_manifest=snapshot_manifest)
+    def weekly_retrain_pipeline(snapshot_root: str, model_bundle_root: str):
+        validate_job = validate_component(snapshot_root=snapshot_root)
         train_job = train_component(
-            snapshot_manifest=snapshot_manifest,
+            snapshot_root=snapshot_root,
             model_bundle_root=model_bundle_root,
         )
         train_job.outputs.artifact_dir.mode = "rw_mount"
@@ -132,7 +132,7 @@ def main() -> None:
         }
 
     pipeline_job = weekly_retrain_pipeline(
-        snapshot_manifest=args.training_snapshot_manifest,
+        snapshot_root=args.training_set_root,
         model_bundle_root=args.model_bundle_root,
     )
     pipeline_job.experiment_name = args.experiment_name

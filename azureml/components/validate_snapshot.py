@@ -16,14 +16,26 @@ from src.mlops_runtime import read_json_manifest, resolve_manifest_asset_path, u
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Validate a Brand Health training snapshot manifest.")
-    parser.add_argument("--snapshot-manifest", type=str, required=True)
+    parser.add_argument("--snapshot-manifest", type=str, default=None)
+    parser.add_argument("--snapshot-root", type=str, default=None)
     parser.add_argument("--output-json", type=str, required=True)
     return parser
 
 
+def _resolve_manifest_input(snapshot_manifest: str | None, snapshot_root: str | None) -> Path:
+    manifest_raw = str(snapshot_manifest or "").strip()
+    if manifest_raw:
+        return Path(manifest_raw)
+    root_raw = str(snapshot_root or "").strip()
+    if root_raw:
+        return Path(root_raw) / "snapshot_manifest.json"
+    raise ValueError("Either --snapshot-manifest or --snapshot-root is required")
+
+
 def main() -> None:
     args = _build_parser().parse_args()
-    manifest = read_json_manifest(args.snapshot_manifest)
+    manifest_path = _resolve_manifest_input(args.snapshot_manifest, args.snapshot_root)
+    manifest = read_json_manifest(manifest_path)
 
     errors: List[Dict[str, object]] = []
     warnings: List[Dict[str, object]] = []
@@ -48,7 +60,7 @@ def main() -> None:
         if not raw_path:
             errors.append({"type": "asset_path", "asset": item.get("name"), "message": "missing path"})
             continue
-        resolved = resolve_manifest_asset_path(args.snapshot_manifest, raw_path)
+        resolved = resolve_manifest_asset_path(manifest_path, raw_path)
         if not resolved.exists():
             errors.append({"type": "asset_missing", "asset": item.get("name"), "path": raw_path})
 
@@ -63,7 +75,7 @@ def main() -> None:
 
     payload = {
         "validated_at": utc_now_iso(),
-        "snapshot_manifest": str(args.snapshot_manifest),
+        "snapshot_manifest": str(manifest_path),
         "status": "failed" if errors else "passed",
         "error_count": len(errors),
         "warning_count": len(warnings),

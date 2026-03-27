@@ -35,7 +35,7 @@ Validate a snapshot:
 
 ```bash
 python3 azureml/components/validate_snapshot.py \
-  --snapshot-manifest /path/to/training_snapshot/snapshot_manifest.json \
+  --snapshot-root /path/to/training-set \
   --output-json /tmp/validate_snapshot_result.json
 ```
 
@@ -43,9 +43,10 @@ Train and package a candidate bundle:
 
 ```bash
 python3 azureml/components/train_from_snapshot.py \
-  --snapshot-manifest /path/to/training_snapshot/snapshot_manifest.json \
+  --snapshot-root /path/to/training-set \
   --artifact-dir /tmp/brand-health-artifacts \
   --model-bundle-root /tmp/model-registry \
+  --candidate-manifest-out /tmp/candidate_manifest.json \
   --output-json /tmp/train_result.json
 ```
 
@@ -63,3 +64,17 @@ python3 azureml/components/promote_model.py \
 - The pipeline script intentionally keeps Azure-specific dependencies isolated to `pipeline_weekly_retrain.py`.
 - Component scripts use repo-local code and can run both locally and inside Azure ML command jobs.
 - Use a mounted Blob/ADLS path or an Azure ML data asset path that resolves to a local filesystem path inside the job.
+
+Example Azure ML pipeline submission:
+
+```bash
+python3 azureml/pipeline_weekly_retrain.py \
+  --subscription-id <sub_id> \
+  --resource-group <rg> \
+  --workspace-name <aml_ws> \
+  --compute <aml_compute> \
+  --environment <aml_env_name:version> \
+  --training-set-root azureml:<your_training_set_data_asset>:<version> \
+  --model-bundle-root <shared-path>/model_registry \
+  --production-manifest-out <shared-path>/model_registry/production_manifest.json
+```

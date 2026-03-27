@@ -26,7 +26,8 @@ from src.train import train_models  # noqa: E402
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Train Brand Health model from a curated snapshot.")
-    parser.add_argument("--snapshot-manifest", type=str, required=True)
+    parser.add_argument("--snapshot-manifest", type=str, default=None)
+    parser.add_argument("--snapshot-root", type=str, default=None)
     parser.add_argument("--artifact-dir", type=str, required=True)
     parser.add_argument("--model-bundle-root", type=str, required=True)
     parser.add_argument("--sample-mode", type=str, default="off", choices=["off", "quick", "smart"])
@@ -36,6 +37,16 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--candidate-manifest-out", type=str, required=True)
     parser.add_argument("--output-json", type=str, required=True)
     return parser
+
+
+def _resolve_manifest_input(snapshot_manifest: str | None, snapshot_root: str | None) -> Path:
+    manifest_raw = str(snapshot_manifest or "").strip()
+    if manifest_raw:
+        return Path(manifest_raw)
+    root_raw = str(snapshot_root or "").strip()
+    if root_raw:
+        return Path(root_raw) / "snapshot_manifest.json"
+    raise ValueError("Either --snapshot-manifest or --snapshot-root is required")
 
 
 def _find_asset(manifest: Mapping[str, object], asset_name: str) -> Path:
@@ -59,8 +70,9 @@ def _parse_bool_flag(raw: object) -> bool:
 
 def main() -> None:
     args = _build_parser().parse_args()
-    manifest = read_json_manifest(args.snapshot_manifest)
-    manifest["__manifest_path__"] = str(args.snapshot_manifest)
+    manifest_path = _resolve_manifest_input(args.snapshot_manifest, args.snapshot_root)
+    manifest = read_json_manifest(manifest_path)
+    manifest["__manifest_path__"] = str(manifest_path)
 
     labeled_path = _find_asset(manifest, "labeled_feature_table")
     labeled_df = pd.read_parquet(labeled_path)
@@ -102,7 +114,7 @@ def main() -> None:
 
     payload = {
         "trained_at": utc_now_iso(),
-        "snapshot_manifest": str(args.snapshot_manifest),
+        "snapshot_manifest": str(manifest_path),
         "artifact_dir": str(artifact_dir),
         "model_version": model_version,
         "selected_model": str(artifacts.metrics.get("selected_model", "")),
