@@ -1,15 +1,10 @@
-from __future__ import annotations
-
 import argparse
 from pathlib import Path
 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Submit the Brand Health weekly retrain pipeline to Azure ML.")
-    parser.add_argument("--subscription-id", type=str, required=True)
-    parser.add_argument("--resource-group", type=str, required=True)
-    parser.add_argument("--workspace-name", type=str, required=True)
-    parser.add_argument("--compute", type=str, required=True, help="Azure ML compute cluster name.")
+    parser.add_argument("--compute", type=str, required=True, help="Azure ML compute target name.")
     parser.add_argument("--environment", type=str, required=True, help="Registered Azure ML environment name:version.")
     parser.add_argument("--training-set-root", type=str, required=True, help="Azure ML uri_folder data asset or folder path for training-set/")
     parser.add_argument("--model-bundle-root", type=str, required=True)
@@ -20,7 +15,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> None:
+def main(argv=None):
     try:
         from azure.identity import DefaultAzureCredential
         from azure.ai.ml import MLClient, Input, command, dsl
@@ -29,14 +24,11 @@ def main() -> None:
             "Azure ML dependencies are not installed. Install azure-ai-ml and azure-identity to use this scaffold."
         ) from exc
 
-    args = _build_parser().parse_args()
+    args = _build_parser().parse_args(argv)
     repo_root = Path(__file__).resolve().parents[1]
 
-    ml_client = MLClient(
-        DefaultAzureCredential(),
-        subscription_id=args.subscription_id,
-        resource_group_name=args.resource_group,
-        workspace_name=args.workspace_name,
+    ml_client = MLClient.from_config(
+        credential=DefaultAzureCredential(),
     )
 
     validate_component = command(
@@ -140,6 +132,7 @@ def main() -> None:
 
     created = ml_client.jobs.create_or_update(pipeline_job)
     print(f"Submitted Azure ML pipeline job: {created.name}")
+    return created
 
 
 if __name__ == "__main__":

@@ -65,7 +65,7 @@ python3 azureml/components/promote_model.py \
 - Component scripts use repo-local code and can run both locally and inside Azure ML command jobs.
 - Use a mounted Blob/ADLS path or an Azure ML data asset path that resolves to a local filesystem path inside the job.
 
-Example Azure ML pipeline submission:
+Example Azure ML pipeline submission with explicit workspace identifiers:
 
 ```bash
 python3 azureml/pipeline_weekly_retrain.py \
@@ -77,4 +77,16 @@ python3 azureml/pipeline_weekly_retrain.py \
   --training-set-root azureml:<your_training_set_data_asset>:<version> \
   --model-bundle-root <shared-path>/model_registry \
   --production-manifest-out <shared-path>/model_registry/production_manifest.json
+```
+
+Example Azure ML pipeline submission from an Azure ML compute or workspace repo that already has `config.json`:
+
+```bash
+python3 azureml/pipeline_weekly_retrain.py \
+  --config-path . \
+  --compute cpu-cluster \
+  --environment brand-health-train:3 \
+  --training-set-root azureml:brand-health-training-set:20260327 \
+  --model-bundle-root azureml://datastores/workspaceblobstore/paths/brand-health/model_registry/ \
+  --production-manifest-out azureml://datastores/workspaceblobstore/paths/brand-health/model_registry/production_manifest.json
 ```
