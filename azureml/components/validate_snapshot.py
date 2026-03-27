@@ -11,7 +11,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
-from src.mlops_runtime import read_json_manifest, resolve_storage_path, utc_now_iso  # noqa: E402
+from src.mlops_runtime import read_json_manifest, resolve_manifest_asset_path, utc_now_iso  # noqa: E402
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -48,7 +48,7 @@ def main() -> None:
         if not raw_path:
             errors.append({"type": "asset_path", "asset": item.get("name"), "message": "missing path"})
             continue
-        resolved = resolve_storage_path(raw_path)
+        resolved = resolve_manifest_asset_path(args.snapshot_manifest, raw_path)
         if not resolved.exists():
             errors.append({"type": "asset_missing", "asset": item.get("name"), "path": raw_path})
 

@@ -52,6 +52,7 @@ from src.mlops_runtime import (
     read_json_manifest,
     resolve_storage_path,
     summarize_tables_for_contracts,
+    upload_training_set_to_blob,
     utc_now_iso,
 )
 from src.sampling import TrainSampleConfig, build_train_eval_samples, save_sample_outputs
@@ -438,6 +439,22 @@ def _resolve_model_bundle_runtime(args: argparse.Namespace, *, artifacts_dir: Pa
         "root": root,
         "status": "approved" if auto_approve else "candidate",
         "auto_approve": auto_approve,
+    }
+
+
+def _resolve_azure_blob_runtime(args: argparse.Namespace) -> Dict[str, object]:
+    sas_url = _env_or_value(
+        getattr(args, "azure_blob_sas_url", None),
+        "SAS_URL",
+    ) or _env_or_value(
+        getattr(args, "azure_blob_sas_url", None),
+        "AZURE_BLOB_SAS_URL",
+    )
+    enabled = _parse_bool_flag(getattr(args, "azure_upload_training_set", "false"))
+    return {
+        "enabled": bool(enabled),
+        "sas_url": str(sas_url) if sas_url else "",
+        "training_prefix": str(getattr(args, "azure_training_set_prefix", "training-set")).strip() or "training-set",
     }
 
 
@@ -1081,6 +1098,18 @@ def _export_training_snapshot(
             }
         )
     report_path = reports_dir / "pipeline_summary.json"
+    if not report_path.exists():
+        interim_summary = {
+            "run_id": str(run_id),
+            "source_mode": str(source_mode),
+            "train_sample_mode": str(sample_mode),
+            "commerce_joinable": dict(join_diag.commerce_joinable),
+            "activity_enrichment_joinable": dict(activity_enrichment_joinable),
+            "data_validation": dict(validation_report),
+            "feature_definitions_path": str(feature_defs_path),
+            "segment_kpis_path": str(segment_path) if segment_path.exists() else "",
+        }
+        _write_json(report_path, interim_summary)
     if report_path.exists():
         files.append({"name": "pipeline_summary_report", "source_path": report_path, "content_type": "application/json"})
 
@@ -1105,6 +1134,53 @@ def _export_training_snapshot(
         files=files,
         manifest_payload=manifest_payload,
     )
+
+
+def _upload_training_snapshot_to_blob(
+    *,
+    azure_blob_cfg: Mapping[str, object],
+    run_id: str,
+    training_snapshot_export: Optional[Mapping[str, object]],
+) -> Optional[Dict[str, object]]:
+    if training_snapshot_export is None:
+        return None
+    if not bool(azure_blob_cfg.get("enabled", False)):
+        return None
+    sas_url = str(azure_blob_cfg.get("sas_url", "") or "").strip()
+    if not sas_url:
+        raise ValueError("azure_upload_training_set is enabled but azure_blob_sas_url/SAS_URL is missing")
+
+    manifest = training_snapshot_export.get("manifest", {})
+    if not isinstance(manifest, Mapping):
+        manifest = {}
+    exported_assets = manifest.get("exported_assets", [])
+    local_files: List[Dict[str, object]] = []
+    for item in exported_assets:
+        if not isinstance(item, Mapping):
+            continue
+        name = str(item.get("name", "")).strip()
+        path = str(item.get("path", "")).strip()
+        if not name or not path:
+            continue
+        local_files.append(
+            {
+                "name": name,
+                "source_path": path,
+                "dest_name": Path(path).name,
+                "rows": item.get("rows"),
+                "cols": item.get("cols"),
+                "schema_hash": item.get("schema_hash"),
+                "content_type": item.get("content_type"),
+            }
+        )
+    upload = upload_training_set_to_blob(
+        container_sas_url=sas_url,
+        run_id=run_id,
+        prefix=str(azure_blob_cfg.get("training_prefix", "training-set")),
+        local_files=local_files,
+        base_manifest=manifest,
+    )
+    return upload
 
 
 def _export_scoring_snapshot(
@@ -1261,6 +1337,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--data-validation-fail-on-warning", type=str, default="false")
     parser.add_argument("--model-bundle-root", type=str, default=None)
     parser.add_argument("--auto-approve-model-release", type=str, default="false")
+    parser.add_argument("--azure-upload-training-set", type=str, default="false")
+    parser.add_argument("--azure-blob-sas-url", type=str, default=None)
+    parser.add_argument("--azure-training-set-prefix", type=str, default="training-set")
     parser.add_argument("--snapshot-freq", type=str, default="7D")
     parser.add_argument("--report-name", type=str, default="brand_health_report.md")
     parser.add_argument("--skip-train", action="store_true", help="Skip training and reuse model artifacts.")
@@ -1304,6 +1383,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     artifacts_dir.mkdir(parents=True, exist_ok=True)
     snapshot_cfg = _resolve_snapshot_runtime(args, outputs_dir=outputs_dir)
     bundle_cfg = _resolve_model_bundle_runtime(args, artifacts_dir=artifacts_dir)
+    azure_blob_cfg = _resolve_azure_blob_runtime(args)
     _set_thread_limits(args.n_jobs)
     memory_events: List[Dict[str, object]] = []
     log_memory_rss("pipeline_start", sink=memory_events)
@@ -1332,6 +1412,10 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     _log(
         f"MLOps paths | snapshot_root={snapshot_cfg['root']} model_bundle_root={bundle_cfg['root']} "
         f"auto_approve_model_release={bundle_cfg['auto_approve']}"
+    )
+    _log(
+        f"Azure handoff | upload_training_set={azure_blob_cfg['enabled']} "
+        f"prefix={azure_blob_cfg['training_prefix']}"
     )
     _log(f"Using app_id filters: {runtime_brand_app_filters}")
     _log(
@@ -1458,6 +1542,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     )
     source_table_contracts = summarize_tables_for_contracts(tables=tables, columns_map=COLUMNS_MAP)
     training_snapshot_export: Optional[Dict[str, object]] = None
+    training_blob_upload: Optional[Dict[str, object]] = None
     scoring_snapshot_export: Optional[Dict[str, object]] = None
     model_bundle_export: Optional[Dict[str, object]] = None
     zero_row_summary = _zero_row_tables_summary(profile.table_profile)
@@ -1564,6 +1649,13 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     )
     if training_snapshot_export is not None:
         _log(f"Training snapshot exported | manifest={training_snapshot_export['manifest_path']}")
+    training_blob_upload = _upload_training_snapshot_to_blob(
+        azure_blob_cfg=azure_blob_cfg,
+        run_id=run_id,
+        training_snapshot_export=training_snapshot_export,
+    )
+    if training_blob_upload is not None:
+        _log(f"Training snapshot uploaded to blob | manifest={training_blob_upload['manifest_blob_url']}")
 
     # No longer needed after labels/definitions are generated.
     del feature_df
@@ -1867,6 +1959,8 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     }
     if training_snapshot_export is not None:
         summary["training_snapshot_manifest"] = str(training_snapshot_export["manifest_path"])
+    if training_blob_upload is not None:
+        summary["azure_training_set_manifest"] = str(training_blob_upload["manifest_blob_url"])
     (reports_dir / "pipeline_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     if model_bundle_export is not None:
         summary["model_release"] = {

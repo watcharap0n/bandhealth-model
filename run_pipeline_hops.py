@@ -91,6 +91,7 @@ class HopRuntime:
     publish_cfg: Dict[str, object]
     snapshot_cfg: Dict[str, object]
     bundle_cfg: Dict[str, object]
+    azure_blob_cfg: Dict[str, object]
     dataset_root: Path
     reports_dir: Path
     outputs_dir: Path
@@ -562,6 +563,21 @@ def _stage_labels(rt: HopRuntime) -> List[str]:
             },
         )
         outputs.extend([str(training_snapshot_export["manifest_path"]), str(snapshot_ref_path)])
+        training_blob_upload = run_pipeline._upload_training_snapshot_to_blob(
+            azure_blob_cfg=rt.azure_blob_cfg,
+            run_id=str(rt.hop_args.run_id),
+            training_snapshot_export=training_snapshot_export,
+        )
+        if training_blob_upload is not None:
+            blob_ref_path = rt.checkpoint.write_json(
+                "labels",
+                "training_blob_upload.json",
+                {
+                    "manifest_blob_url": str(training_blob_upload["manifest_blob_url"]),
+                    "prefix": str(training_blob_upload["manifest"].get("prefix", "")),
+                },
+            )
+            outputs.extend([str(blob_ref_path)])
     return outputs
 
 
@@ -862,6 +878,9 @@ def _stage_infer(rt: HopRuntime) -> List[str]:
     training_snapshot_export = rt.checkpoint.read_json("labels", "training_snapshot_export.json", default={})
     if isinstance(training_snapshot_export, Mapping) and training_snapshot_export.get("manifest_path"):
         summary["training_snapshot_manifest"] = str(training_snapshot_export["manifest_path"])
+    training_blob_upload = rt.checkpoint.read_json("labels", "training_blob_upload.json", default={})
+    if isinstance(training_blob_upload, Mapping) and training_blob_upload.get("manifest_blob_url"):
+        summary["azure_training_set_manifest"] = str(training_blob_upload["manifest_blob_url"])
     model_release_export = rt.checkpoint.read_json("train", "model_release_export.json", default={})
     if isinstance(model_release_export, Mapping) and model_release_export.get("manifest_path"):
         summary["model_release"] = {
@@ -1124,6 +1143,7 @@ def _build_runtime(hop_args: argparse.Namespace, pipeline_args: argparse.Namespa
     artifacts_dir.mkdir(parents=True, exist_ok=True)
     snapshot_cfg = run_pipeline._resolve_snapshot_runtime(pipeline_args, outputs_dir=outputs_dir)
     bundle_cfg = run_pipeline._resolve_model_bundle_runtime(pipeline_args, artifacts_dir=artifacts_dir)
+    azure_blob_cfg = run_pipeline._resolve_azure_blob_runtime(pipeline_args)
 
     run_pipeline._set_thread_limits(int(pipeline_args.n_jobs))
 
@@ -1153,6 +1173,7 @@ def _build_runtime(hop_args: argparse.Namespace, pipeline_args: argparse.Namespa
         publish_cfg=publish_cfg,
         snapshot_cfg=snapshot_cfg,
         bundle_cfg=bundle_cfg,
+        azure_blob_cfg=azure_blob_cfg,
         dataset_root=dataset_root,
         reports_dir=reports_dir,
         outputs_dir=outputs_dir,
@@ -1178,6 +1199,10 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     )
     run_pipeline._log(
         f"MLOps paths | snapshot_root={runtime.snapshot_cfg['root']} model_bundle_root={runtime.bundle_cfg['root']}"
+    )
+    run_pipeline._log(
+        f"Azure handoff | upload_training_set={runtime.azure_blob_cfg['enabled']} "
+        f"prefix={runtime.azure_blob_cfg['training_prefix']}"
     )
 
     runner = HopRunner(runtime)

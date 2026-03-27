@@ -19,6 +19,7 @@ This folder contains a practical Azure ML control-plane scaffold for the hybrid 
 ## Recommended operating model
 
 1. Databricks weekly job writes a `training_snapshot` to Blob or a mounted path.
+   - If using SAS-based upload, push the training set files into `training-set/` and register or refresh your Azure ML data asset from that folder.
 2. Azure ML weekly pipeline runs:
    1. validate snapshot
    2. train from snapshot

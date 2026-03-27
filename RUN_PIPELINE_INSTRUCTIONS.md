@@ -254,9 +254,23 @@ python3 run_pipeline.py \
   --model-bundle-root /dbfs/tmp/brand-health/model_registry \
   --export-training-snapshot true \
   --export-scoring-snapshot true \
+  --azure-upload-training-set true \
+  --azure-blob-sas-url "$SAS_URL" \
+  --azure-training-set-prefix training-set \
   --publish-kpis-predicted true \
   --publish-kpis-write-mode merge
 ```
+
+Files uploaded to Blob `training-set/` when `--azure-upload-training-set true`:
+
+- `snapshot_manifest.json`
+- `labeled_feature_table.parquet`
+- `feature_definitions.csv`
+- `data_validation_report.json`
+- `segment_kpis.parquet` when available
+- `join_diagnostics.md`
+- `coverage_notes.md`
+- `pipeline_summary.json`
 
 ### 4.8 Score from an approved artifact bundle manifest
 

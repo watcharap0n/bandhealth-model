@@ -109,6 +109,21 @@ class RunPipelineMLflowTests(unittest.TestCase):
 
         self.assertEqual(cfg["write_mode"], "merge")
 
+    def test_azure_blob_runtime_defaults_disabled(self) -> None:
+        parser = run_pipeline.build_arg_parser()
+        args = parser.parse_args([])
+
+        cfg = run_pipeline._resolve_azure_blob_runtime(args)
+
+        self.assertEqual(
+            cfg,
+            {
+                "enabled": False,
+                "sas_url": "",
+                "training_prefix": "training-set",
+            },
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

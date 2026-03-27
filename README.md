@@ -320,6 +320,8 @@ The pipeline now includes hybrid Databricks + Azure ML handoff primitives:
   - latest packaged candidate model release
 - `artifacts/model_registry/production_manifest.json`
   - written only when `--auto-approve-model-release true`
+- optional Blob handoff to Azure ML data assets via `SAS_URL`
+  - uploads the training-set files directly to `training-set/` in the target container
 
 New runtime options:
 
@@ -333,6 +335,9 @@ New runtime options:
 - `--data-validation-row-count-delta-threshold <float>`
 - `--data-validation-fail-on-warning true|false`
 - `--auto-approve-model-release true|false`
+- `--azure-upload-training-set true|false`
+- `--azure-blob-sas-url <container-sas-url>`
+- `--azure-training-set-prefix training-set`
 
 Azure ML control-plane scaffold lives under [`azureml/README.md`](/Users/kmac15/PycharmProjects/banding-health/azureml/README.md).
 

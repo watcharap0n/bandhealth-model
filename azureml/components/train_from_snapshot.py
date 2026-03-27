@@ -14,7 +14,13 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
-from src.mlops_runtime import package_model_artifact_bundle, read_json_manifest, resolve_storage_path, utc_now_iso  # noqa: E402
+from src.mlops_runtime import (  # noqa: E402
+    package_model_artifact_bundle,
+    read_json_manifest,
+    resolve_manifest_asset_path,
+    resolve_storage_path,
+    utc_now_iso,
+)
 from src.train import train_models  # noqa: E402
 
 
@@ -33,6 +39,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _find_asset(manifest: Mapping[str, object], asset_name: str) -> Path:
+    manifest_path = str(manifest.get("__manifest_path__", "")).strip()
     for item in manifest.get("exported_assets", []):
         if not isinstance(item, Mapping):
             continue
@@ -40,6 +47,8 @@ def _find_asset(manifest: Mapping[str, object], asset_name: str) -> Path:
             continue
         raw_path = str(item.get("path", "")).strip()
         if raw_path:
+            if manifest_path:
+                return resolve_manifest_asset_path(manifest_path, raw_path)
             return resolve_storage_path(raw_path)
     raise FileNotFoundError(f"Snapshot asset not found: {asset_name}")
 
@@ -51,6 +60,7 @@ def _parse_bool_flag(raw: object) -> bool:
 def main() -> None:
     args = _build_parser().parse_args()
     manifest = read_json_manifest(args.snapshot_manifest)
+    manifest["__manifest_path__"] = str(args.snapshot_manifest)
 
     labeled_path = _find_asset(manifest, "labeled_feature_table")
     labeled_df = pd.read_parquet(labeled_path)

@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import hashlib
 import json
+import mimetypes
 import shutil
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence
+from urllib.parse import parse_qsl, quote, urlsplit, urlunsplit
 
 import pandas as pd
+import requests
 
 
 DEFAULT_MANIFEST_VERSION = "1.0"
@@ -88,6 +91,19 @@ def current_code_version(cwd: str | Path | None = None) -> str:
 def read_json_manifest(path: str | Path) -> Dict[str, Any]:
     manifest_path = resolve_storage_path(path)
     return json.loads(manifest_path.read_text(encoding="utf-8"))
+
+
+def resolve_manifest_asset_path(manifest_path: str | Path, asset_path: str | Path) -> Path:
+    raw_asset = str(asset_path).strip()
+    if not raw_asset:
+        raise ValueError("asset_path is required")
+    asset = Path(raw_asset)
+    if asset.is_absolute():
+        return asset
+    if raw_asset.startswith("dbfs:/") or raw_asset.startswith("file://"):
+        return resolve_storage_path(raw_asset)
+    manifest_fp = resolve_storage_path(manifest_path)
+    return (manifest_fp.parent / asset).resolve()
 
 
 def find_latest_snapshot_manifest(
@@ -384,6 +400,122 @@ def copy_assets_to_snapshot(
         "manifest": manifest,
         "manifest_path": manifest_path,
         "latest_alias_path": latest_alias,
+    }
+
+
+def _blob_url_for_path(container_sas_url: str, blob_path: str) -> str:
+    split = urlsplit(str(container_sas_url).strip())
+    if split.scheme not in {"http", "https"}:
+        raise ValueError("container_sas_url must be an http(s) URL")
+    base_path = split.path.rstrip("/")
+    blob_suffix = quote(str(blob_path).lstrip("/"), safe="/")
+    combined_path = f"{base_path}/{blob_suffix}"
+    return urlunsplit((split.scheme, split.netloc, combined_path, split.query, ""))
+
+
+def upload_file_to_blob_sas(
+    *,
+    container_sas_url: str,
+    local_path: str | Path,
+    blob_path: str,
+    content_type: Optional[str] = None,
+    timeout_seconds: int = 300,
+) -> Dict[str, Any]:
+    src = resolve_storage_path(local_path)
+    if not src.exists():
+        raise FileNotFoundError(f"Upload source file does not exist: {src}")
+    target_url = _blob_url_for_path(container_sas_url, blob_path)
+    guessed_content_type = content_type or mimetypes.guess_type(str(src.name))[0] or "application/octet-stream"
+    split = urlsplit(str(container_sas_url).strip())
+    version = dict(parse_qsl(split.query)).get("sv", "2024-11-04")
+    headers = {
+        "x-ms-blob-type": "BlockBlob",
+        "x-ms-version": version,
+        "Content-Type": guessed_content_type,
+        "Content-Length": str(int(src.stat().st_size)),
+    }
+    with src.open("rb") as fh:
+        response = requests.put(target_url, headers=headers, data=fh, timeout=timeout_seconds)
+    response.raise_for_status()
+    return {
+        "blob_path": str(blob_path),
+        "url": target_url.split("?", 1)[0],
+        "bytes": int(src.stat().st_size),
+        "content_type": guessed_content_type,
+    }
+
+
+def upload_training_set_to_blob(
+    *,
+    container_sas_url: str,
+    run_id: str,
+    local_files: Sequence[Mapping[str, Any]],
+    prefix: str = "training-set",
+    manifest_name: str = "snapshot_manifest.json",
+    base_manifest: Optional[Mapping[str, Any]] = None,
+) -> Dict[str, Any]:
+    normalized_prefix = str(prefix).strip().strip("/")
+    if not normalized_prefix:
+        raise ValueError("prefix is required")
+
+    uploaded_assets: List[Dict[str, Any]] = []
+    for item in local_files:
+        source_path = resolve_storage_path(str(item.get("source_path", "")))
+        dest_name = str(item.get("dest_name", source_path.name)).strip() or source_path.name
+        blob_path = f"{normalized_prefix}/{dest_name}"
+        uploaded = upload_file_to_blob_sas(
+            container_sas_url=container_sas_url,
+            local_path=source_path,
+            blob_path=blob_path,
+            content_type=str(item.get("content_type", "")).strip() or None,
+        )
+        asset_payload = {
+            "name": str(item.get("name", dest_name)),
+            "path": dest_name,
+            "blob_path": uploaded["blob_path"],
+            "blob_url": uploaded["url"],
+            "bytes": uploaded["bytes"],
+            "content_type": uploaded["content_type"],
+        }
+        for key in ("rows", "cols", "schema_hash"):
+            if key in item and item.get(key) is not None:
+                asset_payload[key] = item.get(key)
+        uploaded_assets.append(asset_payload)
+
+    manifest_payload = {
+        "manifest_version": DEFAULT_MANIFEST_VERSION,
+        "snapshot_kind": "training_snapshot",
+        "run_id": str(run_id),
+        "snapshot_date": utc_now_iso(),
+        "storage_type": "azure_blob_sas",
+        "prefix": normalized_prefix,
+        "exported_assets": uploaded_assets,
+    }
+    if isinstance(base_manifest, Mapping):
+        for key, value in base_manifest.items():
+            if key in {"exported_assets", "manifest_blob_url"}:
+                continue
+            manifest_payload[key] = value
+        manifest_payload["exported_assets"] = uploaded_assets
+        manifest_payload["storage_type"] = "azure_blob_sas"
+        manifest_payload["prefix"] = normalized_prefix
+
+    tmp_dir = Path("/tmp") / "brand-health-upload-manifests"
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    tmp_manifest = tmp_dir / f"{str(run_id).strip() or 'run'}-{manifest_name}"
+    tmp_manifest.write_text(json.dumps(manifest_payload, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
+    uploaded_manifest = upload_file_to_blob_sas(
+        container_sas_url=container_sas_url,
+        local_path=tmp_manifest,
+        blob_path=f"{normalized_prefix}/{manifest_name}",
+        content_type="application/json",
+    )
+    manifest_payload["manifest_blob_url"] = uploaded_manifest["url"]
+
+    return {
+        "manifest": manifest_payload,
+        "manifest_blob_url": uploaded_manifest["url"],
+        "uploaded_assets": uploaded_assets,
     }
 
 
