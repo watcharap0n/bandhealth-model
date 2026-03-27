@@ -9,6 +9,7 @@ import joblib
 import numpy as np
 import pandas as pd
 
+from .mlops_runtime import read_json_manifest, resolve_storage_path
 from .driver_mapping import (
     COMMERCE_METRIC_FAMILIES,
     METRIC_FAMILY_CONFIG,
@@ -118,7 +119,7 @@ def _coerce_attr_values(values) -> List[str]:
 
 
 def load_model_artifacts(artifact_dir: str | Path):
-    artifact_path = Path(artifact_dir)
+    artifact_path = resolve_storage_path(artifact_dir)
     model = joblib.load(artifact_path / "brand_health_model.joblib")
 
     metadata_path = artifact_path / "model_metadata.json"
@@ -137,6 +138,34 @@ def load_model_artifacts(artifact_dir: str | Path):
         "model": model,
         "metadata": metadata,
         "feature_importance": importance,
+    }
+
+
+def load_model_from_release_manifest(manifest_path: str | Path) -> Dict[str, Any]:
+    manifest = read_json_manifest(manifest_path)
+    artifact_uri = str(manifest.get("artifact_uri", "")).strip()
+    if not artifact_uri:
+        raise ValueError("model release manifest is missing required field: artifact_uri")
+
+    loaded = load_model_artifacts(artifact_uri)
+    metadata = loaded.get("metadata", {})
+    if not metadata.get("feature_columns") and manifest.get("feature_columns"):
+        metadata["feature_columns"] = [str(x) for x in manifest.get("feature_columns", [])]
+    if not metadata.get("class_labels") and manifest.get("class_labels"):
+        metadata["class_labels"] = [str(x) for x in manifest.get("class_labels", [])]
+    if not metadata.get("metrics") and isinstance(manifest.get("metrics"), Mapping):
+        metadata["metrics"] = dict(manifest.get("metrics", {}))
+
+    feature_columns = metadata.get("feature_columns") or _extract_model_feature_columns(loaded["model"]) or []
+    class_labels = metadata.get("class_labels") or _coerce_attr_values(getattr(loaded["model"], "classes_", None))
+
+    return {
+        "model": loaded["model"],
+        "metadata": metadata,
+        "feature_importance": loaded.get("feature_importance", {}),
+        "feature_columns": [str(x) for x in feature_columns],
+        "class_labels": [str(x) for x in class_labels],
+        "release_manifest": manifest,
     }
 
 

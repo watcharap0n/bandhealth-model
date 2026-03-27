@@ -523,7 +523,7 @@ class RuntimeValidationTests(unittest.TestCase):
             {
                 "enabled": False,
                 "table_name": "projects_prd.marketingautomation.kpis_predicted",
-                "write_mode": "overwrite",
+                "write_mode": "merge",
                 "fail_on_cast_error": True,
             },
         )

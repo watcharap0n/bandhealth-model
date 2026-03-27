@@ -288,8 +288,8 @@ Optional Unity Catalog publish (Databricks Spark mode):
 - enable `--publish-kpis-predicted true` with `--source-mode databricks_pyspark`
 - default target table: `projects_prd.marketingautomation.kpis_predicted`
 - write modes:
+- `merge`: default mode; upsert by `(brand_id, window_end_date, window_size)` and keep older windows that were not rescored
 - `overwrite`: replace the full target table
-- `merge`: upsert by `(brand_id, window_end_date, window_size)` and keep older windows that were not rescored
 
 ### Sampling artifacts (quick/smart)
 - `outputs/sample_train_indices.csv`
@@ -304,7 +304,39 @@ Important i18n fields in prediction payload:
 - target-segment `reason_statement_i18n`, `metric_family_i18n`, `segment_label_i18n`, `direction_i18n`
 - `suggested_actions_i18n`: list of `{ \"en\": \"...\", \"th\": \"...\" }`
 
-## 7) Cloud run checklist
+## 7) Hybrid MLOps additions
+
+The pipeline now includes hybrid Databricks + Azure ML handoff primitives:
+
+- `outputs/data_validation_report.json`
+  - required-column checks, app_id whitelist validation, null-rate warnings, and row-count drift warnings
+- `outputs/mlops_snapshots/training_snapshot/<RUN_ID>/snapshot_manifest.json`
+  - curated labeled training snapshot + manifest for Azure ML retraining
+- `outputs/mlops_snapshots/scoring_snapshot/<RUN_ID>/snapshot_manifest.json`
+  - scored output archive + manifest for replay/audit
+- `artifacts/model_registry/<RUN_ID>/model_release_manifest.json`
+  - immutable artifact bundle manifest for promoted scoring releases
+- `artifacts/model_registry/latest_candidate.json`
+  - latest packaged candidate model release
+- `artifacts/model_registry/production_manifest.json`
+  - written only when `--auto-approve-model-release true`
+
+New runtime options:
+
+- `--run-id <id>`
+- `--snapshot-root <path>`
+- `--model-source artifact_bundle --model-release-manifest <manifest.json>`
+- `--model-bundle-root <path>`
+- `--export-training-snapshot true|false`
+- `--export-scoring-snapshot true|false`
+- `--data-validation-null-rate-threshold <float>`
+- `--data-validation-row-count-delta-threshold <float>`
+- `--data-validation-fail-on-warning true|false`
+- `--auto-approve-model-release true|false`
+
+Azure ML control-plane scaffold lives under [`azureml/README.md`](/Users/kmac15/PycharmProjects/banding-health/azureml/README.md).
+
+## 8) Cloud run checklist
 
 1. Upload code + dataset folders under `datasets/*`.
 2. Create virtualenv and install packages.
@@ -316,7 +348,7 @@ Important i18n fields in prediction payload:
 - skip-train: run command in 4.4
 5. Download outputs from `reports/` and `outputs/`.
 
-## 8) Troubleshooting
+## 9) Troubleshooting
 
 - `--skip-train` fails with missing artifact files:
   - Run full training once, or upload the 3 required files in `artifacts/`.

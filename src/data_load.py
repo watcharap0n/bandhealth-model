@@ -134,6 +134,10 @@ def safe_read_parquet(
     add_missing_requested_columns: bool = True,
 ) -> pd.DataFrame:
     parquet_path = Path(parquet_path)
+    if parquet_path.exists() and parquet_path.stat().st_size == 0:
+        empty_cols = list(columns) if columns is not None else []
+        return pd.DataFrame(columns=empty_cols)
+
     available = _available_columns(parquet_path)
 
     selected = None

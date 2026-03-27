@@ -26,7 +26,13 @@ from src.databricks_catalog_publish import publish_kpis_predicted_to_catalog
 from src.databricks_pyspark import load_tables_from_databricks_pyspark
 from src.databricks_sql import CATALOG_TABLE_MAP, COLUMN_ALIASES, DatabricksSQLConfig, QuerySelection, load_tables_from_databricks_sql
 from src.features import build_feature_table, feature_definitions
-from src.infer import load_model_artifacts, load_model_from_mlflow, predict_with_drivers, save_predictions
+from src.infer import (
+    load_model_artifacts,
+    load_model_from_mlflow,
+    load_model_from_release_manifest,
+    predict_with_drivers,
+    save_predictions,
+)
 from src.labeling import generate_weak_labels, labeling_thresholds
 from src.memory_opt import optimize_table_dict, write_parquet_chunked
 from src.pipeline_checkpoints import CheckpointManager, build_arg_fingerprint, utc_now_iso
@@ -83,6 +89,8 @@ class HopRuntime:
     mlflow_cfg: Dict[str, object]
     model_cfg: Dict[str, str]
     publish_cfg: Dict[str, object]
+    snapshot_cfg: Dict[str, object]
+    bundle_cfg: Dict[str, object]
     dataset_root: Path
     reports_dir: Path
     outputs_dir: Path
@@ -192,6 +200,9 @@ def _load_model_bundle(rt: HopRuntime) -> Dict[str, object]:
             registry_uri=rt.model_cfg.get("mlflow_registry_uri", "databricks"),
         )
         default_selected = "mlflow_sklearn_model"
+    elif bool(args.skip_train) and rt.model_cfg.get("source") == "artifact_bundle":
+        loaded = load_model_from_release_manifest(rt.model_cfg.get("model_release_manifest", ""))
+        default_selected = "artifact_bundle_model"
     else:
         loaded = load_model_artifacts(artifact_dir=rt.artifacts_dir)
         default_selected = "hist_gradient_boosting_calibrated"
@@ -391,6 +402,17 @@ def _stage_profile(rt: HopRuntime) -> List[str]:
         time_diag_df=join_diag.time_range_summary,
         commerce_joinable=join_diag.commerce_joinable,
     )
+    validation_report = run_pipeline._run_data_validation(
+        tables=tables,
+        columns_map=run_pipeline.COLUMNS_MAP,
+        runtime_brand_app_filters=rt.runtime_brand_app_filters,
+        join_diag=join_diag,
+        activity_enrichment_joinable=activity_enrichment_joinable,
+        snapshot_cfg=rt.snapshot_cfg,
+        run_id=str(rt.hop_args.run_id),
+        outputs_dir=rt.outputs_dir,
+    )
+    validation_path = rt.checkpoint.write_json("profile", "data_validation_report.json", validation_report)
 
     zero_row_summary = run_pipeline._zero_row_tables_summary(profile.table_profile)
     if zero_row_summary:
@@ -402,6 +424,8 @@ def _stage_profile(rt: HopRuntime) -> List[str]:
         str(rt.reports_dir / "data_profile" / "join_coverage.csv"),
         str(coverage_notes_path),
         str(profiling_report_path),
+        str(rt.outputs_dir / "data_validation_report.json"),
+        str(validation_path),
     ]
     outputs.extend(str(p) for p in rt.checkpoint.save_profile(profile, activity_enrichment_joinable))
     return outputs
@@ -500,7 +524,45 @@ def _stage_labels(rt: HopRuntime) -> List[str]:
             "cols": int(len(labeled_df.columns)),
         },
     )
-    return [str(labeled_path), str(summary_path)]
+    outputs = [str(labeled_path), str(summary_path)]
+
+    tables = rt.checkpoint.load_tables()
+    join_diag = rt.checkpoint.load_join_diagnostics()
+    _, activity_enrichment_joinable = rt.checkpoint.load_profile()
+    validation_report = rt.checkpoint.read_json("profile", "data_validation_report.json", default={})
+    if not isinstance(validation_report, Mapping):
+        validation_report = {}
+    source_table_contracts = validation_report.get("table_contracts")
+    if not isinstance(source_table_contracts, list):
+        source_table_contracts = run_pipeline.summarize_tables_for_contracts(
+            tables=tables,
+            columns_map=run_pipeline.COLUMNS_MAP,
+        )
+
+    training_snapshot_export = run_pipeline._export_training_snapshot(
+        snapshot_cfg=rt.snapshot_cfg,
+        run_id=str(rt.hop_args.run_id),
+        source_mode=rt.source_mode,
+        runtime_brand_app_filters=rt.runtime_brand_app_filters,
+        source_table_contracts=source_table_contracts,
+        join_diag=join_diag,
+        activity_enrichment_joinable=activity_enrichment_joinable,
+        validation_report=validation_report,
+        outputs_dir=rt.outputs_dir,
+        reports_dir=rt.reports_dir,
+        sample_mode=str(rt.pipeline_args.train_sample_mode).strip().lower(),
+    )
+    if training_snapshot_export is not None:
+        snapshot_ref_path = rt.checkpoint.write_json(
+            "labels",
+            "training_snapshot_export.json",
+            {
+                "manifest_path": str(training_snapshot_export["manifest_path"]),
+                "snapshot_dir": str(training_snapshot_export["snapshot_dir"]),
+            },
+        )
+        outputs.extend([str(training_snapshot_export["manifest_path"]), str(snapshot_ref_path)])
+    return outputs
 
 
 def _stage_train(rt: HopRuntime) -> List[str]:
@@ -566,6 +628,30 @@ def _stage_train(rt: HopRuntime) -> List[str]:
         metrics = artifacts.metrics
         feature_columns = artifacts.feature_columns
         class_labels = artifacts.class_labels
+        training_snapshot_export = rt.checkpoint.read_json("labels", "training_snapshot_export.json", default={})
+        if not isinstance(training_snapshot_export, Mapping):
+            training_snapshot_export = {}
+        model_bundle_export = run_pipeline._package_model_bundle(
+            bundle_cfg=rt.bundle_cfg,
+            run_id=str(rt.hop_args.run_id),
+            artifacts_dir=rt.artifacts_dir,
+            training_snapshot_export=training_snapshot_export,
+            feature_columns=feature_columns,
+            class_labels=class_labels,
+            metrics=metrics if isinstance(metrics, Mapping) else {},
+            selected_model=selected_model,
+        )
+        if model_bundle_export is not None:
+            model_release_path = rt.checkpoint.write_json(
+                "train",
+                "model_release_export.json",
+                {
+                    "manifest_path": str(model_bundle_export["manifest_path"]),
+                    "artifact_uri": str(model_bundle_export["manifest"].get("artifact_uri", "")),
+                    "status": str(model_bundle_export["manifest"].get("status", "")),
+                },
+            )
+            outputs.extend([str(model_bundle_export["manifest_path"]), str(model_release_path)])
 
     summary_path = rt.checkpoint.write_json(
         "train",
@@ -621,7 +707,7 @@ def _stage_infer(rt: HopRuntime) -> List[str]:
         class_labels=class_labels,
         feature_importance=feature_importance,
         segment_kpis_df=segment_kpi_df if not segment_kpi_df.empty else None,
-        brand_primary_app_id_map=run_pipeline._brand_primary_app_id_map(run_pipeline.BRAND_APP_ID_FILTERS),
+        brand_primary_app_id_map=run_pipeline._brand_primary_app_id_map(rt.runtime_brand_app_filters),
         top_n_drivers=5,
         top_n_actions=3,
         top_n_target_segments=3,
@@ -691,6 +777,9 @@ def _stage_infer(rt: HopRuntime) -> List[str]:
         profile, activity_enrichment_joinable = rt.checkpoint.load_profile()
     except Exception:
         profile, activity_enrichment_joinable = _empty_profile(), {}
+    validation_report = rt.checkpoint.read_json("profile", "data_validation_report.json", default={})
+    if not isinstance(validation_report, Mapping):
+        validation_report = {}
 
     try:
         join_diag = rt.checkpoint.load_join_diagnostics()
@@ -746,7 +835,7 @@ def _stage_infer(rt: HopRuntime) -> List[str]:
     catalog_publish_summary = existing_summary.get("catalog_publish") if isinstance(existing_summary.get("catalog_publish"), Mapping) else {
         "enabled": bool(rt.publish_cfg.get("enabled", False)),
         "table": str(rt.publish_cfg.get("table_name", "")),
-        "write_mode": str(rt.publish_cfg.get("write_mode", "overwrite")),
+        "write_mode": str(rt.publish_cfg.get("write_mode", "merge")),
         "rows_written": 0,
         "status": "disabled",
         "error": "",
@@ -762,6 +851,7 @@ def _stage_infer(rt: HopRuntime) -> List[str]:
         "feature_count": len(feature_columns),
         "example_count": len(examples),
         "attribution_qa": attribution_qa,
+        "data_validation": dict(validation_report),
         "catalog_publish": catalog_publish_summary,
         "memory_optimization": {
             "enabled": bool(memory_payload.get("memory_optimize", False)),
@@ -769,7 +859,41 @@ def _stage_infer(rt: HopRuntime) -> List[str]:
             "memory_events": [],
         },
     }
+    training_snapshot_export = rt.checkpoint.read_json("labels", "training_snapshot_export.json", default={})
+    if isinstance(training_snapshot_export, Mapping) and training_snapshot_export.get("manifest_path"):
+        summary["training_snapshot_manifest"] = str(training_snapshot_export["manifest_path"])
+    model_release_export = rt.checkpoint.read_json("train", "model_release_export.json", default={})
+    if isinstance(model_release_export, Mapping) and model_release_export.get("manifest_path"):
+        summary["model_release"] = {
+            "manifest_path": str(model_release_export["manifest_path"]),
+            "artifact_uri": str(model_release_export.get("artifact_uri", "")),
+            "status": str(model_release_export.get("status", "")),
+        }
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+
+    tables = rt.checkpoint.load_tables()
+    source_table_contracts = validation_report.get("table_contracts")
+    if not isinstance(source_table_contracts, list):
+        source_table_contracts = run_pipeline.summarize_tables_for_contracts(
+            tables=tables,
+            columns_map=run_pipeline.COLUMNS_MAP,
+        )
+    scoring_snapshot_export = run_pipeline._export_scoring_snapshot(
+        snapshot_cfg=rt.snapshot_cfg,
+        run_id=str(rt.hop_args.run_id),
+        source_mode=rt.source_mode,
+        runtime_brand_app_filters=rt.runtime_brand_app_filters,
+        source_table_contracts=source_table_contracts,
+        join_diag=join_diag,
+        activity_enrichment_joinable=activity_enrichment_joinable,
+        validation_report=validation_report,
+        outputs_dir=rt.outputs_dir,
+        reports_dir=rt.reports_dir,
+        rows_scored=int(len(pred_df)),
+    )
+    if scoring_snapshot_export is not None:
+        summary["scoring_snapshot_manifest"] = str(scoring_snapshot_export["manifest_path"])
+        summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
     mlflow_model_input_sample: Optional[pd.DataFrame] = None
     if not args.skip_train and feature_columns:
@@ -820,6 +944,8 @@ def _stage_infer(rt: HopRuntime) -> List[str]:
         str(memory_report_path),
         str(infer_summary_path),
     ]
+    if scoring_snapshot_export is not None:
+        outputs.append(str(scoring_snapshot_export["manifest_path"]))
     return outputs
 
 
@@ -833,7 +959,7 @@ def _stage_publish(rt: HopRuntime) -> List[str]:
     catalog_publish_summary: Dict[str, object] = {
         "enabled": bool(publish_cfg.get("enabled", False)),
         "table": str(publish_cfg.get("table_name", "")),
-        "write_mode": str(publish_cfg.get("write_mode", "overwrite")),
+        "write_mode": str(publish_cfg.get("write_mode", "merge")),
         "rows_written": 0,
         "status": "disabled",
         "error": "",
@@ -844,7 +970,7 @@ def _stage_publish(rt: HopRuntime) -> List[str]:
             publish_result = publish_kpis_predicted_to_catalog(
                 pred_df=pred_df,
                 table_name=str(publish_cfg.get("table_name", "")),
-                write_mode=str(publish_cfg.get("write_mode", "overwrite")),
+                write_mode=str(publish_cfg.get("write_mode", "merge")),
                 fail_on_cast_error=bool(publish_cfg.get("fail_on_cast_error", True)),
             )
             catalog_publish_summary["rows_written"] = int(publish_result.get("rows_written", 0))
@@ -981,6 +1107,7 @@ class HopRunner:
 
 
 def _build_runtime(hop_args: argparse.Namespace, pipeline_args: argparse.Namespace) -> HopRuntime:
+    pipeline_args.run_id = str(hop_args.run_id)
     source_mode = str(pipeline_args.source_mode).strip().lower()
     publish_cfg = run_pipeline._resolve_publish_runtime(pipeline_args, source_mode=source_mode)
     runtime_brand_app_filters, databricks_cfg, query_selection = run_pipeline._resolve_source_runtime(pipeline_args)
@@ -995,6 +1122,8 @@ def _build_runtime(hop_args: argparse.Namespace, pipeline_args: argparse.Namespa
     reports_dir.mkdir(parents=True, exist_ok=True)
     outputs_dir.mkdir(parents=True, exist_ok=True)
     artifacts_dir.mkdir(parents=True, exist_ok=True)
+    snapshot_cfg = run_pipeline._resolve_snapshot_runtime(pipeline_args, outputs_dir=outputs_dir)
+    bundle_cfg = run_pipeline._resolve_model_bundle_runtime(pipeline_args, artifacts_dir=artifacts_dir)
 
     run_pipeline._set_thread_limits(int(pipeline_args.n_jobs))
 
@@ -1022,6 +1151,8 @@ def _build_runtime(hop_args: argparse.Namespace, pipeline_args: argparse.Namespa
         mlflow_cfg=mlflow_cfg,
         model_cfg=model_cfg,
         publish_cfg=publish_cfg,
+        snapshot_cfg=snapshot_cfg,
+        bundle_cfg=bundle_cfg,
         dataset_root=dataset_root,
         reports_dir=reports_dir,
         outputs_dir=outputs_dir,
@@ -1044,6 +1175,9 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         f"Paths | dataset_root={runtime.dataset_root} reports_dir={runtime.reports_dir} "
         f"outputs_dir={runtime.outputs_dir} artifacts_dir={runtime.artifacts_dir} "
         f"checkpoint_run_dir={runtime.checkpoint.run_dir}"
+    )
+    run_pipeline._log(
+        f"MLOps paths | snapshot_root={runtime.snapshot_cfg['root']} model_bundle_root={runtime.bundle_cfg['root']}"
     )
 
     runner = HopRunner(runtime)

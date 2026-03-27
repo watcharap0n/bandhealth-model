@@ -242,6 +242,37 @@ Databricks task chain (same `--run-id` for all tasks):
 8. `infer`
 9. `publish`
 
+### 4.7 Export hybrid MLOps snapshots + candidate model bundle
+
+```bash
+python3 run_pipeline.py \
+  --run-id bh-20260327-train \
+  --source-mode databricks_pyspark \
+  --query-app-ids 1993744540760190,838315041537793 \
+  --brand-aliases 1993744540760190=c-vit,838315041537793=see-chan \
+  --snapshot-root /dbfs/tmp/brand-health/mlops_snapshots \
+  --model-bundle-root /dbfs/tmp/brand-health/model_registry \
+  --export-training-snapshot true \
+  --export-scoring-snapshot true \
+  --publish-kpis-predicted true \
+  --publish-kpis-write-mode merge
+```
+
+### 4.8 Score from an approved artifact bundle manifest
+
+```bash
+python3 run_pipeline.py \
+  --run-id bh-20260327-score \
+  --source-mode databricks_pyspark \
+  --query-app-ids 1993744540760190,838315041537793 \
+  --brand-aliases 1993744540760190=c-vit,838315041537793=see-chan \
+  --skip-train \
+  --model-source artifact_bundle \
+  --model-release-manifest /dbfs/tmp/brand-health/model_registry/production_manifest.json \
+  --publish-kpis-predicted true \
+  --publish-kpis-write-mode merge
+```
+
 ## 5) Key output files to verify
 
 | Category | Files |
@@ -250,6 +281,9 @@ Databricks task chain (same `--run-id` for all tasks):
 | Dashboard examples | `outputs/examples_last4_with_segments.json` |
 | Attribution QA | `outputs/attribution_qa.json` |
 | Sampling QA | `outputs/sample_qa_report.json` |
+| Data validation | `outputs/data_validation_report.json` |
 | Memory QA | `outputs/memory_optimization_report.json`, `outputs/memory_dtype_optimization.csv` |
+| Snapshot manifests | `outputs/mlops_snapshots/training_snapshot/<RUN_ID>/snapshot_manifest.json`, `outputs/mlops_snapshots/scoring_snapshot/<RUN_ID>/snapshot_manifest.json` |
+| Model release | `artifacts/model_registry/<RUN_ID>/model_release_manifest.json`, `artifacts/model_registry/latest_candidate.json`, `artifacts/model_registry/production_manifest.json` |
 | Metrics summary | `reports/pipeline_summary.json`, `outputs/model_metrics_sample.json` |
 | Hop checkpoints | `outputs/checkpoints/<RUN_ID>/status/*.json` and stage checkpoint files |

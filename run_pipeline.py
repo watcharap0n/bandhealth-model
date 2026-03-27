@@ -33,8 +33,27 @@ from src.databricks_sql import (
 from src.databricks_pyspark import load_tables_from_databricks_pyspark
 from src.databricks_catalog_publish import publish_kpis_predicted_to_catalog
 from src.features import build_feature_table, feature_definitions
-from src.infer import load_model_artifacts, load_model_from_mlflow, predict_with_drivers, save_predictions
+from src.infer import (
+    load_model_artifacts,
+    load_model_from_mlflow,
+    load_model_from_release_manifest,
+    predict_with_drivers,
+    save_predictions,
+)
 from src.labeling import generate_weak_labels, labeling_thresholds
+from src.mlops_runtime import (
+    assert_validation_report,
+    build_data_validation_report,
+    copy_assets_to_snapshot,
+    current_code_version,
+    dataframe_schema_hash,
+    find_latest_snapshot_manifest,
+    package_model_artifact_bundle,
+    read_json_manifest,
+    resolve_storage_path,
+    summarize_tables_for_contracts,
+    utc_now_iso,
+)
 from src.sampling import TrainSampleConfig, build_train_eval_samples, save_sample_outputs
 from src.segments import compute_segment_kpis
 from src.train import train_models
@@ -135,6 +154,17 @@ def _stage_done(step_label: str, started_at: float, extra: Optional[str] = None)
         _log(f"{step_label} done in {elapsed:.2f}s | {extra}")
     else:
         _log(f"{step_label} done in {elapsed:.2f}s")
+
+
+def _default_run_id(now: Optional[datetime] = None) -> str:
+    dt = now or datetime.utcnow()
+    return f"bh-{dt.strftime('%Y%m%d-%H%M%S')}"
+
+
+def _write_json(path: Path, payload: Mapping[str, object] | List[object]) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
+    return path
 
 
 def _table_rows_summary(tables: Mapping[str, pd.DataFrame]) -> str:
@@ -337,8 +367,8 @@ def _resolve_mlflow_runtime(args: argparse.Namespace) -> Dict[str, object]:
 
 def _resolve_model_runtime(args: argparse.Namespace) -> Dict[str, str]:
     model_source = str(getattr(args, "model_source", "artifacts")).strip().lower()
-    if model_source not in {"artifacts", "mlflow"}:
-        raise ValueError("model_source must be one of: artifacts, mlflow")
+    if model_source not in {"artifacts", "mlflow", "artifact_bundle"}:
+        raise ValueError("model_source must be one of: artifacts, mlflow, artifact_bundle")
 
     mlflow_model_uri = _env_or_value(getattr(args, "mlflow_model_uri", None), "MLFLOW_MODEL_URI")
     mlflow_registry_uri = _env_or_value(
@@ -346,21 +376,30 @@ def _resolve_model_runtime(args: argparse.Namespace) -> Dict[str, str]:
         "MLFLOW_REGISTRY_URI",
         default="databricks",
     )
+    model_release_manifest = _env_or_value(
+        getattr(args, "model_release_manifest", None),
+        "MODEL_RELEASE_MANIFEST",
+    )
 
     if bool(getattr(args, "skip_train", False)) and model_source == "mlflow" and not mlflow_model_uri:
         raise ValueError("mlflow_model_uri is required when --skip-train is used with --model-source mlflow")
+    if bool(getattr(args, "skip_train", False)) and model_source == "artifact_bundle" and not model_release_manifest:
+        raise ValueError(
+            "model_release_manifest is required when --skip-train is used with --model-source artifact_bundle"
+        )
 
     return {
         "source": model_source,
         "mlflow_model_uri": str(mlflow_model_uri) if mlflow_model_uri else "",
         "mlflow_registry_uri": str(mlflow_registry_uri or "databricks"),
+        "model_release_manifest": str(model_release_manifest) if model_release_manifest else "",
     }
 
 
 def _resolve_publish_runtime(args: argparse.Namespace, source_mode: str) -> Dict[str, object]:
     enabled = _parse_bool_flag(getattr(args, "publish_kpis_predicted", "false"))
     table_name = str(getattr(args, "publish_kpis_table", "projects_prd.marketingautomation.kpis_predicted")).strip()
-    write_mode = str(getattr(args, "publish_kpis_write_mode", "overwrite")).strip().lower() or "overwrite"
+    write_mode = str(getattr(args, "publish_kpis_write_mode", "merge")).strip().lower() or "merge"
     fail_on_cast_error = _parse_bool_flag(getattr(args, "publish_kpis_fail_on_cast_error", "true"))
 
     if enabled and source_mode != "databricks_pyspark":
@@ -375,6 +414,30 @@ def _resolve_publish_runtime(args: argparse.Namespace, source_mode: str) -> Dict
         "table_name": table_name,
         "write_mode": write_mode,
         "fail_on_cast_error": bool(fail_on_cast_error),
+    }
+
+
+def _resolve_snapshot_runtime(args: argparse.Namespace, *, outputs_dir: Path) -> Dict[str, object]:
+    root_raw = str(getattr(args, "snapshot_root", "") or "").strip()
+    root = resolve_storage_path(root_raw) if root_raw else outputs_dir / "mlops_snapshots"
+    return {
+        "root": root,
+        "null_rate_threshold": float(getattr(args, "data_validation_null_rate_threshold", 0.95)),
+        "row_count_delta_threshold": float(getattr(args, "data_validation_row_count_delta_threshold", 0.50)),
+        "fail_on_warning": bool(_parse_bool_flag(getattr(args, "data_validation_fail_on_warning", "false"))),
+        "export_training_snapshot": bool(_parse_bool_flag(getattr(args, "export_training_snapshot", "true"))),
+        "export_scoring_snapshot": bool(_parse_bool_flag(getattr(args, "export_scoring_snapshot", "true"))),
+    }
+
+
+def _resolve_model_bundle_runtime(args: argparse.Namespace, *, artifacts_dir: Path) -> Dict[str, object]:
+    root_raw = str(getattr(args, "model_bundle_root", "") or "").strip()
+    root = resolve_storage_path(root_raw) if root_raw else artifacts_dir / "model_registry"
+    auto_approve = bool(_parse_bool_flag(getattr(args, "auto_approve_model_release", "false")))
+    return {
+        "root": root,
+        "status": "approved" if auto_approve else "candidate",
+        "auto_approve": auto_approve,
     }
 
 
@@ -496,6 +559,7 @@ def _log_pipeline_to_mlflow(
                 (outputs_dir / "join_diagnostics.md", "outputs"),
                 (outputs_dir / "coverage_notes.md", "outputs"),
                 (outputs_dir / "attribution_qa.json", "outputs"),
+                (outputs_dir / "data_validation_report.json", "outputs"),
                 (outputs_dir / "memory_optimization_report.json", "outputs"),
                 (outputs_dir / "examples_last4_with_segments.json", "outputs"),
                 (outputs_dir / "predictions_with_drivers.csv", "outputs"),
@@ -503,6 +567,24 @@ def _log_pipeline_to_mlflow(
                 (reports_dir / "pipeline_summary.json", "reports"),
                 (report_path, "reports"),
             ]
+            snapshot_root_raw = str(getattr(args, "snapshot_root", "") or "").strip()
+            snapshot_root = resolve_storage_path(snapshot_root_raw) if snapshot_root_raw else outputs_dir / "mlops_snapshots"
+            run_id = str(getattr(args, "run_id", "") or "").strip()
+            if run_id:
+                artifact_targets.extend(
+                    [
+                        (snapshot_root / "training_snapshot" / run_id / "snapshot_manifest.json", "mlops"),
+                        (snapshot_root / "scoring_snapshot" / run_id / "snapshot_manifest.json", "mlops"),
+                    ]
+                )
+            bundle_root_raw = str(getattr(args, "model_bundle_root", "") or "").strip()
+            bundle_root = resolve_storage_path(bundle_root_raw) if bundle_root_raw else Path(args.artifacts_dir) / "model_registry"
+            artifact_targets.extend(
+                [
+                    (bundle_root / "latest_candidate.json", "mlops"),
+                    (bundle_root / "production_manifest.json", "mlops"),
+                ]
+            )
             for artifact_path, artifact_subdir in artifact_targets:
                 if artifact_path.exists():
                     mlflow.log_artifact(str(artifact_path), artifact_path=artifact_subdir)
@@ -851,8 +933,290 @@ def _write_profiling_report(
     lines.append("")
     output_path.write_text("\n".join(lines), encoding="utf-8")
 
+
+def _run_data_validation(
+    *,
+    tables: Mapping[str, pd.DataFrame],
+    columns_map: Mapping[str, Sequence[str]],
+    runtime_brand_app_filters: Mapping[str, Sequence[str]],
+    join_diag,
+    activity_enrichment_joinable: Mapping[str, bool],
+    snapshot_cfg: Mapping[str, object],
+    run_id: str,
+    outputs_dir: Path,
+) -> Dict[str, object]:
+    previous_manifest = None
+    latest_manifest_path = find_latest_snapshot_manifest(
+        snapshot_root=snapshot_cfg["root"],
+        snapshot_kind="training_snapshot",
+        exclude_run_id=run_id,
+    )
+    if latest_manifest_path is not None:
+        previous_manifest = read_json_manifest(latest_manifest_path)
+
+    report = build_data_validation_report(
+        tables=tables,
+        columns_map=columns_map,
+        runtime_brand_app_filters=runtime_brand_app_filters,
+        null_rate_threshold=float(snapshot_cfg["null_rate_threshold"]),
+        row_count_delta_threshold=float(snapshot_cfg["row_count_delta_threshold"]),
+        previous_snapshot_manifest=previous_manifest,
+        join_coverage=join_diag.coverage_summary,
+        commerce_joinable=join_diag.commerce_joinable,
+        commerce_join_threshold=0.80,
+        activity_enrichment_joinable=activity_enrichment_joinable,
+        activity_join_threshold=0.80,
+    )
+    _write_json(outputs_dir / "data_validation_report.json", report)
+    assert_validation_report(report, fail_on_warning=bool(snapshot_cfg["fail_on_warning"]))
+    return report
+
+
+def _snapshot_manifest_base(
+    *,
+    snapshot_kind: str,
+    run_id: str,
+    source_mode: str,
+    runtime_brand_app_filters: Mapping[str, Sequence[str]],
+    source_table_contracts: Sequence[Mapping[str, object]],
+    join_diag,
+    activity_enrichment_joinable: Mapping[str, bool],
+    validation_report: Mapping[str, object],
+    extra: Optional[Mapping[str, object]] = None,
+) -> Dict[str, object]:
+    return {
+        "manifest_version": "1.0",
+        "snapshot_date": utc_now_iso(),
+        "source_mode": str(source_mode),
+        "run_id": str(run_id),
+        "app_ids": sorted(
+            {
+                str(app_id)
+                for app_ids in runtime_brand_app_filters.values()
+                for app_id in app_ids
+            }
+        ),
+        "brand_app_filters": {
+            str(k): [str(x) for x in runtime_brand_app_filters.get(k, [])]
+            for k in sorted(runtime_brand_app_filters.keys())
+        },
+        "source_tables": [dict(item) for item in source_table_contracts],
+        "joinability_summary": {
+            "commerce_joinable": dict(join_diag.commerce_joinable),
+            "activity_enrichment_joinable": dict(activity_enrichment_joinable),
+        },
+        "validation_report": dict(validation_report),
+        "code_version": current_code_version(Path(__file__).resolve().parent),
+        "extra": dict(extra or {}),
+    }
+
+
+def _export_training_snapshot(
+    *,
+    snapshot_cfg: Mapping[str, object],
+    run_id: str,
+    source_mode: str,
+    runtime_brand_app_filters: Mapping[str, Sequence[str]],
+    source_table_contracts: Sequence[Mapping[str, object]],
+    join_diag,
+    activity_enrichment_joinable: Mapping[str, bool],
+    validation_report: Mapping[str, object],
+    outputs_dir: Path,
+    reports_dir: Path,
+    sample_mode: str,
+) -> Optional[Dict[str, object]]:
+    if not bool(snapshot_cfg.get("export_training_snapshot", True)):
+        return None
+
+    labeled_path = outputs_dir / "labeled_feature_table.parquet"
+    feature_defs_path = outputs_dir / "feature_definitions.csv"
+    segment_path = outputs_dir / "segment_kpis.parquet"
+    join_md_path = outputs_dir / "join_diagnostics.md"
+    coverage_notes_path = outputs_dir / "coverage_notes.md"
+    validation_path = outputs_dir / "data_validation_report.json"
+    if not labeled_path.exists():
+        return None
+
+    labeled_df = pd.read_parquet(labeled_path)
+    segment_df = pd.read_parquet(segment_path) if segment_path.exists() else pd.DataFrame()
+    files: List[Dict[str, object]] = [
+        {
+            "name": "labeled_feature_table",
+            "source_path": labeled_path,
+            "rows": int(len(labeled_df)),
+            "cols": int(len(labeled_df.columns)),
+            "schema_hash": dataframe_schema_hash(labeled_df),
+            "content_type": "application/x-parquet",
+        },
+        {
+            "name": "feature_definitions",
+            "source_path": feature_defs_path,
+            "content_type": "text/csv",
+        },
+        {
+            "name": "data_validation_report",
+            "source_path": validation_path,
+            "content_type": "application/json",
+        },
+        {
+            "name": "join_diagnostics",
+            "source_path": join_md_path,
+            "content_type": "text/markdown",
+        },
+        {
+            "name": "coverage_notes",
+            "source_path": coverage_notes_path,
+            "content_type": "text/markdown",
+        },
+    ]
+    if segment_path.exists():
+        files.append(
+            {
+                "name": "segment_kpis",
+                "source_path": segment_path,
+                "rows": int(len(segment_df)),
+                "cols": int(len(segment_df.columns)) if not segment_df.empty else 0,
+                "schema_hash": dataframe_schema_hash(segment_df) if not segment_df.empty else "",
+                "content_type": "application/x-parquet",
+            }
+        )
+    report_path = reports_dir / "pipeline_summary.json"
+    if report_path.exists():
+        files.append({"name": "pipeline_summary_report", "source_path": report_path, "content_type": "application/json"})
+
+    manifest_payload = _snapshot_manifest_base(
+        snapshot_kind="training_snapshot",
+        run_id=run_id,
+        source_mode=source_mode,
+        runtime_brand_app_filters=runtime_brand_app_filters,
+        source_table_contracts=source_table_contracts,
+        join_diag=join_diag,
+        activity_enrichment_joinable=activity_enrichment_joinable,
+        validation_report=validation_report,
+        extra={
+            "sample_mode": str(sample_mode),
+            "snapshot_kind": "training_snapshot",
+        },
+    )
+    return copy_assets_to_snapshot(
+        snapshot_root=snapshot_cfg["root"],
+        snapshot_kind="training_snapshot",
+        run_id=run_id,
+        files=files,
+        manifest_payload=manifest_payload,
+    )
+
+
+def _export_scoring_snapshot(
+    *,
+    snapshot_cfg: Mapping[str, object],
+    run_id: str,
+    source_mode: str,
+    runtime_brand_app_filters: Mapping[str, Sequence[str]],
+    source_table_contracts: Sequence[Mapping[str, object]],
+    join_diag,
+    activity_enrichment_joinable: Mapping[str, bool],
+    validation_report: Mapping[str, object],
+    outputs_dir: Path,
+    reports_dir: Path,
+    rows_scored: int,
+) -> Optional[Dict[str, object]]:
+    if not bool(snapshot_cfg.get("export_scoring_snapshot", True)):
+        return None
+
+    pred_parquet = outputs_dir / "predictions_with_drivers.parquet"
+    pred_jsonl = outputs_dir / "predictions_with_drivers.jsonl"
+    examples_path = outputs_dir / "examples_last4_with_segments.json"
+    attribution_path = outputs_dir / "attribution_qa.json"
+    if not pred_parquet.exists():
+        return None
+
+    pred_df = pd.read_parquet(pred_parquet)
+    files: List[Dict[str, object]] = [
+        {
+            "name": "predictions_with_drivers_parquet",
+            "source_path": pred_parquet,
+            "rows": int(len(pred_df)),
+            "cols": int(len(pred_df.columns)),
+            "schema_hash": dataframe_schema_hash(pred_df),
+            "content_type": "application/x-parquet",
+        },
+        {
+            "name": "predictions_with_drivers_jsonl",
+            "source_path": pred_jsonl,
+            "content_type": "application/jsonl",
+        },
+        {
+            "name": "examples_last4_with_segments",
+            "source_path": examples_path,
+            "content_type": "application/json",
+        },
+        {
+            "name": "attribution_qa",
+            "source_path": attribution_path,
+            "content_type": "application/json",
+        },
+    ]
+    summary_path = reports_dir / "pipeline_summary.json"
+    if summary_path.exists():
+        files.append({"name": "pipeline_summary_report", "source_path": summary_path, "content_type": "application/json"})
+
+    manifest_payload = _snapshot_manifest_base(
+        snapshot_kind="scoring_snapshot",
+        run_id=run_id,
+        source_mode=source_mode,
+        runtime_brand_app_filters=runtime_brand_app_filters,
+        source_table_contracts=source_table_contracts,
+        join_diag=join_diag,
+        activity_enrichment_joinable=activity_enrichment_joinable,
+        validation_report=validation_report,
+        extra={
+            "rows_scored": int(rows_scored),
+            "snapshot_kind": "scoring_snapshot",
+        },
+    )
+    return copy_assets_to_snapshot(
+        snapshot_root=snapshot_cfg["root"],
+        snapshot_kind="scoring_snapshot",
+        run_id=run_id,
+        files=files,
+        manifest_payload=manifest_payload,
+    )
+
+
+def _package_model_bundle(
+    *,
+    bundle_cfg: Mapping[str, object],
+    run_id: str,
+    artifacts_dir: Path,
+    training_snapshot_export: Optional[Mapping[str, object]],
+    feature_columns: Sequence[str],
+    class_labels: Sequence[str],
+    metrics: Mapping[str, object],
+    selected_model: Optional[str],
+) -> Optional[Dict[str, object]]:
+    if training_snapshot_export is None:
+        return None
+    manifest_path = training_snapshot_export.get("manifest_path")
+    if manifest_path is None:
+        return None
+    return package_model_artifact_bundle(
+        artifact_dir=artifacts_dir,
+        bundle_root=bundle_cfg["root"],
+        model_version=str(run_id),
+        training_snapshot_uri=str(manifest_path),
+        feature_columns=feature_columns,
+        class_labels=class_labels,
+        metrics=metrics,
+        selected_model=str(selected_model or ""),
+        status=str(bundle_cfg.get("status", "candidate")),
+        code_version=current_code_version(Path(__file__).resolve().parent),
+        extra_tags={"pipeline": "brand-health"},
+    )
+
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Brand Health Pipeline")
+    parser.add_argument("--run-id", type=str, default=None)
     parser.add_argument("--dataset-root", type=str, default="datasets")
     parser.add_argument("--reports-dir", type=str, default="reports")
     parser.add_argument("--outputs-dir", type=str, default="outputs")
@@ -879,15 +1243,24 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--databricks-spark-explain-pushdown", type=str, default="false")
     parser.add_argument("--publish-kpis-predicted", type=str, default="false")
     parser.add_argument("--publish-kpis-table", type=str, default="projects_prd.marketingautomation.kpis_predicted")
-    parser.add_argument("--publish-kpis-write-mode", type=str, choices=["overwrite", "merge"], default="overwrite")
+    parser.add_argument("--publish-kpis-write-mode", type=str, choices=["overwrite", "merge"], default="merge")
     parser.add_argument("--publish-kpis-fail-on-cast-error", type=str, default="true")
     parser.add_argument("--mlflow-enable", type=str, default="false")
     parser.add_argument("--mlflow-experiment", type=str, default=None)
     parser.add_argument("--mlflow-run-name", type=str, default=None)
     parser.add_argument("--mlflow-log-outputs", type=str, default="true")
-    parser.add_argument("--model-source", type=str, default="artifacts", choices=["artifacts", "mlflow"])
+    parser.add_argument("--model-source", type=str, default="artifacts", choices=["artifacts", "mlflow", "artifact_bundle"])
     parser.add_argument("--mlflow-model-uri", type=str, default=None)
     parser.add_argument("--mlflow-registry-uri", type=str, default="databricks")
+    parser.add_argument("--model-release-manifest", type=str, default=None)
+    parser.add_argument("--snapshot-root", type=str, default=None)
+    parser.add_argument("--export-training-snapshot", type=str, default="true")
+    parser.add_argument("--export-scoring-snapshot", type=str, default="true")
+    parser.add_argument("--data-validation-null-rate-threshold", type=float, default=0.95)
+    parser.add_argument("--data-validation-row-count-delta-threshold", type=float, default=0.50)
+    parser.add_argument("--data-validation-fail-on-warning", type=str, default="false")
+    parser.add_argument("--model-bundle-root", type=str, default=None)
+    parser.add_argument("--auto-approve-model-release", type=str, default="false")
     parser.add_argument("--snapshot-freq", type=str, default="7D")
     parser.add_argument("--report-name", type=str, default="brand_health_report.md")
     parser.add_argument("--skip-train", action="store_true", help="Skip training and reuse model artifacts.")
@@ -913,6 +1286,8 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     args = parser.parse_args(argv)
     pipeline_started_at = time.perf_counter()
     pipeline_started_dt = datetime.now()
+    run_id = str(getattr(args, "run_id", "") or "").strip() or _default_run_id(pipeline_started_dt)
+    args.run_id = run_id
 
     dataset_root = Path(args.dataset_root)
     reports_dir = Path(args.reports_dir)
@@ -927,6 +1302,8 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     reports_dir.mkdir(parents=True, exist_ok=True)
     outputs_dir.mkdir(parents=True, exist_ok=True)
     artifacts_dir.mkdir(parents=True, exist_ok=True)
+    snapshot_cfg = _resolve_snapshot_runtime(args, outputs_dir=outputs_dir)
+    bundle_cfg = _resolve_model_bundle_runtime(args, artifacts_dir=artifacts_dir)
     _set_thread_limits(args.n_jobs)
     memory_events: List[Dict[str, object]] = []
     log_memory_rss("pipeline_start", sink=memory_events)
@@ -945,12 +1322,16 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
 
     _log(
         "Pipeline start | "
-        f"started_at={pipeline_started_dt.strftime('%Y-%m-%d %H:%M:%S')} "
+        f"run_id={run_id} started_at={pipeline_started_dt.strftime('%Y-%m-%d %H:%M:%S')} "
         f"source_mode={source_mode} skip_train={bool(args.skip_train)} "
         f"sample_mode={str(args.train_sample_mode).strip().lower()} n_jobs={int(args.n_jobs)}"
     )
     _log(
         f"Paths | dataset_root={dataset_root} reports_dir={reports_dir} outputs_dir={outputs_dir} artifacts_dir={artifacts_dir}"
+    )
+    _log(
+        f"MLOps paths | snapshot_root={snapshot_cfg['root']} model_bundle_root={bundle_cfg['root']} "
+        f"auto_approve_model_release={bundle_cfg['auto_approve']}"
     )
     _log(f"Using app_id filters: {runtime_brand_app_filters}")
     _log(
@@ -1061,6 +1442,24 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         time_diag_df=join_diag.time_range_summary,
         commerce_joinable=join_diag.commerce_joinable,
     )
+    validation_report = _run_data_validation(
+        tables=tables,
+        columns_map=COLUMNS_MAP,
+        runtime_brand_app_filters=runtime_brand_app_filters,
+        join_diag=join_diag,
+        activity_enrichment_joinable=activity_enrichment_joinable,
+        snapshot_cfg=snapshot_cfg,
+        run_id=run_id,
+        outputs_dir=outputs_dir,
+    )
+    _log(
+        f"Data validation | status={validation_report['status']} "
+        f"errors={validation_report['error_count']} warnings={validation_report['warning_count']}"
+    )
+    source_table_contracts = summarize_tables_for_contracts(tables=tables, columns_map=COLUMNS_MAP)
+    training_snapshot_export: Optional[Dict[str, object]] = None
+    scoring_snapshot_export: Optional[Dict[str, object]] = None
+    model_bundle_export: Optional[Dict[str, object]] = None
     zero_row_summary = _zero_row_tables_summary(profile.table_profile)
     if zero_row_summary:
         _log(f"Data warning | zero-row tables detected: {zero_row_summary}")
@@ -1150,6 +1549,21 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         f"rows={len(labeled_df)} cols={len(labeled_df.columns)}",
     )
     log_memory_rss("after_generate_labels", sink=memory_events)
+    training_snapshot_export = _export_training_snapshot(
+        snapshot_cfg=snapshot_cfg,
+        run_id=run_id,
+        source_mode=source_mode,
+        runtime_brand_app_filters=runtime_brand_app_filters,
+        source_table_contracts=source_table_contracts,
+        join_diag=join_diag,
+        activity_enrichment_joinable=activity_enrichment_joinable,
+        validation_report=validation_report,
+        outputs_dir=outputs_dir,
+        reports_dir=reports_dir,
+        sample_mode=str(args.train_sample_mode).strip().lower(),
+    )
+    if training_snapshot_export is not None:
+        _log(f"Training snapshot exported | manifest={training_snapshot_export['manifest_path']}")
 
     # No longer needed after labels/definitions are generated.
     del feature_df
@@ -1212,6 +1626,8 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
                 model_uri=model_cfg["mlflow_model_uri"],
                 registry_uri=model_cfg["mlflow_registry_uri"],
             )
+        elif model_cfg["source"] == "artifact_bundle":
+            loaded = load_model_from_release_manifest(model_cfg["model_release_manifest"])
         else:
             loaded = load_model_artifacts(artifact_dir=artifacts_dir)
         model = loaded["model"]
@@ -1233,7 +1649,12 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             except json.JSONDecodeError:
                 existing_summary = {}
         metrics = metadata.get("metrics") or existing_summary.get("metrics", {})
-        default_selected = "mlflow_sklearn_model" if model_cfg["source"] == "mlflow" else "hist_gradient_boosting_calibrated"
+        if model_cfg["source"] == "mlflow":
+            default_selected = "mlflow_sklearn_model"
+        elif model_cfg["source"] == "artifact_bundle":
+            default_selected = "artifact_bundle_model"
+        else:
+            default_selected = "hist_gradient_boosting_calibrated"
         selected_model = (
             (metrics.get("selected_model") if isinstance(metrics, Mapping) else None)
             or existing_summary.get("selected_model")
@@ -1257,6 +1678,18 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         class_labels = artifacts.class_labels
         metrics = artifacts.metrics
         selected_model = artifacts.metrics.get("selected_model")
+        model_bundle_export = _package_model_bundle(
+            bundle_cfg=bundle_cfg,
+            run_id=run_id,
+            artifacts_dir=artifacts_dir,
+            training_snapshot_export=training_snapshot_export,
+            feature_columns=feature_columns,
+            class_labels=class_labels,
+            metrics=metrics if isinstance(metrics, Mapping) else {},
+            selected_model=selected_model,
+        )
+        if model_bundle_export is not None:
+            _log(f"Model bundle packaged | manifest={model_bundle_export['manifest_path']}")
     _stage_done(
         "[6/7] Training and evaluating models",
         step_started_at,
@@ -1266,7 +1699,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
 
     step_started_at = time.perf_counter()
     print("[7/7] Running inference + drivers + actions...")
-    primary_app_id_map = _brand_primary_app_id_map(BRAND_APP_ID_FILTERS)
+    primary_app_id_map = _brand_primary_app_id_map(runtime_brand_app_filters)
     pred_df = predict_with_drivers(
         feature_df=infer_input_df,
         model=model,
@@ -1289,7 +1722,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     catalog_publish_summary: Dict[str, object] = {
         "enabled": bool(publish_cfg.get("enabled", False)),
         "table": str(publish_cfg.get("table_name", "")),
-        "write_mode": str(publish_cfg.get("write_mode", "overwrite")),
+        "write_mode": str(publish_cfg.get("write_mode", "merge")),
         "rows_written": 0,
         "status": "disabled",
         "error": "",
@@ -1301,7 +1734,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             publish_result = publish_kpis_predicted_to_catalog(
                 pred_df=pred_df,
                 table_name=str(publish_cfg.get("table_name", "")),
-                write_mode=str(publish_cfg.get("write_mode", "overwrite")),
+                write_mode=str(publish_cfg.get("write_mode", "merge")),
                 fail_on_cast_error=bool(publish_cfg.get("fail_on_cast_error", True)),
             )
         except Exception as exc:
@@ -1424,6 +1857,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         "feature_count": len(feature_columns),
         "example_count": len(examples),
         "attribution_qa": attribution_qa,
+        "data_validation": validation_report,
         "catalog_publish": catalog_publish_summary,
         "memory_optimization": {
             "enabled": bool(memory_optimize),
@@ -1431,7 +1865,34 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             "memory_events": memory_events,
         },
     }
+    if training_snapshot_export is not None:
+        summary["training_snapshot_manifest"] = str(training_snapshot_export["manifest_path"])
     (reports_dir / "pipeline_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    if model_bundle_export is not None:
+        summary["model_release"] = {
+            "status": model_bundle_export["manifest"].get("status"),
+            "model_version": model_bundle_export["manifest"].get("model_version"),
+            "manifest_path": str(model_bundle_export["manifest_path"]),
+            "artifact_uri": model_bundle_export["manifest"].get("artifact_uri"),
+        }
+        (reports_dir / "pipeline_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+
+    scoring_snapshot_export = _export_scoring_snapshot(
+        snapshot_cfg=snapshot_cfg,
+        run_id=run_id,
+        source_mode=source_mode,
+        runtime_brand_app_filters=runtime_brand_app_filters,
+        source_table_contracts=source_table_contracts,
+        join_diag=join_diag,
+        activity_enrichment_joinable=activity_enrichment_joinable,
+        validation_report=validation_report,
+        outputs_dir=outputs_dir,
+        reports_dir=reports_dir,
+        rows_scored=int(len(pred_df)),
+    )
+    if scoring_snapshot_export is not None:
+        summary["scoring_snapshot_manifest"] = str(scoring_snapshot_export["manifest_path"])
+        (reports_dir / "pipeline_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
     _log_pipeline_to_mlflow(
         mlflow_cfg=mlflow_cfg,

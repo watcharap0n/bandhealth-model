@@ -61,6 +61,7 @@ class RunPipelineMLflowTests(unittest.TestCase):
                 "source": "artifacts",
                 "mlflow_model_uri": "",
                 "mlflow_registry_uri": "databricks",
+                "model_release_manifest": "",
             },
         )
 
@@ -90,6 +91,23 @@ class RunPipelineMLflowTests(unittest.TestCase):
         self.assertEqual(cfg["source"], "mlflow")
         self.assertEqual(cfg["mlflow_model_uri"], "runs:/abc123/model")
         self.assertEqual(cfg["mlflow_registry_uri"], "databricks")
+
+    def test_skip_train_artifact_bundle_requires_release_manifest(self) -> None:
+        parser = run_pipeline.build_arg_parser()
+        args = parser.parse_args(["--skip-train", "--model-source", "artifact_bundle"])
+
+        with self.assertRaises(ValueError) as ctx:
+            run_pipeline._resolve_model_runtime(args)
+
+        self.assertIn("model_release_manifest", str(ctx.exception))
+
+    def test_publish_runtime_defaults_to_merge(self) -> None:
+        parser = run_pipeline.build_arg_parser()
+        args = parser.parse_args([])
+
+        cfg = run_pipeline._resolve_publish_runtime(args, source_mode="parquet")
+
+        self.assertEqual(cfg["write_mode"], "merge")
 
 
 if __name__ == "__main__":
