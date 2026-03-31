@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import gc
+import os
+import shutil
+import tempfile
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Dict, List, Mapping, MutableMapping, Optional, Sequence, Tuple
@@ -248,20 +251,36 @@ def write_parquet_chunked(
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
+    # Databricks Workspace Files can fail on pyarrow ParquetWriter.close() for
+    # larger files. Write to a local temp file first, then copy into place.
+    use_temp_staging = str(path).startswith("/Workspace/")
+    tmp_path: Optional[Path] = None
+    write_path = path
+    if use_temp_staging:
+        fd, raw_tmp = tempfile.mkstemp(prefix="banding-health-", suffix=".parquet")
+        os.close(fd)
+        tmp_path = Path(raw_tmp)
+        write_path = tmp_path
+
     if len(df) == 0:
         empty = pa.Table.from_pandas(df, preserve_index=False)
-        pq.write_table(empty, path, compression=compression)
+        pq.write_table(empty, write_path, compression=compression)
+        if tmp_path is not None:
+            if path.exists() and path.is_file():
+                path.unlink()
+            shutil.copy2(tmp_path, path)
+            tmp_path.unlink(missing_ok=True)
         return
 
     # Avoid mixed inferred schemas across chunks (e.g., all-null chunk -> null type).
     # We infer once from the full DataFrame and force every chunk to this schema.
     schema = pa.Schema.from_pandas(df, preserve_index=False)
-    if path.exists() and path.is_file():
-        path.unlink()
+    if write_path.exists() and write_path.is_file():
+        write_path.unlink()
 
     writer: Optional[pq.ParquetWriter] = None
     try:
-        writer = pq.ParquetWriter(path, schema, compression=compression)
+        writer = pq.ParquetWriter(write_path, schema, compression=compression)
         for start in range(0, len(df), max(1, int(chunk_rows))):
             chunk = df.iloc[start : start + int(chunk_rows)]
             table = pa.Table.from_pandas(chunk, schema=schema, preserve_index=False, safe=False)
@@ -269,3 +288,8 @@ def write_parquet_chunked(
     finally:
         if writer is not None:
             writer.close()
+        if tmp_path is not None:
+            if path.exists() and path.is_file():
+                path.unlink()
+            shutil.copy2(tmp_path, path)
+            tmp_path.unlink(missing_ok=True)
