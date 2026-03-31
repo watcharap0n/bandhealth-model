@@ -1,24 +1,69 @@
-from __future__ import annotations
-
 import unittest
 
-import pandas as pd
-
-from src.train import _safe_calibration_cv
+import src.train as train
 
 
-class TrainCalibrationTests(unittest.TestCase):
-    def test_safe_calibration_cv_drops_to_two_when_min_class_count_is_two(self) -> None:
-        y = pd.Series(["Healthy", "Healthy", "Warning", "Warning", "AtRisk", "AtRisk"])
-        self.assertEqual(_safe_calibration_cv(y, preferred_cv=3), 2)
+class LegacyOneHotEncoder:
+    def __init__(self, handle_unknown=None, sparse=None, sparse_output=None):
+        if sparse_output is not None:
+            raise TypeError("unexpected keyword argument 'sparse_output'")
+        self.handle_unknown = handle_unknown
+        self.sparse = sparse
 
-    def test_safe_calibration_cv_skips_when_any_class_has_only_one_row(self) -> None:
-        y = pd.Series(["Healthy", "Healthy", "Warning", "AtRisk"])
-        self.assertEqual(_safe_calibration_cv(y, preferred_cv=3), 0)
 
-    def test_safe_calibration_cv_skips_when_only_one_class_exists(self) -> None:
-        y = pd.Series(["Healthy", "Healthy", "Healthy"])
-        self.assertEqual(_safe_calibration_cv(y, preferred_cv=3), 0)
+class LegacyHistGradientBoostingClassifier:
+    def __init__(self, class_weight=None, **kwargs):
+        if class_weight is not None:
+            raise TypeError("unexpected keyword argument 'class_weight'")
+        self.kwargs = kwargs
+
+
+class LegacyCalibratedClassifierCV:
+    def __init__(self, estimator=None, base_estimator=None, method=None, cv=None):
+        if estimator is not None:
+            raise TypeError("unexpected keyword argument 'estimator'")
+        self.base_estimator = base_estimator
+        self.method = method
+        self.cv = cv
+
+
+class TrainCompatibilityTests(unittest.TestCase):
+    def test_make_onehot_encoder_falls_back_for_legacy_sklearn(self):
+        original = train.OneHotEncoder
+        train.OneHotEncoder = LegacyOneHotEncoder
+        try:
+            encoder = train._make_onehot_encoder()
+        finally:
+            train.OneHotEncoder = original
+
+        self.assertIsInstance(encoder, LegacyOneHotEncoder)
+        self.assertEqual(encoder.handle_unknown, "ignore")
+        self.assertFalse(encoder.sparse)
+
+    def test_make_hgb_classifier_falls_back_for_legacy_sklearn(self):
+        original = train.HistGradientBoostingClassifier
+        train.HistGradientBoostingClassifier = LegacyHistGradientBoostingClassifier
+        try:
+            model = train._make_hgb_classifier(hgb_max_iter=220, class_weight="balanced")
+        finally:
+            train.HistGradientBoostingClassifier = original
+
+        self.assertIsInstance(model, LegacyHistGradientBoostingClassifier)
+        self.assertEqual(model.kwargs["max_iter"], 220)
+        self.assertTrue(model.kwargs["early_stopping"])
+
+    def test_make_calibrated_classifier_falls_back_for_legacy_sklearn(self):
+        original = train.CalibratedClassifierCV
+        train.CalibratedClassifierCV = LegacyCalibratedClassifierCV
+        try:
+            model = train._make_calibrated_classifier(estimator="dummy", method="sigmoid", cv=3)
+        finally:
+            train.CalibratedClassifierCV = original
+
+        self.assertIsInstance(model, LegacyCalibratedClassifierCV)
+        self.assertEqual(model.base_estimator, "dummy")
+        self.assertEqual(model.method, "sigmoid")
+        self.assertEqual(model.cv, 3)
 
 
 if __name__ == "__main__":

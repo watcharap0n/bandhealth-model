@@ -40,6 +40,56 @@ class TrainArtifacts:
     feature_importance: Dict[str, float]
 
 
+def _make_onehot_encoder() -> OneHotEncoder:
+    # sklearn < 1.2 uses `sparse`; sklearn >= 1.2 renamed it to `sparse_output`.
+    try:
+        return OneHotEncoder(handle_unknown="ignore", sparse_output=False)
+    except TypeError:
+        return OneHotEncoder(handle_unknown="ignore", sparse=False)
+
+
+def _make_hgb_classifier(
+    *,
+    hgb_max_iter: int,
+    class_weight: str | None,
+) -> HistGradientBoostingClassifier:
+    params = dict(
+        max_iter=hgb_max_iter,
+        learning_rate=0.05,
+        max_depth=8,
+        min_samples_leaf=20,
+        l2_regularization=0.1,
+        early_stopping=True,
+        validation_fraction=0.1,
+        n_iter_no_change=20,
+        random_state=42,
+    )
+    try:
+        return HistGradientBoostingClassifier(class_weight=class_weight, **params)
+    except TypeError:
+        return HistGradientBoostingClassifier(**params)
+
+
+def _make_calibrated_classifier(
+    *,
+    estimator,
+    method: str,
+    cv: int,
+) -> CalibratedClassifierCV:
+    try:
+        return CalibratedClassifierCV(
+            estimator=estimator,
+            method=method,
+            cv=cv,
+        )
+    except TypeError:
+        return CalibratedClassifierCV(
+            base_estimator=estimator,
+            method=method,
+            cv=cv,
+        )
+
+
 
 def _build_preprocessor(categorical_cols: List[str], numeric_cols: List[str]) -> ColumnTransformer:
     return ColumnTransformer(
@@ -49,7 +99,7 @@ def _build_preprocessor(categorical_cols: List[str], numeric_cols: List[str]) ->
                 Pipeline(
                     steps=[
                         ("imputer", SimpleImputer(strategy="most_frequent")),
-                        ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
+                        ("onehot", _make_onehot_encoder()),
                     ]
                 ),
                 categorical_cols,
@@ -94,17 +144,9 @@ def _model_pipelines(
             ("preprocess", preprocessor),
             (
                 "model",
-                HistGradientBoostingClassifier(
-                    max_iter=hgb_max_iter,
-                    learning_rate=0.05,
-                    max_depth=8,
-                    min_samples_leaf=20,
-                    l2_regularization=0.1,
+                _make_hgb_classifier(
+                    hgb_max_iter=hgb_max_iter,
                     class_weight=class_weight,
-                    early_stopping=True,
-                    validation_fraction=0.1,
-                    n_iter_no_change=20,
-                    random_state=42,
                 ),
             ),
         ]
@@ -350,7 +392,7 @@ def train_models(
     calibrated = None
     calibration_status = "skipped"
     if cal_cv >= 2:
-        calibrated = CalibratedClassifierCV(
+        calibrated = _make_calibrated_classifier(
             estimator=_model_pipelines(cat_cols, num_cols, weight_classes=weight_classes, sample_mode=sample_mode)["hgb"],
             method="sigmoid",
             cv=cal_cv,
@@ -398,7 +440,7 @@ def train_models(
     # Fit final selected model on full data.
     final_cal_cv = _safe_calibration_cv(y, preferred_cv=preferred_cal_cv) if best_is_calibrated else 0
     if best_is_calibrated and final_cal_cv >= 2:
-        final_model = CalibratedClassifierCV(
+        final_model = _make_calibrated_classifier(
             estimator=_model_pipelines(cat_cols, num_cols, weight_classes=weight_classes, sample_mode=sample_mode)["hgb"],
             method="sigmoid",
             cv=final_cal_cv,
